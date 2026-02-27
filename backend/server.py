@@ -766,16 +766,16 @@ async def update_strain_image(
     return {"message": "Image updated", "image_url": new_image_url}
 
 @api_router.delete("/strains/{strain_id}")
-async def delete_strain(strain_id: str):
-    """Delete a strain (admin)"""
+async def delete_strain(strain_id: str, token: str = Depends(verify_admin_token)):
+    """Delete a strain (admin only)"""
     result = await db.strains.delete_one({"id": strain_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Strain not found")
     return {"message": "Strain deleted"}
 
 @api_router.put("/strains/{strain_id}")
-async def update_strain(strain_id: str, strain_input: StrainCreate):
-    """Update strain details (admin)"""
+async def update_strain(strain_id: str, strain_input: StrainCreate, token: str = Depends(verify_admin_token)):
+    """Update strain details (admin only)"""
     strain = await db.strains.find_one({"id": strain_id}, {"_id": 0})
     if not strain:
         raise HTTPException(status_code=404, detail="Strain not found")
