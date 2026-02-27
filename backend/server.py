@@ -954,7 +954,6 @@ async def register_user(user_data: UserRegister):
             "company": user.company,
             "email": user.email
         },
-        "temp_password": temp_password,  # Send this to user for future logins
         "flags_detected": len(flags)  # Let admin know if flags were raised
     }
 
