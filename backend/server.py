@@ -1141,6 +1141,20 @@ async def get_strains_admin(token: str = Depends(verify_admin_token)):
             strain['created_at'] = datetime.fromisoformat(strain['created_at'].replace('Z', '+00:00'))
     return strains
 
+@api_router.post("/strains/admin/create", response_model=Strain)
+async def create_strain_admin(strain_input: StrainCreate, token: str = Depends(verify_admin_token)):
+    """Create a new strain (admin only)"""
+    # Check if strain name already exists
+    existing = await db.strains.find_one({"strain_name": {"$regex": f"^{strain_input.strain_name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Strain '{strain_input.strain_name}' already exists")
+    
+    strain = Strain(**strain_input.model_dump())
+    doc = strain.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.strains.insert_one(doc)
+    return strain
+
 @api_router.get("/strains", response_model=List[Strain])
 async def get_strains(
     type_filter: Optional[str] = Query(None, description="Filter by strain type"),
