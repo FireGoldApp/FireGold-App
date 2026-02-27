@@ -96,8 +96,8 @@ class SampleRequest(BaseModel):
     phone: Optional[str] = None
     strain_id: str
     strain_name: Optional[str] = None
-    health_canada_license: str
-    cra_license: str
+    health_canada_license_filename: Optional[str] = None
+    cra_license_filename: Optional[str] = None
     shipping_address: str
     message: Optional[str] = None
     status: str = "pending"  # pending, approved, shipped, rejected
