@@ -853,6 +853,86 @@ async def update_submission_status(
     
     return {"message": f"Submission {body.status}", "submission_id": submission_id}
 
+# Public: Check if LP/company already has licenses on file
+@api_router.get("/grower/check-licenses")
+async def check_licenses_on_file(company_name: str = Query(..., min_length=2)):
+    """Check if an LP/company already has licenses on file from previous submissions"""
+    # Look for any submission from this company that has license files
+    submissions = await db.grower_submissions.find(
+        {"company_name": {"$regex": f"^{company_name}$", "$options": "i"}},
+        {"_id": 0, "company_name": 1, "health_canada_license_path": 1, "cra_license_path": 1, "coa_path": 1, "grower_name": 1, "status": 1}
+    ).to_list(100)
+    
+    has_hc = any(s.get("health_canada_license_path") for s in submissions)
+    has_cra = any(s.get("cra_license_path") for s in submissions)
+    has_coa = any(s.get("coa_path") for s in submissions)
+    previous_submissions = len(submissions)
+    
+    return {
+        "company_name": company_name,
+        "licenses_on_file": {
+            "health_canada_license": has_hc,
+            "cra_license": has_cra,
+            "coa": has_coa
+        },
+        "previous_submissions": previous_submissions,
+        "recognized": previous_submissions > 0
+    }
+
+# Public: Submission status tracker
+@api_router.get("/grower/track")
+async def track_submission(
+    submission_id: Optional[str] = Query(None),
+    company_name: Optional[str] = Query(None)
+):
+    """Public endpoint for growers to track their submission status"""
+    if not submission_id and not company_name:
+        raise HTTPException(status_code=400, detail="Provide submission_id or company_name")
+    
+    if submission_id:
+        sub = await db.grower_submissions.find_one(
+            {"id": submission_id},
+            {"_id": 0, "id": 1, "strain_name": 1, "company_name": 1, "status": 1, 
+             "created_at": 1, "admin_notes": 1, "admin_price_per_gram": 1,
+             "health_canada_license_path": 1, "cra_license_path": 1, "coa_path": 1}
+        )
+        if not sub:
+            raise HTTPException(status_code=404, detail="Submission not found")
+        submissions = [sub]
+    else:
+        submissions = await db.grower_submissions.find(
+            {"company_name": {"$regex": f"^{company_name}$", "$options": "i"}},
+            {"_id": 0, "id": 1, "strain_name": 1, "company_name": 1, "status": 1,
+             "created_at": 1, "admin_notes": 1, "admin_price_per_gram": 1,
+             "health_canada_license_path": 1, "cra_license_path": 1, "coa_path": 1}
+        ).sort("created_at", -1).to_list(100)
+    
+    # Determine license status for the company
+    has_hc = any(s.get("health_canada_license_path") for s in submissions)
+    has_cra = any(s.get("cra_license_path") for s in submissions)
+    has_coa = any(s.get("coa_path") for s in submissions)
+    
+    # Clean submissions for public view (remove internal paths)
+    results = []
+    for s in submissions:
+        results.append({
+            "id": s["id"],
+            "strain_name": s["strain_name"],
+            "company_name": s["company_name"],
+            "status": s["status"],
+            "submitted_at": s.get("created_at"),
+            "price_per_gram": s.get("admin_price_per_gram") if s["status"] == "approved" else None
+        })
+    
+    return {
+        "submissions": results,
+        "licenses_on_file": {
+            "health_canada_license": has_hc,
+            "cra_license": has_cra,
+            "coa": has_coa
+        }
+    }
+
 # Admin authentication endpoints
 @api_router.post("/admin/login")
 async def admin_login(login: AdminLogin):
