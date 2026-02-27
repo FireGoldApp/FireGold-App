@@ -85,7 +85,7 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
 };
 
 // Strain Detail Modal
-const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry }) => {
+const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onRequestSample }) => {
   if (!strain) return null;
 
   return (
@@ -166,14 +166,24 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry }) => 
               <div className="text-white font-mono">{strain.lot_size}</div>
             </div>
             
-            {/* Action Button */}
-            <button 
-              data-testid="add-to-inquiry-btn"
-              onClick={() => onAddToInquiry(strain.id)}
-              className={`mt-auto ${isInInquiry ? 'bg-cannabis-green' : 'bg-gold-500 hover:bg-gold-400'} text-black font-bold uppercase tracking-widest px-8 py-4 transition-all`}
-            >
-              {isInInquiry ? 'Added to Inquiry' : 'Add to Inquiry'}
-            </button>
+            {/* Action Buttons */}
+            <div className="mt-auto space-y-3">
+              <button 
+                data-testid="request-sample-btn"
+                onClick={() => onRequestSample(strain)}
+                className="w-full border-2 border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-black font-bold uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-2"
+              >
+                <Package className="w-4 h-4" />
+                Request Sample
+              </button>
+              <button 
+                data-testid="add-to-inquiry-btn"
+                onClick={() => onAddToInquiry(strain.id)}
+                className={`w-full ${isInInquiry ? 'bg-cannabis-green' : 'bg-gold-500 hover:bg-gold-400'} text-black font-bold uppercase tracking-widest px-8 py-4 transition-all`}
+              >
+                {isInInquiry ? 'Added to Inquiry' : 'Add to Inquiry'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
