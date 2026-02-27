@@ -22,7 +22,13 @@ import {
   ShieldCheck,
   Upload,
   FileText,
-  Check
+  Check,
+  Settings,
+  Image,
+  Trash2,
+  Edit3,
+  Save,
+  ArrowLeft
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
