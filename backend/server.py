@@ -626,6 +626,10 @@ async def health_check():
 @api_router.post("/grower/submit")
 async def submit_strain(submission: GrowerSubmissionInput):
     """Public endpoint for growers to submit their strains for consideration"""
+    # Enforce minimum lot size of 30 kg
+    if submission.lot_size_kg < 30:
+        raise HTTPException(status_code=400, detail="Minimum lot size is 30 kilograms.")
+    
     # Check if same strain from same company already submitted
     existing = await db.grower_submissions.find_one({
         "company_name": {"$regex": f"^{submission.company_name}$", "$options": "i"},
