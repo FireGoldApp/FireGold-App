@@ -59,6 +59,37 @@ class User(BaseModel):
     status: str = "active"  # active, suspended
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# Analytics Event Model
+class AnalyticsEvent(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_email: Optional[str] = None
+    user_company: Optional[str] = None
+    event_type: str  # page_view, strain_view, strain_click, filter_apply, search, inquiry_submit, sample_request
+    event_data: dict = {}  # Flexible data storage
+    page: Optional[str] = None
+    strain_id: Optional[str] = None
+    strain_name: Optional[str] = None
+    thc_percentage: Optional[str] = None
+    strain_type: Optional[str] = None
+    price_tier: Optional[str] = None
+    search_query: Optional[str] = None
+    filters_applied: Optional[dict] = None
+    user_agent: Optional[str] = None
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class TrackEventInput(BaseModel):
+    event_type: str
+    event_data: Optional[dict] = {}
+    page: Optional[str] = None
+    strain_id: Optional[str] = None
+    strain_name: Optional[str] = None
+    thc_percentage: Optional[str] = None
+    strain_type: Optional[str] = None
+    price_tier: Optional[str] = None
+    search_query: Optional[str] = None
+    filters_applied: Optional[dict] = None
+
 # Admin authentication
 class AdminLogin(BaseModel):
     password: str
