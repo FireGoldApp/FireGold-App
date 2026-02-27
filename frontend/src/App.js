@@ -845,12 +845,16 @@ const GrowerSubmitPage = () => {
     lot_size_kg: '',
     effects: '',
     growing_method: 'Indoor',
+    export_country: '',
+    is_irradiated: '',
+    willing_to_irradiate: '',
     additional_notes: ''
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submissionId, setSubmissionId] = useState('');
   const [lotError, setLotError] = useState('');
+  const [strainImage, setStrainImage] = useState(null);
 
   const handleLotSizeChange = (val) => {
     setFormData(prev => ({ ...prev, lot_size_kg: val }));
