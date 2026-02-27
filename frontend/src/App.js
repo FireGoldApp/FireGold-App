@@ -1229,7 +1229,10 @@ const AdminPage = () => {
 
   const fetchStrains = async (token) => {
     try {
-      const response = await axios.get(`${API}/strains`);
+      // Admin fetches strains without user token (public endpoint still works for admin)
+      const response = await axios.get(`${API}/strains/admin`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setStrains(response.data);
     } catch (error) {
       toast.error('Failed to load strains');
