@@ -1356,6 +1356,84 @@ const AdminPage = () => {
     }
   };
 
+  const handleAddStrain = async (e) => {
+    e.preventDefault();
+    if (!newStrainImage) {
+      toast.error('Please upload a strain image');
+      return;
+    }
+    
+    setAddingStrain(true);
+    
+    try {
+      // First create the strain
+      const strainData = {
+        ...newStrain,
+        terpene_profile: newStrain.terpene_profile.split(',').map(t => t.trim()).filter(t => t)
+      };
+      
+      const createResponse = await axios.post(`${API}/strains/admin/create`, strainData, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      
+      const strainId = createResponse.data.id;
+      
+      // Then upload the image
+      const formData = new FormData();
+      formData.append('image', newStrainImage);
+      
+      await axios.put(`${API}/strains/${strainId}/image`, formData, {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${adminToken}`
+        }
+      });
+      
+      toast.success(`${newStrain.strain_name} added successfully!`);
+      
+      // Reset form
+      setNewStrain({
+        strain_name: '',
+        type: 'Balanced Hybrid',
+        thc_percentage: '',
+        price_tier: '$$',
+        terpene_profile: '',
+        lineage: '',
+        lot_size: '',
+        effects: ''
+      });
+      setNewStrainImage(null);
+      setShowAddStrain(false);
+      setActiveTab('images');
+      fetchStrains(adminToken);
+      fetchStats(adminToken);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to add strain');
+    } finally {
+      setAddingStrain(false);
+    }
+  };
+
+  const confirmDeleteStrain = async (strainId, strainName) => {
+    if (!window.confirm(`Are you sure you want to remove "${strainName}" from the catalog?\n\nThis action cannot be undone.`)) return;
+    
+    try {
+      await axios.delete(`${API}/strains/${strainId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      toast.success(`${strainName} removed from catalog`);
+      fetchStrains(adminToken);
+      fetchStats(adminToken);
+    } catch (error) {
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        handleLogout();
+      } else {
+        toast.error('Failed to remove strain');
+      }
+    }
+  };
+
   const handleImageUpload = async (strainId, file) => {
     if (!file) return;
     
