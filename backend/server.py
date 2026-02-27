@@ -189,6 +189,50 @@ class StrainCreate(BaseModel):
     effects: str
     image_url: Optional[str] = None
 
+# Grower Submission Model
+class GrowerSubmission(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    # Grower info
+    grower_name: str
+    company_name: str
+    email: str
+    phone: str
+    license_number: Optional[str] = None
+    # Strain info
+    strain_name: str
+    strain_type: str
+    thc_percentage: str
+    cbd_percentage: Optional[str] = None
+    terpene_profile: str  # Comma separated
+    lineage: str
+    available_quantity: str
+    price_per_lb: Optional[str] = None
+    effects: str
+    growing_method: Optional[str] = None  # Indoor, Outdoor, Greenhouse
+    additional_notes: Optional[str] = None
+    # Status
+    status: str = "pending"  # pending, approved, rejected
+    admin_notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class GrowerSubmissionInput(BaseModel):
+    grower_name: str
+    company_name: str
+    email: EmailStr
+    phone: str
+    license_number: Optional[str] = None
+    strain_name: str
+    strain_type: str
+    thc_percentage: str
+    cbd_percentage: Optional[str] = None
+    terpene_profile: str
+    lineage: str
+    available_quantity: str
+    price_per_lb: Optional[str] = None
+    effects: str
+    growing_method: Optional[str] = None
+    additional_notes: Optional[str] = None
+
 class InquiryCreate(BaseModel):
     company_name: str
     contact_name: str
