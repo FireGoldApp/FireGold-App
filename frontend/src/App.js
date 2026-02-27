@@ -1791,7 +1791,7 @@ const CatalogPage = () => {
                     strain={strain}
                     onSelect={toggleStrainSelection}
                     isSelected={selectedStrains.includes(strain.id)}
-                    onViewDetails={setViewingStrain}
+                    onViewDetails={handleStrainClick}
                   />
                 ))}
               </div>
