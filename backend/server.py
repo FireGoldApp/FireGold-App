@@ -663,26 +663,75 @@ async def get_grower_submissions(
     submissions = await db.grower_submissions.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return submissions
 
+class UpdateSubmissionStatus(BaseModel):
+    status: str  # approved, rejected, pending
+    admin_notes: Optional[str] = None
+    admin_price_per_gram: Optional[str] = None
+
 @api_router.put("/grower/submissions/{submission_id}/status")
 async def update_submission_status(
     submission_id: str,
-    status: str = Query(..., description="New status: approved, rejected"),
-    admin_notes: Optional[str] = Query(None),
+    body: UpdateSubmissionStatus,
     token: str = Depends(verify_admin_token)
 ):
     """Update grower submission status (admin only)"""
-    if status not in ["approved", "rejected", "pending"]:
+    if body.status not in ["approved", "rejected", "pending"]:
         raise HTTPException(status_code=400, detail="Invalid status")
+    
+    update_fields = {"status": body.status}
+    if body.admin_notes is not None:
+        update_fields["admin_notes"] = body.admin_notes
+    if body.admin_price_per_gram is not None:
+        update_fields["admin_price_per_gram"] = body.admin_price_per_gram
     
     result = await db.grower_submissions.update_one(
         {"id": submission_id},
-        {"$set": {"status": status, "admin_notes": admin_notes}}
+        {"$set": update_fields}
     )
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Submission not found")
     
-    return {"message": f"Submission {status}", "submission_id": submission_id}
+    # If approved, automatically add the strain to the catalog
+    if body.status == "approved":
+        submission = await db.grower_submissions.find_one({"id": submission_id}, {"_id": 0})
+        if submission:
+            terpenes = [t.strip() for t in submission.get("terpene_profile", "").split(",") if t.strip()]
+            lot_kg = submission.get("lot_size_kg", 30)
+            
+            # Determine price tier from admin_price_per_gram
+            price_tier = "$$"  # default
+            ppg = body.admin_price_per_gram or submission.get("admin_price_per_gram")
+            if ppg:
+                try:
+                    ppg_val = float(ppg.replace("$", "").strip())
+                    if ppg_val >= 8:
+                        price_tier = "$$$"
+                    elif ppg_val >= 5:
+                        price_tier = "$$"
+                    else:
+                        price_tier = "$"
+                except ValueError:
+                    pass
+            
+            new_strain = Strain(
+                strain_name=submission["strain_name"],
+                type=submission["strain_type"],
+                thc_percentage=submission["thc_percentage"],
+                cbd_percentage=submission.get("cbd_percentage"),
+                price_tier=price_tier,
+                terpene_profile=terpenes,
+                lineage=submission["lineage"],
+                lot_size=f"{lot_kg} kg",
+                effects=submission["effects"]
+            )
+            doc = new_strain.model_dump()
+            doc['created_at'] = doc['created_at'].isoformat()
+            if ppg:
+                doc['price_per_gram'] = ppg
+            await db.strains.insert_one(doc)
+    
+    return {"message": f"Submission {body.status}", "submission_id": submission_id}
 
 # Admin authentication endpoints
 @api_router.post("/admin/login")
