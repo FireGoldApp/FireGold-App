@@ -62,7 +62,10 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
         <img 
           src={strain.image_url || 'https://images.unsplash.com/photo-1721058454918-5582b68de13c'}
           alt={strain.strain_name}
-          className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+          className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105 select-none pointer-events-none"
+          onContextMenu={preventImageActions}
+          onDragStart={preventImageActions}
+          draggable="false"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
         
