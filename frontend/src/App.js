@@ -272,6 +272,241 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
   );
 };
 
+// Sample Request Modal Component
+const SampleRequestModal = ({ isOpen, onClose, strain }) => {
+  const [formData, setFormData] = useState({
+    company_name: '',
+    contact_name: '',
+    email: '',
+    phone: '',
+    health_canada_license: '',
+    cra_license: '',
+    shipping_address: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.health_canada_license || !formData.cra_license) {
+      toast.error('Health Canada License and CRA License are required for sample requests');
+      return;
+    }
+    
+    setIsSubmitting(true);
+
+    try {
+      await axios.post(`${API}/sample-requests`, {
+        ...formData,
+        strain_id: strain.id
+      });
+      toast.success('Sample request submitted! We will verify your licenses and contact you.');
+      onClose();
+      setFormData({ 
+        company_name: '', contact_name: '', email: '', phone: '',
+        health_canada_license: '', cra_license: '', shipping_address: '', message: '' 
+      });
+    } catch (error) {
+      toast.error('Failed to submit sample request. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen || !strain) return null;
+
+  return (
+    <div 
+      data-testid="sample-request-modal"
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-charcoal border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-8">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Package className="w-5 h-5 text-gold-500" />
+                <h2 className="font-cinzel font-bold text-2xl text-white">Request Sample</h2>
+              </div>
+              <p className="text-zinc-400 text-sm">Sample request for <span className="text-gold-500">{strain.strain_name}</span></p>
+            </div>
+            <button 
+              data-testid="close-sample-request-btn"
+              onClick={onClose}
+              className="w-10 h-10 flex items-center justify-center hover:bg-zinc-800 transition-all"
+            >
+              <X className="w-5 h-5 text-zinc-400" />
+            </button>
+          </div>
+
+          {/* License Requirements Notice */}
+          <div className="bg-gold-500/10 border border-gold-500/30 p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="w-5 h-5 text-gold-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-gold-500 font-semibold text-sm mb-1">License Verification Required</h4>
+                <p className="text-zinc-400 text-xs">
+                  Sample requests require valid Health Canada and CRA licenses. Your licenses will be verified before samples are shipped.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Company Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                  <Building2 className="w-4 h-4 inline mr-2" />Company Name *
+                </label>
+                <input
+                  data-testid="sample-company-input"
+                  type="text"
+                  required
+                  value={formData.company_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                  placeholder="Licensed cannabis retailer"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Contact Name *</label>
+                <input
+                  data-testid="sample-contact-input"
+                  type="text"
+                  required
+                  value={formData.contact_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                  placeholder="Your name"
+                />
+              </div>
+            </div>
+
+            {/* Contact Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                  <Mail className="w-4 h-4 inline mr-2" />Email *
+                </label>
+                <input
+                  data-testid="sample-email-input"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                  placeholder="email@company.com"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                  <Phone className="w-4 h-4 inline mr-2" />Phone
+                </label>
+                <input
+                  data-testid="sample-phone-input"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                  placeholder="+1 (555) 000-0000"
+                />
+              </div>
+            </div>
+
+            {/* License Information */}
+            <div className="border-t border-white/5 pt-6">
+              <h3 className="font-manrope text-sm uppercase tracking-widest text-gold-500 mb-4 flex items-center gap-2">
+                <FileCheck className="w-4 h-4" /> License Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                    Health Canada License # *
+                  </label>
+                  <input
+                    data-testid="sample-hc-license-input"
+                    type="text"
+                    required
+                    value={formData.health_canada_license}
+                    onChange={(e) => setFormData(prev => ({ ...prev, health_canada_license: e.target.value }))}
+                    className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none font-mono"
+                    placeholder="LIC-XXXXX-XXXXX"
+                  />
+                  <p className="text-zinc-600 text-xs mt-1">Cannabis license issued by Health Canada</p>
+                </div>
+                <div>
+                  <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                    CRA License # *
+                  </label>
+                  <input
+                    data-testid="sample-cra-license-input"
+                    type="text"
+                    required
+                    value={formData.cra_license}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cra_license: e.target.value }))}
+                    className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none font-mono"
+                    placeholder="CRA-XXXXX-XXXXX"
+                  />
+                  <p className="text-zinc-600 text-xs mt-1">Cannabis excise license from CRA</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Shipping Address */}
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                <MapPin className="w-4 h-4 inline mr-2" />Shipping Address *
+              </label>
+              <textarea
+                data-testid="sample-address-input"
+                required
+                value={formData.shipping_address}
+                onChange={(e) => setFormData(prev => ({ ...prev, shipping_address: e.target.value }))}
+                rows={2}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 px-4 py-3 transition-colors outline-none resize-none"
+                placeholder="Full shipping address for licensed facility"
+              />
+            </div>
+
+            {/* Additional Notes */}
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Additional Notes</label>
+              <textarea
+                data-testid="sample-message-input"
+                value={formData.message}
+                onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                rows={2}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 px-4 py-3 transition-colors outline-none resize-none"
+                placeholder="Any specific requirements or questions..."
+              />
+            </div>
+
+            <button
+              data-testid="submit-sample-request-btn"
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-zinc-700 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-2"
+            >
+              <Package className="w-4 h-4" />
+              {isSubmitting ? 'Submitting...' : 'Submit Sample Request'}
+            </button>
+
+            <p className="text-zinc-600 text-xs text-center">
+              By submitting, you confirm that the license information provided is accurate and valid.
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Inquiry Form Modal
 const InquiryModal = ({ isOpen, onClose, selectedStrains, strains }) => {
   const [formData, setFormData] = useState({
