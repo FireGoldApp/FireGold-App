@@ -30,7 +30,10 @@ import {
   Save,
   ArrowLeft,
   Lock,
-  LogOut
+  LogOut,
+  User,
+  Globe,
+  UserPlus
 } from "lucide-react";
 
 // Prevent right-click on images
