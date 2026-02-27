@@ -103,6 +103,37 @@ class SampleRequest(BaseModel):
     status: str = "pending"  # pending, approved, shipped, rejected
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# Strain image mapping (filename in /strains/ folder)
+STRAIN_IMAGE_MAP = {
+    "Jealousy": "Jealousy.png",
+    "AIS": "AIS.png",
+    "Animal Mints": "Animal Mitnz.png",
+    "Black Tuna": "Black Tuna.png",
+    "Bubble Gum": "Buuble Gum.png",
+    "BCC": "BCC.png",
+    "Cadillac Rainbows": "Cadillac Rainbow.png",
+    "Cerberus": "Cerebrus.png",
+    "Chemo Kush": "Chemo Kush.png",
+    "Crystal Caviar": "Crystal Caviar.png",
+    "G-Force": "G-Force.png",
+    "Grape Galena": "Grape Gelina.png",
+    "Integrator": "Integrator.png",
+    "Jager": "Jager.png",
+    "Juicee J": "Juicee J.png",
+    "London Zoap": "London Zoap.png",
+    "Marshmallow OG": "Marshmellow OG.png",
+    "MAC 1": "Mac 1.png",
+    "Motorbreath": "Motorbreath.png",
+    "Papaya Bombs": "Papaya Bombs.png",
+    "Purple Platinum": "Purple Platinum.png",
+    "Rainbow": "Rainbow.png",
+    "Runtz Coffin Candy": "Runtz Coffin Candy.png",
+    "Rainbow Driver": "Rainbow Driver.png",
+    "Royal Sherb": "Souffle.png",  # Using Souffle image as placeholder
+    "Souffle": "Souffle.png",
+    "Strawberry Froyo": "Strawberry Froyo.png"
+}
+
 # Seed data from PDF
 SEED_STRAINS = [
     {
@@ -114,7 +145,7 @@ SEED_STRAINS = [
         "lineage": "Cookies Gelato 41 x Sherbet Bx1",
         "lot_size": "In Harvest",
         "effects": "Mood Elevation, Uplift, Clear Head",
-        "image_url": "https://images.unsplash.com/photo-1721058454918-5582b68de13c"
+        "image_url": "/strains/Jealousy.png"
     },
     {
         "strain_name": "AIS",
@@ -125,7 +156,7 @@ SEED_STRAINS = [
         "lineage": "Falcon 9 x Grease Monkey",
         "lot_size": "35 kg",
         "effects": "Grounding, Euphoric Lift, Physical",
-        "image_url": "https://images.unsplash.com/photo-1587474721098-57aefc0e588f"
+        "image_url": "/strains/AIS.png"
     },
     {
         "strain_name": "Animal Mints",
@@ -136,7 +167,7 @@ SEED_STRAINS = [
         "lineage": "Animal Cookies x SinMint Cookies",
         "lot_size": "Lot 1: 42KG, Lot 2: 45KG",
         "effects": "Mood Elevation, Uplift, Controlled Euphoria",
-        "image_url": "https://images.unsplash.com/photo-1757936440365-e9c5215c62fc"
+        "image_url": "/strains/Animal Mitnz.png"
     },
     {
         "strain_name": "Black Tuna",
@@ -147,7 +178,7 @@ SEED_STRAINS = [
         "lineage": "Herijuana x Lambs Bread",
         "lot_size": "In Harvest",
         "effects": "Mental Elevation, Relaxed Body",
-        "image_url": "https://images.unsplash.com/photo-1695123048616-cebba513381d"
+        "image_url": "/strains/Black Tuna.png"
     },
     {
         "strain_name": "Bubble Gum",
@@ -158,7 +189,7 @@ SEED_STRAINS = [
         "lineage": "Unknown",
         "lot_size": "In Harvest",
         "effects": "Euphoric Mood, Grounding, Sedative",
-        "image_url": "https://images.unsplash.com/photo-1721058454918-5582b68de13c"
+        "image_url": "/strains/Buuble Gum.png"
     },
     {
         "strain_name": "BCC",
@@ -169,7 +200,7 @@ SEED_STRAINS = [
         "lineage": "Wedding Cake x Monkey Banana",
         "lot_size": "In Harvest",
         "effects": "Mood Elevation, Stress, Anxiety Relief",
-        "image_url": "https://images.unsplash.com/photo-1587474721098-57aefc0e588f"
+        "image_url": "/strains/BCC.png"
     },
     {
         "strain_name": "Cadillac Rainbows",
@@ -180,7 +211,7 @@ SEED_STRAINS = [
         "lineage": "Pure Michigan x Runtz",
         "lot_size": "In Harvest",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1757936440365-e9c5215c62fc"
+        "image_url": "/strains/Cadillac Rainbow.png"
     },
     {
         "strain_name": "Cerberus",
@@ -191,7 +222,7 @@ SEED_STRAINS = [
         "lineage": "Typhon x Echidna",
         "lot_size": "19 kg",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1695123048616-cebba513381d"
+        "image_url": "/strains/Cerebrus.png"
     },
     {
         "strain_name": "Chemo Kush",
@@ -202,7 +233,7 @@ SEED_STRAINS = [
         "lineage": "Unknown",
         "lot_size": "35 kg",
         "effects": "Cerebral Calm, Sedative Relax, Mood Softening",
-        "image_url": "https://images.unsplash.com/photo-1721058454918-5582b68de13c"
+        "image_url": "/strains/Chemo Kush.png"
     },
     {
         "strain_name": "Crystal Caviar",
@@ -213,7 +244,7 @@ SEED_STRAINS = [
         "lineage": "Dark Matter x Cali Diesel x God",
         "lot_size": "In Harvest",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1587474721098-57aefc0e588f"
+        "image_url": "/strains/Crystal Caviar.png"
     },
     {
         "strain_name": "G-Force",
@@ -224,7 +255,7 @@ SEED_STRAINS = [
         "lineage": "G-13 x Skunk #1 x Northern Lights",
         "lot_size": "26 kg",
         "effects": "Stress, Inflammation, Relax, Sleep, Appetite Support",
-        "image_url": "https://images.unsplash.com/photo-1757936440365-e9c5215c62fc"
+        "image_url": "/strains/G-Force.png"
     },
     {
         "strain_name": "Grape Galena",
@@ -235,7 +266,7 @@ SEED_STRAINS = [
         "lineage": "OG Kush Breath x Platinum Kush",
         "lot_size": "20 kg",
         "effects": "Mood Shift, Grounded Euphoria, Stress, Sleep, Body Warmth",
-        "image_url": "https://images.unsplash.com/photo-1695123048616-cebba513381d"
+        "image_url": "/strains/Grape Gelina.png"
     },
     {
         "strain_name": "Integrator",
@@ -246,7 +277,7 @@ SEED_STRAINS = [
         "lineage": "Highschool Sweetheart x Grateful Breath",
         "lot_size": "35 kg",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1721058454918-5582b68de13c"
+        "image_url": "/strains/Integrator.png"
     },
     {
         "strain_name": "Jager",
@@ -257,7 +288,7 @@ SEED_STRAINS = [
         "lineage": "G-13 x Skunk #1 x Northern Lights",
         "lot_size": "In Harvest",
         "effects": "Sleep, Appetite, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1587474721098-57aefc0e588f"
+        "image_url": "/strains/Jager.png"
     },
     {
         "strain_name": "Juicee J",
@@ -268,7 +299,7 @@ SEED_STRAINS = [
         "lineage": "Cap Junky x Jealousy",
         "lot_size": "Lot 1: 31 kg, Lot 2: 28 kg, Lot 3: 27 kg",
         "effects": "Mood Elevation, Stress, Anxiety, Mental Clarity, Relax",
-        "image_url": "https://images.unsplash.com/photo-1757936440365-e9c5215c62fc"
+        "image_url": "/strains/Juicee J.png"
     },
     {
         "strain_name": "London Zoap",
@@ -279,7 +310,7 @@ SEED_STRAINS = [
         "lineage": "London Pound Cake x Zoap",
         "lot_size": "36 kg",
         "effects": "Mood Elevation, Stress, Anxiety Relief",
-        "image_url": "https://images.unsplash.com/photo-1695123048616-cebba513381d"
+        "image_url": "/strains/London Zoap.png"
     },
     {
         "strain_name": "Marshmallow OG",
@@ -290,7 +321,7 @@ SEED_STRAINS = [
         "lineage": "Jet Fuel x Chemdog D x Triangle Kush",
         "lot_size": "50 kg",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1721058454918-5582b68de13c"
+        "image_url": "/strains/Marshmellow OG.png"
     },
     {
         "strain_name": "MAC 1",
@@ -301,7 +332,7 @@ SEED_STRAINS = [
         "lineage": "Alien Cookies F2 x Miracle 15",
         "lot_size": "50 kg",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1587474721098-57aefc0e588f"
+        "image_url": "/strains/Mac 1.png"
     },
     {
         "strain_name": "Motorbreath",
@@ -312,7 +343,7 @@ SEED_STRAINS = [
         "lineage": "Chemdog x SFV OG Kush",
         "lot_size": "22 kg",
         "effects": "Muscle Tension, Stress, Appetite, Inflammation, Sleep",
-        "image_url": "https://images.unsplash.com/photo-1757936440365-e9c5215c62fc"
+        "image_url": "/strains/Motorbreath.png"
     },
     {
         "strain_name": "Papaya Bombs",
@@ -323,7 +354,7 @@ SEED_STRAINS = [
         "lineage": "Papaya x THC Bomb",
         "lot_size": "41 kg",
         "effects": "Mood Elevation, Stress, Inflammation, Muscle Relax",
-        "image_url": "https://images.unsplash.com/photo-1695123048616-cebba513381d"
+        "image_url": "/strains/Papaya Bombs.png"
     },
     {
         "strain_name": "Purple Platinum",
@@ -334,7 +365,7 @@ SEED_STRAINS = [
         "lineage": "Potent pheno of Purple Kush",
         "lot_size": "In Harvest",
         "effects": "Mild High, Calm Euphoria, Relaxation",
-        "image_url": "https://images.unsplash.com/photo-1721058454918-5582b68de13c"
+        "image_url": "/strains/Purple Platinum.png"
     },
     {
         "strain_name": "Rainbow",
@@ -345,7 +376,7 @@ SEED_STRAINS = [
         "lineage": "Dancehall x Blueberry",
         "lot_size": "35 kg",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1587474721098-57aefc0e588f"
+        "image_url": "/strains/Rainbow.png"
     },
     {
         "strain_name": "Runtz Coffin Candy",
@@ -356,7 +387,7 @@ SEED_STRAINS = [
         "lineage": "Runtz x Coffin Candy",
         "lot_size": "40 kg",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1757936440365-e9c5215c62fc"
+        "image_url": "/strains/Runtz Coffin Candy.png"
     },
     {
         "strain_name": "Rainbow Driver",
@@ -367,7 +398,7 @@ SEED_STRAINS = [
         "lineage": "Zkittlez x Sundae Driver",
         "lot_size": "28 kg",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1695123048616-cebba513381d"
+        "image_url": "/strains/Rainbow Driver.png"
     },
     {
         "strain_name": "Royal Sherb",
@@ -378,7 +409,7 @@ SEED_STRAINS = [
         "lineage": "Wedding Cake Bx1 x Sherb U4",
         "lot_size": "In Harvest",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1721058454918-5582b68de13c"
+        "image_url": "/strains/Souffle.png"
     },
     {
         "strain_name": "Souffle",
@@ -389,7 +420,7 @@ SEED_STRAINS = [
         "lineage": "Do-Si-Dos x Lava Cake",
         "lot_size": "26 kg",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1587474721098-57aefc0e588f"
+        "image_url": "/strains/Souffle.png"
     },
     {
         "strain_name": "Strawberry Froyo",
@@ -400,7 +431,7 @@ SEED_STRAINS = [
         "lineage": "Grape Cream Cake x Grandpa's Gun Chest",
         "lot_size": "80 kg",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "https://images.unsplash.com/photo-1757936440365-e9c5215c62fc"
+        "image_url": "/strains/Strawberry Froyo.png"
     }
 ]
 
