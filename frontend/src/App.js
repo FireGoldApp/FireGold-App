@@ -1209,6 +1209,8 @@ const AdminPage = () => {
     setIsAuthenticated(true);
     fetchStrains(token);
     fetchStats(token);
+    fetchAnalytics(token);
+    fetchUsers(token);
   };
 
   const handleLogout = async () => {
