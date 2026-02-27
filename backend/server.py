@@ -92,6 +92,29 @@ class TrackEventInput(BaseModel):
     price_tier: Optional[str] = None
     search_query: Optional[str] = None
     filters_applied: Optional[dict] = None
+    session_duration: Optional[int] = None  # Time on page in seconds
+    page_scroll_depth: Optional[int] = None  # Percentage scrolled
+
+# Session tracking model
+class UserSession(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_email: Optional[str] = None
+    session_start: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    session_end: Optional[datetime] = None
+    total_duration: int = 0  # seconds
+    pages_visited: List[str] = []
+    strains_viewed: List[str] = []
+    actions_count: int = 0
+
+# Duplicate registration flags
+class RegistrationFlag(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    flag_type: str  # 'duplicate_company', 'duplicate_phone', 'duplicate_email_domain'
+    flag_reason: str
+    matched_user_ids: List[str] = []
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Admin authentication
 class AdminLogin(BaseModel):
