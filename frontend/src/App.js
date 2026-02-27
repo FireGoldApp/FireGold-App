@@ -3431,6 +3431,14 @@ const CatalogPage = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          <a
+            href="/submit-strain"
+            data-testid="submit-strain-cta"
+            className="hidden md:flex items-center gap-2 border-2 border-cannabis-green text-cannabis-green hover:bg-cannabis-green hover:text-white font-bold uppercase tracking-widest px-5 py-2 text-xs transition-all"
+          >
+            <Leaf className="w-4 h-4" />
+            Submit Your Strain
+          </a>
           {selectedStrains.length > 0 && (
             <button
               data-testid="open-inquiry-btn"
