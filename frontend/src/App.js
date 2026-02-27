@@ -826,6 +826,330 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains }) => {
   );
 };
 
+// Grower Submission Page (Public)
+const GrowerSubmitPage = () => {
+  const [formData, setFormData] = useState({
+    grower_name: '',
+    company_name: '',
+    email: '',
+    phone: '',
+    license_number: '',
+    strain_name: '',
+    strain_type: 'Balanced Hybrid',
+    thc_percentage: '',
+    cbd_percentage: '',
+    terpene_profile: '',
+    lineage: '',
+    available_quantity: '',
+    price_per_lb: '',
+    effects: '',
+    growing_method: 'Indoor',
+    additional_notes: ''
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [submissionId, setSubmissionId] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      const response = await axios.post(`${API}/grower/submit`, formData);
+      setSubmissionId(response.data.submission_id);
+      setSubmitted(true);
+      toast.success('Strain submitted for review!');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Submission failed');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-obsidian flex items-center justify-center p-6">
+        <div className="bg-charcoal border border-white/10 p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-cannabis-green/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-8 h-8 text-cannabis-green" />
+          </div>
+          <h2 className="font-cinzel font-bold text-2xl text-white mb-4">Submission Received!</h2>
+          <p className="text-zinc-400 mb-4">
+            Thank you for submitting <span className="text-gold-500">{formData.strain_name}</span>
+          </p>
+          <p className="text-zinc-500 text-sm mb-6">
+            Our team will review your submission and contact you at {formData.email}
+          </p>
+          <div className="bg-zinc-900 border border-white/5 p-3 mb-6">
+            <p className="text-zinc-500 text-xs">Reference ID</p>
+            <p className="text-gold-500 font-mono">{submissionId}</p>
+          </div>
+          <a href="/" className="block w-full bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all text-center">
+            Back to Catalog
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-obsidian">
+      {/* Header */}
+      <header className="bg-black/80 backdrop-blur-md border-b border-white/5 h-20 flex items-center justify-between px-6 md:px-12">
+        <a href="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm">Back to Catalog</span>
+        </a>
+        <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-12" />
+        <div></div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <div className="text-center mb-12">
+          <div className="w-16 h-16 bg-cannabis-green/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Leaf className="w-8 h-8 text-cannabis-green" />
+          </div>
+          <h1 className="font-cinzel font-bold text-3xl text-white mb-4">Submit Your Flower</h1>
+          <p className="text-zinc-400 max-w-xl mx-auto">
+            Are you a licensed grower with premium cannabis flower? Submit your strain for consideration in our B2B catalog.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="bg-charcoal border border-white/10 p-8 space-y-8">
+          {/* Grower Information */}
+          <div>
+            <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
+              <User className="w-5 h-5" /> Grower Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Contact Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.grower_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, grower_name: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Company / LP Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.company_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="Licensed Producer name"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Email *</label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="email@company.com"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Phone *</label>
+                <input
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="+1 (555) 000-0000"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Health Canada License # (optional)</label>
+                <input
+                  type="text"
+                  value={formData.license_number}
+                  onChange={(e) => setFormData(prev => ({ ...prev, license_number: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="LIC-XXXXX"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Strain Information */}
+          <div>
+            <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
+              <Leaf className="w-5 h-5" /> Strain Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Strain Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.strain_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, strain_name: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="e.g., Blue Dream"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Type *</label>
+                <select
+                  value={formData.strain_type}
+                  onChange={(e) => setFormData(prev => ({ ...prev, strain_type: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                >
+                  <option value="Balanced Hybrid">Balanced Hybrid</option>
+                  <option value="Hybrid, Indica Leaning">Hybrid, Indica Leaning</option>
+                  <option value="Hybrid, Sativa Leaning">Hybrid, Sativa Leaning</option>
+                  <option value="Indica Dominant">Indica Dominant</option>
+                  <option value="Sativa Dominant">Sativa Dominant</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">THC % *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.thc_percentage}
+                  onChange={(e) => setFormData(prev => ({ ...prev, thc_percentage: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="e.g., 28.5%"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">CBD % (optional)</label>
+                <input
+                  type="text"
+                  value={formData.cbd_percentage}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cbd_percentage: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="e.g., 0.5%"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Lineage / Genetics *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.lineage}
+                  onChange={(e) => setFormData(prev => ({ ...prev, lineage: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="e.g., OG Kush x Durban Poison"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Terpene Profile *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.terpene_profile}
+                  onChange={(e) => setFormData(prev => ({ ...prev, terpene_profile: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="e.g., Limonene, Caryophyllene, Myrcene"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Effects *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.effects}
+                  onChange={(e) => setFormData(prev => ({ ...prev, effects: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="e.g., Relaxation, Mood Elevation, Pain Relief"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Availability */}
+          <div>
+            <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
+              <Package className="w-5 h-5" /> Availability
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Available Quantity *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.available_quantity}
+                  onChange={(e) => setFormData(prev => ({ ...prev, available_quantity: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="e.g., 50 kg"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Price per LB (optional)</label>
+                <input
+                  type="text"
+                  value={formData.price_per_lb}
+                  onChange={(e) => setFormData(prev => ({ ...prev, price_per_lb: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="e.g., $800"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Growing Method</label>
+                <select
+                  value={formData.growing_method}
+                  onChange={(e) => setFormData(prev => ({ ...prev, growing_method: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                >
+                  <option value="Indoor">Indoor</option>
+                  <option value="Outdoor">Outdoor</option>
+                  <option value="Greenhouse">Greenhouse</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Notes */}
+          <div>
+            <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Additional Notes (optional)</label>
+            <textarea
+              value={formData.additional_notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, additional_notes: e.target.value }))}
+              rows={3}
+              className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white px-4 py-3 outline-none resize-none"
+              placeholder="Any additional information about your flower, COA availability, etc."
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-cannabis-green hover:bg-green-600 disabled:bg-zinc-700 text-white font-bold uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-2"
+          >
+            <Send className="w-5 h-5" />
+            {submitting ? 'Submitting...' : 'Submit for Review'}
+          </button>
+
+          <p className="text-zinc-600 text-xs text-center">
+            Submissions are reviewed within 2-3 business days. We will contact you via email.
+          </p>
+        </form>
+      </main>
+
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#0A0A0A',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: '#fff'
+          }
+        }}
+      />
+    </div>
+  );
+};
+
 // Auth Page Component (Register/Login)
 const AuthPage = ({ onAuth }) => {
   const [mode, setMode] = useState('register'); // 'register' or 'login'
