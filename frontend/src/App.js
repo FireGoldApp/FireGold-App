@@ -1161,6 +1161,13 @@ const CatalogPage = () => {
             <p className="text-zinc-500 text-sm">The Firegold Standard</p>
             <p className="text-zinc-600 text-xs mt-1">© 2026 Firegold Brands. Premium B2B Cannabis Wholesale.</p>
           </div>
+          <a 
+            href="/admin" 
+            data-testid="admin-link"
+            className="text-zinc-600 hover:text-gold-500 text-xs flex items-center gap-1 transition-colors"
+          >
+            <Settings className="w-3 h-3" /> Admin
+          </a>
         </div>
       </footer>
 
