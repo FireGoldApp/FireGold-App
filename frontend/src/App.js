@@ -1249,6 +1249,28 @@ const AdminPage = () => {
     }
   };
 
+  const fetchAnalytics = async (token) => {
+    try {
+      const response = await axios.get(`${API}/analytics/dashboard?days=30`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAnalytics(response.data);
+    } catch (error) {
+      console.error('Failed to load analytics');
+    }
+  };
+
+  const fetchUsers = async (token) => {
+    try {
+      const response = await axios.get(`${API}/auth/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Failed to load users');
+    }
+  };
+
   const handleImageUpload = async (strainId, file) => {
     if (!file) return;
     
