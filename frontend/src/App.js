@@ -840,8 +840,7 @@ const GrowerSubmitPage = () => {
     cbd_percentage: '',
     terpene_profile: '',
     lineage: '',
-    available_quantity: '',
-    price_per_lb: '',
+    lot_size_kg: '',
     effects: '',
     growing_method: 'Indoor',
     additional_notes: ''
@@ -849,13 +848,30 @@ const GrowerSubmitPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submissionId, setSubmissionId] = useState('');
+  const [lotError, setLotError] = useState('');
+
+  const handleLotSizeChange = (val) => {
+    setFormData(prev => ({ ...prev, lot_size_kg: val }));
+    const num = parseFloat(val);
+    if (val && (isNaN(num) || num < 30)) {
+      setLotError('Minimum lot size is 30 kg');
+    } else {
+      setLotError('');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const lotKg = parseFloat(formData.lot_size_kg);
+    if (isNaN(lotKg) || lotKg < 30) {
+      setLotError('Minimum lot size is 30 kg');
+      return;
+    }
     setSubmitting(true);
 
     try {
-      const response = await axios.post(`${API}/grower/submit`, formData);
+      const payload = { ...formData, lot_size_kg: lotKg };
+      const response = await axios.post(`${API}/grower/submit`, payload);
       setSubmissionId(response.data.submission_id);
       setSubmitted(true);
       toast.success('Strain submitted for review!');
@@ -884,6 +900,10 @@ const GrowerSubmitPage = () => {
             <p className="text-zinc-500 text-xs">Reference ID</p>
             <p className="text-gold-500 font-mono">{submissionId}</p>
           </div>
+          <div className="bg-gold-500/10 border border-gold-500/30 p-3 mb-6">
+            <p className="text-gold-500 text-xs uppercase tracking-widest mb-1">Status</p>
+            <p className="text-gold-500 font-bold">Pending Admin Authorization</p>
+          </div>
           <a href="/" className="block w-full bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all text-center">
             Back to Catalog
           </a>
@@ -911,11 +931,11 @@ const GrowerSubmitPage = () => {
           </div>
           <h1 className="font-cinzel font-bold text-3xl text-white mb-4">Submit Your Flower</h1>
           <p className="text-zinc-400 max-w-xl mx-auto">
-            Are you a licensed grower with premium cannabis flower? Submit your strain for consideration in our B2B catalog.
+            Are you a licensed grower with premium cannabis flower? Submit your strain for consideration in our B2B catalog. Minimum lot size: <span className="text-gold-500 font-bold">30 kg</span>.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-charcoal border border-white/10 p-8 space-y-8">
+        <form onSubmit={handleSubmit} className="bg-charcoal border border-white/10 p-8 space-y-8" data-testid="grower-submit-form">
           {/* Grower Information */}
           <div>
             <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
@@ -925,6 +945,7 @@ const GrowerSubmitPage = () => {
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Contact Name *</label>
                 <input
+                  data-testid="grower-name-input"
                   type="text"
                   required
                   value={formData.grower_name}
@@ -936,6 +957,7 @@ const GrowerSubmitPage = () => {
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Company / LP Name *</label>
                 <input
+                  data-testid="grower-company-input"
                   type="text"
                   required
                   value={formData.company_name}
@@ -947,6 +969,7 @@ const GrowerSubmitPage = () => {
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Email *</label>
                 <input
+                  data-testid="grower-email-input"
                   type="email"
                   required
                   value={formData.email}
@@ -958,6 +981,7 @@ const GrowerSubmitPage = () => {
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Phone *</label>
                 <input
+                  data-testid="grower-phone-input"
                   type="tel"
                   required
                   value={formData.phone}
@@ -969,6 +993,7 @@ const GrowerSubmitPage = () => {
               <div className="md:col-span-2">
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Health Canada License # (optional)</label>
                 <input
+                  data-testid="grower-license-input"
                   type="text"
                   value={formData.license_number}
                   onChange={(e) => setFormData(prev => ({ ...prev, license_number: e.target.value }))}
@@ -988,6 +1013,7 @@ const GrowerSubmitPage = () => {
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Strain Name *</label>
                 <input
+                  data-testid="grower-strain-name-input"
                   type="text"
                   required
                   value={formData.strain_name}
@@ -999,6 +1025,7 @@ const GrowerSubmitPage = () => {
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Type *</label>
                 <select
+                  data-testid="grower-strain-type-select"
                   value={formData.strain_type}
                   onChange={(e) => setFormData(prev => ({ ...prev, strain_type: e.target.value }))}
                   className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
@@ -1013,6 +1040,7 @@ const GrowerSubmitPage = () => {
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">THC % *</label>
                 <input
+                  data-testid="grower-thc-input"
                   type="text"
                   required
                   value={formData.thc_percentage}
@@ -1024,6 +1052,7 @@ const GrowerSubmitPage = () => {
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">CBD % (optional)</label>
                 <input
+                  data-testid="grower-cbd-input"
                   type="text"
                   value={formData.cbd_percentage}
                   onChange={(e) => setFormData(prev => ({ ...prev, cbd_percentage: e.target.value }))}
@@ -1034,6 +1063,7 @@ const GrowerSubmitPage = () => {
               <div className="md:col-span-2">
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Lineage / Genetics *</label>
                 <input
+                  data-testid="grower-lineage-input"
                   type="text"
                   required
                   value={formData.lineage}
@@ -1045,6 +1075,7 @@ const GrowerSubmitPage = () => {
               <div className="md:col-span-2">
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Terpene Profile *</label>
                 <input
+                  data-testid="grower-terpene-input"
                   type="text"
                   required
                   value={formData.terpene_profile}
@@ -1056,6 +1087,7 @@ const GrowerSubmitPage = () => {
               <div className="md:col-span-2">
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Effects *</label>
                 <input
+                  data-testid="grower-effects-input"
                   type="text"
                   required
                   value={formData.effects}
@@ -1072,31 +1104,26 @@ const GrowerSubmitPage = () => {
             <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
               <Package className="w-5 h-5" /> Availability
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Available Quantity *</label>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Lot Size (kg) * <span className="text-gold-500">Min 30 kg</span></label>
                 <input
-                  type="text"
+                  data-testid="grower-lot-size-input"
+                  type="number"
                   required
-                  value={formData.available_quantity}
-                  onChange={(e) => setFormData(prev => ({ ...prev, available_quantity: e.target.value }))}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
-                  placeholder="e.g., 50 kg"
+                  min="30"
+                  step="0.1"
+                  value={formData.lot_size_kg}
+                  onChange={(e) => handleLotSizeChange(e.target.value)}
+                  className={`w-full bg-zinc-900/50 border ${lotError ? 'border-red-500' : 'border-zinc-800'} focus:border-gold-500 text-white h-12 px-4 outline-none`}
+                  placeholder="e.g., 50"
                 />
-              </div>
-              <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Price per LB (optional)</label>
-                <input
-                  type="text"
-                  value={formData.price_per_lb}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price_per_lb: e.target.value }))}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
-                  placeholder="e.g., $800"
-                />
+                {lotError && <p className="text-red-500 text-xs mt-1">{lotError}</p>}
               </div>
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Growing Method</label>
                 <select
+                  data-testid="grower-method-select"
                   value={formData.growing_method}
                   onChange={(e) => setFormData(prev => ({ ...prev, growing_method: e.target.value }))}
                   className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
@@ -1113,6 +1140,7 @@ const GrowerSubmitPage = () => {
           <div>
             <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Additional Notes (optional)</label>
             <textarea
+              data-testid="grower-notes-input"
               value={formData.additional_notes}
               onChange={(e) => setFormData(prev => ({ ...prev, additional_notes: e.target.value }))}
               rows={3}
@@ -1122,16 +1150,17 @@ const GrowerSubmitPage = () => {
           </div>
 
           <button
+            data-testid="grower-submit-btn"
             type="submit"
-            disabled={submitting}
-            className="w-full bg-cannabis-green hover:bg-green-600 disabled:bg-zinc-700 text-white font-bold uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-2"
+            disabled={submitting || !!lotError}
+            className="w-full bg-cannabis-green hover:bg-green-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white font-bold uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-2"
           >
             <Send className="w-5 h-5" />
             {submitting ? 'Submitting...' : 'Submit for Review'}
           </button>
 
           <p className="text-zinc-600 text-xs text-center">
-            Submissions are reviewed within 2-3 business days. We will contact you via email.
+            Submissions are reviewed within 2-3 business days. Admin will set pricing and authorize your strain for the catalog.
           </p>
         </form>
       </main>
