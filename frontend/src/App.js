@@ -1577,6 +1577,15 @@ const CatalogPage = () => {
   }, [strains, filters]);
 
   const toggleStrainSelection = (strainId) => {
+    const strain = strains.find(s => s.id === strainId);
+    if (strain) {
+      trackEvent('strain_select', {
+        strain_id: strain.id,
+        strain_name: strain.strain_name,
+        strain_type: strain.type,
+        price_tier: strain.price_tier
+      });
+    }
     setSelectedStrains(prev => 
       prev.includes(strainId) 
         ? prev.filter(id => id !== strainId)
@@ -1585,10 +1594,37 @@ const CatalogPage = () => {
   };
 
   const handleRequestSample = (strain) => {
-    setViewingStrain(null); // Close detail modal
+    trackEvent('sample_request_start', {
+      strain_id: strain.id,
+      strain_name: strain.strain_name,
+      strain_type: strain.type
+    });
+    setViewingStrain(null);
     setSampleStrain(strain);
     setShowSampleModal(true);
   };
+
+  const handleOpenInquiry = () => {
+    trackEvent('inquiry_start', {
+      strains_count: selectedStrains.length,
+      strain_ids: selectedStrains
+    });
+    setShowInquiryModal(true);
+  };
+
+  // Show loading while checking auth
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-obsidian flex items-center justify-center">
+        <div className="text-gold-500">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show auth page if not authenticated
+  if (!isAuthenticated) {
+    return <AuthPage onAuth={handleAuth} />;
+  }
 
   return (
     <div data-testid="catalog-page" className="min-h-screen bg-obsidian">
