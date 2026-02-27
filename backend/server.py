@@ -208,6 +208,10 @@ class GrowerSubmission(BaseModel):
     lot_size_kg: float  # Minimum 30 kg
     effects: str
     growing_method: Optional[str] = None  # Indoor, Outdoor, Greenhouse
+    export_country: Optional[str] = None  # Country of export
+    is_irradiated: Optional[str] = None  # Yes/No - has flower been irradiated for micros
+    willing_to_irradiate: Optional[str] = None  # Yes/No - willing to irradiate if required
+    image_path: Optional[str] = None  # Path to uploaded image
     additional_notes: Optional[str] = None
     # Status
     status: str = "pending"  # pending, approved, rejected
@@ -230,6 +234,9 @@ class GrowerSubmissionInput(BaseModel):
     lot_size_kg: float  # Minimum 30 kg
     effects: str
     growing_method: Optional[str] = None
+    export_country: Optional[str] = None
+    is_irradiated: Optional[str] = None
+    willing_to_irradiate: Optional[str] = None
     additional_notes: Optional[str] = None
 
 class InquiryCreate(BaseModel):
