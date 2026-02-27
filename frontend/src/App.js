@@ -1212,7 +1212,8 @@ const AdminPage = () => {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [analytics, setAnalytics] = useState(null);
   const [users, setUsers] = useState([]);
-  const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users'
+  const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users', 'flags'
+  const [flags, setFlags] = useState([]);
 
   useEffect(() => {
     // Check for existing token
