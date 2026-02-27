@@ -1382,7 +1382,10 @@ const GrowerSubmitPage = () => {
 
               {/* CRA License Upload */}
               <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">CRA Excise License</label>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                  CRA Excise License
+                  {licensesOnFile?.licenses_on_file?.cra_license && <span className="text-cannabis-green ml-1">- on file</span>}
+                </label>
                 <div className="relative">
                   <input
                     data-testid="grower-cra-license-upload"
