@@ -1258,6 +1258,96 @@ const GrowerSubmitPage = () => {
             </div>
           </div>
 
+          {/* Document Uploads */}
+          <div>
+            <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
+              <FileText className="w-5 h-5" /> Documents
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* COA Upload */}
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Certificate of Analysis (COA)</label>
+                <div className="relative">
+                  <input
+                    data-testid="grower-coa-upload"
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => setCoaFile(e.target.files[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className={`w-full border-2 border-dashed ${coaFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors text-center`}>
+                    {coaFile ? (
+                      <div className="flex items-center justify-center gap-2 text-cannabis-green">
+                        <Check className="w-4 h-4" />
+                        <span className="text-sm truncate">{coaFile.name}</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-zinc-500">
+                        <Upload className="w-6 h-6" />
+                        <span className="text-xs">Upload PDF</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Health Canada License Upload */}
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Health Canada License</label>
+                <div className="relative">
+                  <input
+                    data-testid="grower-hc-license-upload"
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => setHcLicenseFile(e.target.files[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className={`w-full border-2 border-dashed ${hcLicenseFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors text-center`}>
+                    {hcLicenseFile ? (
+                      <div className="flex items-center justify-center gap-2 text-cannabis-green">
+                        <Check className="w-4 h-4" />
+                        <span className="text-sm truncate">{hcLicenseFile.name}</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-zinc-500">
+                        <Upload className="w-6 h-6" />
+                        <span className="text-xs">Upload PDF</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* CRA License Upload */}
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">CRA Excise License</label>
+                <div className="relative">
+                  <input
+                    data-testid="grower-cra-license-upload"
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => setCraLicenseFile(e.target.files[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className={`w-full border-2 border-dashed ${craLicenseFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors text-center`}>
+                    {craLicenseFile ? (
+                      <div className="flex items-center justify-center gap-2 text-cannabis-green">
+                        <Check className="w-4 h-4" />
+                        <span className="text-sm truncate">{craLicenseFile.name}</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-zinc-500">
+                        <Upload className="w-6 h-6" />
+                        <span className="text-xs">Upload PDF</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="text-zinc-600 text-xs mt-2">Upload PDFs of your COA, Health Canada, and CRA Excise licenses if available.</p>
+          </div>
+
           {/* Additional Notes */}
           <div>
             <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Additional Notes (optional)</label>
