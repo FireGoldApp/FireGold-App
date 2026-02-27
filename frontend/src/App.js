@@ -1437,6 +1437,11 @@ const AdminPage = () => {
 
 // Main Catalog Page
 const CatalogPage = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userToken, setUserToken] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  
   const [strains, setStrains] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ type: '', priceTier: '', minThc: null, search: '' });
@@ -1448,18 +1453,114 @@ const CatalogPage = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
-    fetchStrains();
+    const token = localStorage.getItem('userToken');
+    const user = localStorage.getItem('userData');
+    if (token && user) {
+      verifyAuth(token, JSON.parse(user));
+    } else {
+      setCheckingAuth(false);
+    }
   }, []);
 
-  const fetchStrains = async () => {
+  const verifyAuth = async (token, user) => {
     try {
-      const response = await axios.get(`${API}/strains`);
+      await axios.get(`${API}/auth/verify`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUserToken(token);
+      setUserData(user);
+      setIsAuthenticated(true);
+      fetchStrains(token);
+      // Track page view
+      trackEvent('page_view', { page: 'catalog' });
+    } catch (err) {
+      localStorage.removeItem('userToken');
+      localStorage.removeItem('userData');
+    } finally {
+      setCheckingAuth(false);
+    }
+  };
+
+  const handleAuth = (token, user) => {
+    setUserToken(token);
+    setUserData(user);
+    setIsAuthenticated(true);
+    fetchStrains(token);
+    // Track registration/login
+    trackEvent('page_view', { page: 'catalog', event_data: { first_visit: true } });
+  };
+
+  const handleLogout = () => {
+    trackEvent('logout', { page: 'catalog' });
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('userData');
+    setUserToken(null);
+    setUserData(null);
+    setIsAuthenticated(false);
+    setStrains([]);
+    toast.success('Logged out successfully');
+  };
+
+  const fetchStrains = async (token) => {
+    try {
+      const response = await axios.get(`${API}/strains`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setStrains(response.data);
     } catch (error) {
-      toast.error('Failed to load catalog');
+      if (error.response?.status === 401) {
+        handleLogout();
+      } else {
+        toast.error('Failed to load catalog');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Track filter changes
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    if (newFilters.type || newFilters.priceTier || newFilters.minThc) {
+      trackEvent('filter_apply', {
+        filters_applied: {
+          type: newFilters.type || null,
+          price_tier: newFilters.priceTier || null,
+          min_thc: newFilters.minThc || null
+        }
+      });
+    }
+  };
+
+  // Track search
+  const handleSearch = (searchTerm) => {
+    setFilters(prev => ({ ...prev, search: searchTerm }));
+    if (searchTerm && searchTerm.length > 2) {
+      trackEvent('search', { search_query: searchTerm });
+    }
+  };
+
+  // Track strain view
+  const handleViewStrain = (strain) => {
+    setViewingStrain(strain);
+    trackEvent('strain_view', {
+      strain_id: strain.id,
+      strain_name: strain.strain_name,
+      thc_percentage: strain.thc_percentage,
+      strain_type: strain.type,
+      price_tier: strain.price_tier
+    });
+  };
+
+  // Track strain card click
+  const handleStrainClick = (strain) => {
+    trackEvent('strain_click', {
+      strain_id: strain.id,
+      strain_name: strain.strain_name,
+      strain_type: strain.type,
+      price_tier: strain.price_tier
+    });
+    handleViewStrain(strain);
   };
 
   const filteredStrains = useMemo(() => {
