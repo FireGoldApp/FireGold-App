@@ -1,0 +1,186 @@
+{
+  "brand_identity": {
+    "name": "Firegold",
+    "persona": "The Sommelier's Vault",
+    "core_values": ["Exclusive", "Precision", "Organic Luxury", "Industrial Elegance"],
+    "emotional_tone": "High-end, Trustworthy, Scientific, Premium",
+    "theme_mode": "dark"
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Cinzel, serif",
+      "body": "Manrope, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "installation_instructions": "Import fonts via Google Fonts in index.css: @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Manrope:wght@300;400;600;800&family=JetBrains+Mono:wght@400&display=swap');",
+    "usage_rules": {
+      "h1": "Cinzel font-bold text-5xl md:text-7xl tracking-tighter text-gold-grad",
+      "h2": "Cinzel font-bold text-3xl md:text-4xl tracking-tight text-white/90",
+      "h3": "Manrope font-semibold text-xl tracking-wide uppercase text-gold-500",
+      "body": "Manrope font-light text-base leading-relaxed text-zinc-400",
+      "data_labels": "Manrope font-bold text-xs uppercase tracking-widest text-zinc-500",
+      "data_values": "JetBrains Mono text-sm text-white"
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": {
+        "main": "#050505",
+        "card": "#0A0A0A",
+        "surface": "#121212",
+        "overlay": "rgba(0,0,0,0.8)"
+      },
+      "brand": {
+        "gold": "#D4AF37",
+        "gold_dim": "#A68A2D",
+        "gold_light": "#F2D06B",
+        "accent_green": "#10B981"
+      },
+      "text": {
+        "primary": "#F4F4F5",
+        "secondary": "#A1A1AA",
+        "muted": "#52525B"
+      },
+      "status": {
+        "success": "#059669",
+        "warning": "#D97706",
+        "error": "#DC2626"
+      }
+    },
+    "tailwind_config_extension": {
+      "colors": {
+        "obsidian": "#050505",
+        "charcoal": "#0A0A0A",
+        "gold": {
+          "400": "#F2D06B",
+          "500": "#D4AF37",
+          "600": "#A68A2D"
+        },
+        "cannabis": {
+          "green": "#10B981",
+          "dark": "#064E3B"
+        }
+      },
+      "backgroundImage": {
+        "gold-gradient": "linear-gradient(135deg, #F2D06B 0%, #D4AF37 50%, #A68A2D 100%)",
+        "dark-glass": "linear-gradient(180deg, rgba(20,20,20,0.7) 0%, rgba(10,10,10,0.9) 100%)"
+      }
+    }
+  },
+  "layout_system": {
+    "container": "max-w-[1400px] mx-auto px-6 md:px-12",
+    "spacing": {
+      "section_gap": "py-24 md:py-32",
+      "card_gap": "gap-8",
+      "internal_padding": "p-8"
+    },
+    "grids": {
+      "catalog": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8",
+      "bento_detail": "grid grid-cols-1 md:grid-cols-12 gap-6"
+    },
+    "border_radius": {
+      "card": "rounded-none",
+      "button": "rounded-sm",
+      "input": "rounded-none"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-gold-500 text-black font-bold uppercase tracking-widest hover:bg-gold-400 transition-all duration-300 px-8 py-4 rounded-sm hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]",
+      "secondary": "border border-zinc-700 text-zinc-300 hover:border-gold-500 hover:text-gold-500 uppercase tracking-widest transition-all px-8 py-4 rounded-sm",
+      "ghost": "text-zinc-500 hover:text-white hover:tracking-widest transition-all"
+    },
+    "cards": {
+      "product_card": {
+        "style": "bg-charcoal border border-white/5 hover:border-gold-500/50 transition-all duration-500 group relative overflow-hidden",
+        "image_container": "aspect-[4/5] overflow-hidden grayscale-[20%] group-hover:grayscale-0 transition-all duration-700",
+        "content": "p-6 bg-gradient-to-t from-black via-black/80 to-transparent absolute bottom-0 w-full"
+      }
+    },
+    "inputs": {
+      "style": "bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 rounded-none h-12 px-4 transition-colors"
+    },
+    "navigation": {
+      "bar": "fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-white/5 h-20 flex items-center justify-between px-6 md:px-12"
+    }
+  },
+  "assets": {
+    "images": {
+      "hero_background": {
+        "url": "https://images.unsplash.com/photo-1647268465509-f0229a865b6f",
+        "alt": "Luxury Greenhouse Dark Interior"
+      },
+      "products": [
+        {
+          "url": "https://images.unsplash.com/photo-1721058454918-5582b68de13c",
+          "alt": "Purple Haze Strain Macro",
+          "category": "Indica"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1587474721098-57aefc0e588f",
+          "alt": "Green Cush Strain",
+          "category": "Sativa"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1757936440365-e9c5215c62fc",
+          "alt": "Royal Gorilla Bud",
+          "category": "Hybrid"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1695123048616-cebba513381d",
+          "alt": "Northern Lights Dark",
+          "category": "Indica"
+        }
+      ],
+      "textures": {
+        "glass_structure": "https://images.unsplash.com/photo-1768847537055-b001f4022276"
+      }
+    },
+    "icons": {
+      "library": "lucide-react",
+      "preferred_icons": ["Leaf", "Activity", "Droplets", "Wind", "Search", "Filter", "Menu", "X", "ChevronDown", "ShoppingCart"]
+    }
+  },
+  "universal_guidelines": {
+    "visual_hierarchy": "Content is King. Use size and contrast to guide the eye. Gold is for action/highlight only.",
+    "interactions": "All interactables must have a hover state. Use duration-300 for smooth transitions.",
+    "accessibility": "Ensure text contrast is at least 4.5:1. Use ARIA labels on icon buttons.",
+    "grid_behavior": "Strict alignment. No jagged edges.",
+    "dark_mode_rule": "Avoid pure black #000000 on cards. Use #0A0A0A or #121212 to reduce eye strain and allow shadows to be visible.",
+    "testing": "All interactive elements must have data-testid attributes."
+  },
+  "motion_library": {
+    "library": "framer-motion",
+    "defaults": {
+      "fade_in": {
+        "initial": { "opacity": 0, "y": 20 },
+        "animate": { "opacity": 1, "y": 0 },
+        "transition": { "duration": 0.6, "ease": "easeOut" }
+      },
+      "stagger_container": {
+        "hidden": { "opacity": 0 },
+        "show": {
+          "opacity": 1,
+          "transition": {
+            "staggerChildren": 0.1
+          }
+        }
+      },
+      "hover_card": {
+        "scale": 1.02,
+        "transition": { "duration": 0.3 }
+      }
+    }
+  },
+  "instructions_to_main_agent": [
+    "STEP 1: Install fonts in index.css using the @import provided.",
+    "STEP 2: Update tailwind.config.js with the custom colors (obsidian, gold) and font families.",
+    "STEP 3: Create the Layout component with the sticky glass header.",
+    "STEP 4: Build the 'StrainCard' component using the specified image aspect ratio and overlay gradient.",
+    "STEP 5: Implement the Catalog page with the sidebar filter (left) and product grid (right).",
+    "STEP 6: Ensure all prices are shown as tiers ($ / $$ / $$$) not numbers.",
+    "STEP 7: Use the provided Unsplash URLs for the mock data seed.",
+    "CRITICAL: Do NOT use standard Shadcn cards. Build custom <div> based cards with border-white/10 to match the luxury aesthetic.",
+    "CRITICAL: Use 'sonner' for toast notifications."
+  ]
+}
