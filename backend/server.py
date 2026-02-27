@@ -181,6 +181,7 @@ class Strain(BaseModel):
     lot_size: str
     effects: str
     image_url: Optional[str] = None
+    coa_url: Optional[str] = None  # Path to redacted COA PDF
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class StrainCreate(BaseModel):
