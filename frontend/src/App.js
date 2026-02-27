@@ -1653,11 +1653,25 @@ const CatalogPage = () => {
           {selectedStrains.length > 0 && (
             <button
               data-testid="open-inquiry-btn"
-              onClick={() => setShowInquiryModal(true)}
+              onClick={handleOpenInquiry}
               className="bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-6 py-2 text-sm transition-all"
             >
               Inquire ({selectedStrains.length})
             </button>
+          )}
+          {userData && (
+            <div className="flex items-center gap-4">
+              <span className="text-zinc-400 text-sm hidden md:block">
+                {userData.first_name} · {userData.company}
+              </span>
+              <button 
+                onClick={handleLogout}
+                data-testid="user-logout-btn"
+                className="text-zinc-500 hover:text-red-400 transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
           )}
           <button 
             data-testid="mobile-menu-btn"
