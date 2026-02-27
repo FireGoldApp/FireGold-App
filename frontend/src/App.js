@@ -19,7 +19,10 @@ import {
   FileCheck,
   Package,
   MapPin,
-  ShieldCheck
+  ShieldCheck,
+  Upload,
+  FileText,
+  Check
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
