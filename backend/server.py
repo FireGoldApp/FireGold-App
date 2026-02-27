@@ -556,6 +556,127 @@ async def verify_admin(token: str = Depends(verify_admin_token)):
     """Verify admin token is valid"""
     return {"valid": True, "message": "Admin token valid"}
 
+# User authentication endpoints
+@api_router.post("/auth/register")
+async def register_user(user_data: UserRegister):
+    """Register a new user"""
+    # Check if email already exists
+    existing = await db.users.find_one({"email": user_data.email.lower()})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered. Please login.")
+    
+    # Generate a random password and hash it
+    temp_password = secrets.token_urlsafe(8)
+    password_hash = hash_password(temp_password)
+    
+    # Create user
+    user = User(
+        first_name=user_data.first_name,
+        last_name=user_data.last_name,
+        company=user_data.company,
+        country=user_data.country,
+        email=user_data.email.lower(),
+        phone=user_data.phone,
+        password_hash=password_hash
+    )
+    
+    doc = user.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.users.insert_one(doc)
+    
+    # Generate session token
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59)
+    
+    USER_TOKENS[token] = {
+        'user_id': user.id,
+        'email': user.email,
+        'first_name': user.first_name,
+        'company': user.company,
+        'expires_at': expires_at
+    }
+    
+    return {
+        "message": "Registration successful",
+        "token": token,
+        "user": {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "company": user.company,
+            "email": user.email
+        },
+        "temp_password": temp_password  # Send this to user for future logins
+    }
+
+@api_router.post("/auth/login")
+async def login_user(login: UserLogin):
+    """Login existing user"""
+    user = await db.users.find_one({"email": login.email.lower()}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="Email not found. Please register first.")
+    
+    if user.get('password_hash') != hash_password(login.password):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    
+    if user.get('status') == 'suspended':
+        raise HTTPException(status_code=403, detail="Account suspended. Contact support.")
+    
+    # Generate session token
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59)
+    
+    USER_TOKENS[token] = {
+        'user_id': user['id'],
+        'email': user['email'],
+        'first_name': user['first_name'],
+        'company': user['company'],
+        'expires_at': expires_at
+    }
+    
+    return {
+        "message": "Login successful",
+        "token": token,
+        "user": {
+            "id": user['id'],
+            "first_name": user['first_name'],
+            "last_name": user['last_name'],
+            "company": user['company'],
+            "email": user['email']
+        }
+    }
+
+@api_router.post("/auth/logout")
+async def logout_user(user_data: dict = Depends(verify_user_token)):
+    """Logout user"""
+    # Find and remove token
+    for token, data in list(USER_TOKENS.items()):
+        if data.get('user_id') == user_data.get('user_id'):
+            del USER_TOKENS[token]
+            break
+    return {"message": "Logged out successfully"}
+
+@api_router.get("/auth/verify")
+async def verify_user(user_data: dict = Depends(verify_user_token)):
+    """Verify user token is valid"""
+    return {
+        "valid": True,
+        "user": {
+            "first_name": user_data.get('first_name'),
+            "company": user_data.get('company'),
+            "email": user_data.get('email')
+        }
+    }
+
+@api_router.get("/auth/users")
+async def get_users(token: str = Depends(verify_admin_token)):
+    """Get all registered users (admin only)"""
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    for user in users:
+        if isinstance(user.get('created_at'), str):
+            user['created_at'] = datetime.fromisoformat(user['created_at'].replace('Z', '+00:00'))
+    return users
+
 @api_router.post("/seed")
 async def seed_database():
     """Seed the database with initial strain data"""
