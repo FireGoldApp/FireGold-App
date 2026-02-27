@@ -767,19 +767,136 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains }) => {
   );
 };
 
+// Admin Login Component
+const AdminLogin = ({ onLogin }) => {
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.post(`${API}/admin/login`, { password });
+      localStorage.setItem('adminToken', response.data.token);
+      onLogin(response.data.token);
+      toast.success('Admin access granted');
+    } catch (err) {
+      setError('Invalid admin password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-obsidian flex items-center justify-center p-6">
+      <div className="bg-charcoal border border-white/10 p-8 max-w-md w-full">
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <Lock className="w-8 h-8 text-gold-500" />
+          <h1 className="font-cinzel font-bold text-2xl text-white">Admin Access</h1>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+              Admin Password
+            </label>
+            <input
+              data-testid="admin-password-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+              placeholder="Enter admin password"
+              required
+            />
+          </div>
+
+          {error && (
+            <div className="text-red-500 text-sm text-center">{error}</div>
+          )}
+
+          <button
+            data-testid="admin-login-btn"
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-zinc-700 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all"
+          >
+            {loading ? 'Verifying...' : 'Access Admin Panel'}
+          </button>
+        </form>
+
+        <a 
+          href="/"
+          className="block text-center mt-6 text-zinc-500 hover:text-gold-500 text-sm transition-colors"
+        >
+          ← Back to Catalog
+        </a>
+      </div>
+    </div>
+  );
+};
+
 // Admin Page Component
 const AdminPage = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminToken, setAdminToken] = useState(null);
   const [strains, setStrains] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploadingId, setUploadingId] = useState(null);
   const [stats, setStats] = useState(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    fetchStrains();
-    fetchStats();
+    // Check for existing token
+    const token = localStorage.getItem('adminToken');
+    if (token) {
+      verifyToken(token);
+    } else {
+      setCheckingAuth(false);
+    }
   }, []);
 
-  const fetchStrains = async () => {
+  const verifyToken = async (token) => {
+    try {
+      await axios.get(`${API}/admin/verify`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAdminToken(token);
+      setIsAuthenticated(true);
+      fetchStrains(token);
+      fetchStats(token);
+    } catch (err) {
+      localStorage.removeItem('adminToken');
+    } finally {
+      setCheckingAuth(false);
+    }
+  };
+
+  const handleLogin = (token) => {
+    setAdminToken(token);
+    setIsAuthenticated(true);
+    fetchStrains(token);
+    fetchStats(token);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${API}/admin/logout`, {}, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+    } catch (err) {
+      // Ignore errors
+    }
+    localStorage.removeItem('adminToken');
+    setAdminToken(null);
+    setIsAuthenticated(false);
+    toast.success('Logged out');
+  };
+
+  const fetchStrains = async (token) => {
     try {
       const response = await axios.get(`${API}/strains`);
       setStrains(response.data);
@@ -790,9 +907,11 @@ const AdminPage = () => {
     }
   };
 
-  const fetchStats = async () => {
+  const fetchStats = async (token) => {
     try {
-      const response = await axios.get(`${API}/stats`);
+      const response = await axios.get(`${API}/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setStats(response.data);
     } catch (error) {
       console.error('Failed to load stats');
@@ -814,12 +933,20 @@ const AdminPage = () => {
 
     try {
       await axios.put(`${API}/strains/${strainId}/image`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${adminToken}`
+        }
       });
       toast.success('Image updated successfully');
-      fetchStrains(); // Refresh to show new image
+      fetchStrains(adminToken);
     } catch (error) {
-      toast.error('Failed to update image');
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        handleLogout();
+      } else {
+        toast.error('Failed to update image');
+      }
     } finally {
       setUploadingId(null);
     }
@@ -829,14 +956,35 @@ const AdminPage = () => {
     if (!window.confirm(`Are you sure you want to delete "${strainName}"?`)) return;
     
     try {
-      await axios.delete(`${API}/strains/${strainId}`);
+      await axios.delete(`${API}/strains/${strainId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
       toast.success('Strain deleted');
-      fetchStrains();
-      fetchStats();
+      fetchStrains(adminToken);
+      fetchStats(adminToken);
     } catch (error) {
-      toast.error('Failed to delete strain');
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        handleLogout();
+      } else {
+        toast.error('Failed to delete strain');
+      }
     }
   };
+
+  // Show loading while checking auth
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-obsidian flex items-center justify-center">
+        <div className="text-gold-500">Verifying access...</div>
+      </div>
+    );
+  }
+
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <AdminLogin onLogin={handleLogin} />;
+  }
 
   return (
     <div data-testid="admin-page" className="min-h-screen bg-obsidian">
@@ -849,10 +997,18 @@ const AdminPage = () => {
           </a>
         </div>
         <div className="flex items-center gap-3">
+          <Lock className="w-5 h-5 text-cannabis-green" />
           <Settings className="w-6 h-6 text-gold-500" />
           <span className="font-cinzel font-bold text-xl text-white">Admin Panel</span>
         </div>
-        <div></div>
+        <button 
+          onClick={handleLogout}
+          data-testid="admin-logout-btn"
+          className="flex items-center gap-2 text-zinc-400 hover:text-red-400 transition-colors"
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="text-sm">Logout</span>
+        </button>
       </header>
 
       <main className="max-w-[1400px] mx-auto px-6 md:px-12 py-12">
