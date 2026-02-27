@@ -15,7 +15,11 @@ import {
   Menu,
   Mail,
   Phone,
-  Building2
+  Building2,
+  FileCheck,
+  Package,
+  MapPin,
+  ShieldCheck
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
