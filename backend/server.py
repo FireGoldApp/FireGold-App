@@ -636,9 +636,15 @@ async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 @api_router.get("/files/{file_path:path}")
-async def serve_file(file_path: str, token: str = Depends(verify_admin_token)):
-    """Serve uploaded files (admin only)"""
+async def serve_file(file_path: str, token: str = Query(...)):
+    """Serve uploaded files (admin only, token via query param for direct download)"""
     from fastapi.responses import FileResponse
+    if token not in ADMIN_TOKENS:
+        raise HTTPException(status_code=401, detail="Invalid admin token")
+    token_data = ADMIN_TOKENS[token]
+    if datetime.now(timezone.utc) > token_data['expires_at']:
+        del ADMIN_TOKENS[token]
+        raise HTTPException(status_code=401, detail="Token expired")
     full_path = f"/app/uploads/{file_path}"
     if not os.path.exists(full_path):
         raise HTTPException(status_code=404, detail="File not found")
