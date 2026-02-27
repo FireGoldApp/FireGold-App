@@ -41,12 +41,18 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - Country of Export field for destination market
   - Irradiation fields: "Has been irradiated for micros?" + "Willing to irradiate if required?" (Yes/No)
   - Image upload (JPG/PNG/WebP) — saved to /submissions/, transferred to strain on approval
+  - Document uploads: COA (Certificate of Analysis), Health Canada License, CRA Excise License (PDFs)
+  - Admin document links served via /api/files/ endpoint (admin-only, token-authenticated)
   - Admin "Submissions" tab with filter (all/pending/approved/rejected)
   - Admin price_per_gram evaluation field during review
   - Auto-add approved strains to catalog with correct price tier and submitted image
   - Pending authorization notice shown to growers on submission
   - Color-coded irradiation status in admin view (green=Yes, red=No)
   - Backend: multipart/form-data endpoint, all tests passing
+- [x] **User-Chosen Password at Registration** (Feb 27, 2026)
+  - Users now set their own password during registration (min 6 chars + confirm)
+  - No more generated temp passwords — users go directly to catalog after registration
+  - Login works with the user-chosen password
 
 ### Routes
 - `/` — Catalog (requires user auth)
@@ -59,7 +65,7 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
 Backend endpoint and basic UI exist. Form submission logic and state management need full implementation and testing.
 
 ### P2 — Email-Based Password Delivery
-Requires user to provide Resend API key. User has deferred. Do NOT ask for key again.
+Requires user to provide Resend API key. User has deferred. Password is now user-chosen, so email delivery is less critical but could be used for welcome emails or verification.
 
 ### Content — Strain Image Backgrounds
 AIS and Animal Mints have white backgrounds. Admin can update via image management. User decided to "leave for now".
