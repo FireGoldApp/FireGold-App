@@ -325,6 +325,34 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
             </div>
           </div>
         </div>
+
+        {/* COA PDF Viewer Overlay */}
+        {showCoa && coaBlobUrl && (
+          <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col" data-testid="coa-viewer">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-charcoal">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-cannabis-green" />
+                <h3 className="font-cinzel font-bold text-lg text-white">Certificate of Analysis</h3>
+                <span className="text-zinc-500 text-sm">— {strain.strain_name}</span>
+              </div>
+              <button
+                data-testid="close-coa-btn"
+                onClick={closeCoa}
+                className="w-10 h-10 bg-zinc-800 hover:bg-gold-500 hover:text-black flex items-center justify-center transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 p-4">
+              <iframe
+                src={coaBlobUrl}
+                title={`COA - ${strain.strain_name}`}
+                className="w-full h-full border border-white/10"
+                style={{ minHeight: 'calc(100vh - 80px)' }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
