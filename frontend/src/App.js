@@ -1300,13 +1300,14 @@ const AuthPage = ({ onAuth }) => {
     company: '',
     country: '',
     email: '',
-    phone: ''
+    phone: '',
+    password: ''
   });
   const [loginData, setLoginData] = useState({
     email: '',
     password: ''
   });
-  const [tempPassword, setTempPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleRegister = async (e) => {
     e.preventDefault();
