@@ -198,21 +198,21 @@ class GrowerSubmission(BaseModel):
     email: str
     phone: str
     license_number: Optional[str] = None
-    # Strain info
+    # Strain info (matches catalog strain format)
     strain_name: str
     strain_type: str
     thc_percentage: str
     cbd_percentage: Optional[str] = None
     terpene_profile: str  # Comma separated
     lineage: str
-    available_quantity: str
-    price_per_lb: Optional[str] = None
+    lot_size_kg: float  # Minimum 30 kg
     effects: str
     growing_method: Optional[str] = None  # Indoor, Outdoor, Greenhouse
     additional_notes: Optional[str] = None
     # Status
     status: str = "pending"  # pending, approved, rejected
     admin_notes: Optional[str] = None
+    admin_price_per_gram: Optional[str] = None  # Admin sets this during review
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class GrowerSubmissionInput(BaseModel):
@@ -227,8 +227,7 @@ class GrowerSubmissionInput(BaseModel):
     cbd_percentage: Optional[str] = None
     terpene_profile: str
     lineage: str
-    available_quantity: str
-    price_per_lb: Optional[str] = None
+    lot_size_kg: float  # Minimum 30 kg
     effects: str
     growing_method: Optional[str] = None
     additional_notes: Optional[str] = None
