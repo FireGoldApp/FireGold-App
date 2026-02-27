@@ -34,10 +34,28 @@ Build a B2B cannabis wholesale flower database/catalog for Firegold company disp
   - Health Canada License PDF upload
   - CRA Excise License PDF upload
   - Files stored in database (base64 encoded)
-  - Shipping address required
-  - Sample requests stored with pending status
+- ✅ **User Registration & Authentication**
+  - Required: First name, Last name, Company/LP, Country, Email, Phone
+  - Auto-generated password shown after registration
+  - Login with email + password
+- ✅ **Admin Panel (password protected)**
+  - Images tab: Upload/delete strain images
+  - Analytics tab: User behavior tracking with CSV export
+  - Users tab: All registered users with CSV export
+  - Flags tab: Duplicate detection alerts
+- ✅ **Analytics Tracking**
+  - Top viewed strains, THC potency interest
+  - Strain type preference, price tier interest
+  - Search queries, filter patterns
+  - Company engagement, session tracking
+- ✅ **Duplicate Detection Flags**
+  - Same company name
+  - Same phone number
+  - Same email domain
+- ✅ **CSV Export** for analytics and users
+- ✅ **Session tracking** (time on page)
+- ✅ **Image protection** (right-click disabled, no download)
 - ✅ Mobile responsive design
-- ✅ Backend API with all CRUD endpoints including file upload
 
 ## Prioritized Backlog
 ### P0 (Critical)
