@@ -1699,9 +1699,18 @@ const AdminPage = () => {
         {/* Users Tab */}
         {activeTab === 'users' && (
           <>
-            <div className="mb-8">
-              <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Registered Users</h2>
-              <p className="text-zinc-500 text-sm">{users.length} total users</p>
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Registered Users</h2>
+                <p className="text-zinc-500 text-sm">{users.length} total users</p>
+              </div>
+              <button
+                onClick={() => exportCSV('users')}
+                className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 text-sm flex items-center gap-2 transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                Export CSV
+              </button>
             </div>
 
             <div className="bg-charcoal border border-white/5 overflow-hidden">
