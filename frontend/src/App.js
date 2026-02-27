@@ -2858,6 +2858,33 @@ const AdminPage = () => {
                       </div>
                     )}
 
+                    {/* Uploaded Documents */}
+                    {(sub.coa_path || sub.health_canada_license_path || sub.cra_license_path) && (
+                      <div className="flex flex-wrap gap-3 mb-4">
+                        {sub.coa_path && (
+                          <a href={sub.coa_path} target="_blank" rel="noopener noreferrer" data-testid={`doc-coa-${sub.id}`}
+                            className="flex items-center gap-2 bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-zinc-300 hover:border-gold-500/50 transition-colors">
+                            <FileText className="w-4 h-4 text-gold-500" />
+                            COA
+                          </a>
+                        )}
+                        {sub.health_canada_license_path && (
+                          <a href={sub.health_canada_license_path} target="_blank" rel="noopener noreferrer" data-testid={`doc-hc-${sub.id}`}
+                            className="flex items-center gap-2 bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-zinc-300 hover:border-gold-500/50 transition-colors">
+                            <FileText className="w-4 h-4 text-cannabis-green" />
+                            HC License
+                          </a>
+                        )}
+                        {sub.cra_license_path && (
+                          <a href={sub.cra_license_path} target="_blank" rel="noopener noreferrer" data-testid={`doc-cra-${sub.id}`}
+                            className="flex items-center gap-2 bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-zinc-300 hover:border-gold-500/50 transition-colors">
+                            <FileText className="w-4 h-4 text-blue-400" />
+                            CRA License
+                          </a>
+                        )}
+                      </div>
+                    )}
+
                     {sub.admin_price_per_gram && (
                       <div className="mb-4 bg-gold-500/10 border border-gold-500/30 p-3 inline-block">
                         <p className="text-gold-500 text-xs uppercase tracking-widest">Admin Price/Gram</p>
