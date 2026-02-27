@@ -1571,8 +1571,14 @@ const AdminPage = () => {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [analytics, setAnalytics] = useState(null);
   const [users, setUsers] = useState([]);
-  const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users', 'flags', 'add-strain'
+  const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users', 'flags', 'submissions'
   const [flags, setFlags] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [submissionFilter, setSubmissionFilter] = useState('all');
+  const [reviewingSubmission, setReviewingSubmission] = useState(null);
+  const [pricePerGram, setPricePerGram] = useState('');
+  const [adminNotes, setAdminNotes] = useState('');
+  const [processingSubmission, setProcessingSubmission] = useState(false);
   const [showAddStrain, setShowAddStrain] = useState(false);
   const [newStrain, setNewStrain] = useState({
     strain_name: '',
