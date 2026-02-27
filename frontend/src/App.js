@@ -850,6 +850,8 @@ const AuthPage = ({ onAuth }) => {
       const response = await axios.post(`${API}/auth/register`, registerData);
       localStorage.setItem('userToken', response.data.token);
       localStorage.setItem('userData', JSON.stringify(response.data.user));
+      localStorage.setItem('sessionId', response.data.session_id);
+      initSession(response.data.session_id);
       setTempPassword(response.data.temp_password);
       toast.success('Registration successful! Save your password shown below.');
     } catch (err) {
