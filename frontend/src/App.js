@@ -33,7 +33,11 @@ import {
   LogOut,
   User,
   Globe,
-  UserPlus
+  UserPlus,
+  Leaf,
+  CheckCircle,
+  XCircle,
+  Clock
 } from "lucide-react";
 
 // Prevent right-click on images
