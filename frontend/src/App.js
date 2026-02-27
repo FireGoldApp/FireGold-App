@@ -1212,8 +1212,21 @@ const AdminPage = () => {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [analytics, setAnalytics] = useState(null);
   const [users, setUsers] = useState([]);
-  const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users', 'flags'
+  const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users', 'flags', 'add-strain'
   const [flags, setFlags] = useState([]);
+  const [showAddStrain, setShowAddStrain] = useState(false);
+  const [newStrain, setNewStrain] = useState({
+    strain_name: '',
+    type: 'Balanced Hybrid',
+    thc_percentage: '',
+    price_tier: '$$',
+    terpene_profile: '',
+    lineage: '',
+    lot_size: '',
+    effects: ''
+  });
+  const [newStrainImage, setNewStrainImage] = useState(null);
+  const [addingStrain, setAddingStrain] = useState(false);
 
   useEffect(() => {
     // Check for existing token
