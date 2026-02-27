@@ -46,6 +46,24 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 const FIREGOLD_LOGO = "https://customer-assets.emergentagent.com/job_reload-engine/artifacts/sx02pppj_ChatGPT%20Image%20Nov%2011%2C%202025%20at%2009_53_40%20AM.png";
 
+// Analytics tracking helper
+const trackEvent = async (eventType, data = {}) => {
+  const token = localStorage.getItem('userToken');
+  if (!token) return;
+  
+  try {
+    await axios.post(`${API}/analytics/track`, {
+      event_type: eventType,
+      ...data
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  } catch (err) {
+    // Silently fail - don't interrupt user experience
+    console.debug('Analytics tracking failed:', err);
+  }
+};
+
 // Strain Card Component
 const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
   const getTypeColor = (type) => {
