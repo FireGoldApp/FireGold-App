@@ -1627,6 +1627,7 @@ const AdminPage = () => {
     fetchAnalytics(token);
     fetchUsers(token);
     fetchFlags(token);
+    fetchSubmissions(token);
   };
 
   const handleLogout = async () => {
