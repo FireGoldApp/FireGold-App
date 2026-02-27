@@ -1209,6 +1209,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<CatalogPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </BrowserRouter>
     </div>
