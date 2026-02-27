@@ -1569,9 +1569,18 @@ const AdminPage = () => {
         {/* Analytics Tab */}
         {activeTab === 'analytics' && analytics && (
           <>
-            <div className="mb-8">
-              <h2 className="font-cinzel font-bold text-2xl text-white mb-2">User Analytics & Trends</h2>
-              <p className="text-zinc-500 text-sm">Last 30 days · {analytics.summary.total_events} events from {analytics.summary.unique_users} users</p>
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="font-cinzel font-bold text-2xl text-white mb-2">User Analytics & Trends</h2>
+                <p className="text-zinc-500 text-sm">Last 30 days · {analytics.summary.total_events} events from {analytics.summary.unique_users} users</p>
+              </div>
+              <button
+                onClick={() => exportCSV('analytics')}
+                className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 text-sm flex items-center gap-2 transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                Export CSV
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
