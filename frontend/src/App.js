@@ -2623,6 +2623,35 @@ const AdminPage = () => {
                         <span className="text-gold-500 font-mono text-xs">{strain.price_tier}</span>
                         <span className="text-zinc-600 text-xs">{strain.thc_percentage}</span>
                       </div>
+                      {/* COA Management */}
+                      <div className="mt-2 pt-2 border-t border-white/5">
+                        {strain.coa_url ? (
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1 text-cannabis-green text-xs font-bold">
+                              <FileText className="w-3 h-3" /> COA Live
+                            </span>
+                            <button
+                              onClick={() => handleRemoveCoa(strain.id)}
+                              data-testid={`remove-coa-${strain.id}`}
+                              className="text-red-400 hover:text-red-300 text-xs"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="flex items-center justify-center gap-1 cursor-pointer text-zinc-500 hover:text-gold-500 text-xs transition-colors">
+                            <input
+                              type="file"
+                              accept=".pdf"
+                              className="hidden"
+                              data-testid={`upload-coa-${strain.id}`}
+                              onChange={(e) => handleCoaUpload(strain.id, e.target.files[0])}
+                            />
+                            <Upload className="w-3 h-3" />
+                            Upload COA
+                          </label>
+                        )}
+                      </div>
                     </div>
 
                     {/* Delete button - more visible */}
