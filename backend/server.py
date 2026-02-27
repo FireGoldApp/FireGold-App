@@ -635,6 +635,15 @@ async def root():
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
+@api_router.get("/files/{file_path:path}")
+async def serve_file(file_path: str, token: str = Depends(verify_admin_token)):
+    """Serve uploaded files (admin only)"""
+    from fastapi.responses import FileResponse
+    full_path = f"/app/uploads/{file_path}"
+    if not os.path.exists(full_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(full_path)
+
 # Grower Submission Endpoints (Public - no auth required)
 @api_router.post("/grower/submit")
 async def submit_strain(
