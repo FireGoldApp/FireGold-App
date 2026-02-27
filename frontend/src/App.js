@@ -125,7 +125,10 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
             <img 
               src={strain.image_url || 'https://images.unsplash.com/photo-1721058454918-5582b68de13c'}
               alt={strain.strain_name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover select-none pointer-events-none"
+              onContextMenu={preventImageActions}
+              onDragStart={preventImageActions}
+              draggable="false"
             />
             <button 
               data-testid="close-modal-btn"
