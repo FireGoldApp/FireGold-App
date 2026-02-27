@@ -33,6 +33,10 @@ USER_TOKENS = {}  # Store valid user session tokens
 # Create the main app without a prefix
 app = FastAPI(title="Firegold Cannabis Catalog API")
 
+# Serve uploaded files (PDFs, docs) statically
+os.makedirs("/app/uploads/submissions/docs", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="/app/uploads"), name="uploads")
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
