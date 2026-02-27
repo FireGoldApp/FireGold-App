@@ -796,7 +796,8 @@ async def update_submission_status(
                 terpene_profile=terpenes,
                 lineage=submission["lineage"],
                 lot_size=f"{lot_kg} kg",
-                effects=submission["effects"]
+                effects=submission["effects"],
+                image_url=submission.get("image_path")
             )
             doc = new_strain.model_dump()
             doc['created_at'] = doc['created_at'].isoformat()
