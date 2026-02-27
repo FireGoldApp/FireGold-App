@@ -409,7 +409,7 @@ SEED_STRAINS = [
         "lineage": "Wedding Cake Bx1 x Sherb U4",
         "lot_size": "In Harvest",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "/strains/Souffle.png"
+        "image_url": "/strains/Royal Sherb.jpg"
     },
     {
         "strain_name": "Souffle",
