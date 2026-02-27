@@ -3636,6 +3636,7 @@ function App() {
           <Route path="/" element={<CatalogPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/submit-strain" element={<GrowerSubmitPage />} />
+          <Route path="/track" element={<SubmissionTracker />} />
         </Routes>
       </BrowserRouter>
     </div>
