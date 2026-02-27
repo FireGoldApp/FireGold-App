@@ -24,12 +24,40 @@ db = client[os.environ['DB_NAME']]
 # Admin credentials - set via environment or use default
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'firegold2026')
 ADMIN_TOKENS = {}  # Store valid session tokens
+USER_TOKENS = {}  # Store valid user session tokens
 
 # Create the main app without a prefix
 app = FastAPI(title="Firegold Cannabis Catalog API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# User Models
+class UserRegister(BaseModel):
+    first_name: str
+    last_name: str
+    company: str  # LP or Company name
+    country: str
+    email: EmailStr
+    phone: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    first_name: str
+    last_name: str
+    company: str
+    country: str
+    email: str
+    phone: str
+    password_hash: str
+    status: str = "active"  # active, suspended
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Admin authentication
 class AdminLogin(BaseModel):
