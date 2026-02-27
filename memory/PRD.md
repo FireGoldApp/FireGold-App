@@ -38,11 +38,15 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
 - [x] **Grower Submission Feature** (Feb 27, 2026)
   - Public form at /submit-strain with all strain fields matching catalog format
   - 30kg minimum lot size enforced (frontend + backend validation)
+  - Country of Export field for destination market
+  - Irradiation fields: "Has been irradiated for micros?" + "Willing to irradiate if required?" (Yes/No)
+  - Image upload (JPG/PNG/WebP) — saved to /submissions/, transferred to strain on approval
   - Admin "Submissions" tab with filter (all/pending/approved/rejected)
   - Admin price_per_gram evaluation field during review
-  - Auto-add approved strains to catalog with correct price tier ($<5=$, $5-8=$$, $8+=$$S)
+  - Auto-add approved strains to catalog with correct price tier and submitted image
   - Pending authorization notice shown to growers on submission
-  - Backend: 14/14 tests passing, Frontend: all flows verified
+  - Color-coded irradiation status in admin view (green=Yes, red=No)
+  - Backend: multipart/form-data endpoint, all tests passing
 
 ### Routes
 - `/` — Catalog (requires user auth)
