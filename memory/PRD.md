@@ -23,19 +23,20 @@ Build a B2B cannabis wholesale flower database/catalog for Firegold company disp
 
 ## What's Been Implemented (Feb 27, 2026)
 - ✅ Full catalog with 27 strains auto-seeded from PDF data
-- ✅ Firegold brand identity (flame logo, gold gradient text, dark theme)
+- ✅ **Actual Firegold Brands logo** (flame icon with wordmark) in header & footer
 - ✅ Filter sidebar (type, price tier, THC range)
 - ✅ Search by strain name
 - ✅ Strain detail modal with THC%, lineage, terpenes, effects, lot size
 - ✅ Multi-select strain inquiry system
 - ✅ Inquiry form with company/contact/email/phone/message
-- ✅ **REQUEST SAMPLE feature with license verification**
-  - Health Canada License # required
-  - CRA License # required
+- ✅ **REQUEST SAMPLE feature with PDF license uploads**
+  - Health Canada License PDF upload
+  - CRA Excise License PDF upload
+  - Files stored in database (base64 encoded)
   - Shipping address required
-  - Stored in sample_requests collection
+  - Sample requests stored with pending status
 - ✅ Mobile responsive design
-- ✅ Backend API with all CRUD endpoints
+- ✅ Backend API with all CRUD endpoints including file upload
 
 ## Prioritized Backlog
 ### P0 (Critical)
