@@ -1312,6 +1312,37 @@ const AdminPage = () => {
     }
   };
 
+  const fetchFlags = async (token) => {
+    try {
+      const response = await axios.get(`${API}/analytics/flags`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFlags(response.data);
+    } catch (error) {
+      console.error('Failed to load flags');
+    }
+  };
+
+  const exportCSV = async (type) => {
+    const endpoint = type === 'analytics' ? '/analytics/export/csv?days=30' : '/users/export/csv';
+    try {
+      const response = await axios.get(`${API}${endpoint}`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', type === 'analytics' ? 'firegold_analytics.csv' : 'firegold_users.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success(`${type === 'analytics' ? 'Analytics' : 'Users'} exported to CSV`);
+    } catch (error) {
+      toast.error('Export failed');
+    }
+  };
+
   const handleImageUpload = async (strainId, file) => {
     if (!file) return;
     
