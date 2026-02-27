@@ -666,6 +666,64 @@ async def get_stats():
         "type_distribution": type_dist
     }
 
+@api_router.put("/strains/{strain_id}/image")
+async def update_strain_image(
+    strain_id: str,
+    image: UploadFile = File(...)
+):
+    """Update strain image (admin)"""
+    # Validate file type
+    allowed_types = ['.jpg', '.jpeg', '.png', '.webp']
+    file_ext = os.path.splitext(image.filename)[1].lower()
+    if file_ext not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid image type. Use JPG, PNG, or WebP")
+    
+    # Check strain exists
+    strain = await db.strains.find_one({"id": strain_id}, {"_id": 0})
+    if not strain:
+        raise HTTPException(status_code=404, detail="Strain not found")
+    
+    # Save image to public folder
+    import shutil
+    filename = f"{strain['strain_name']}{file_ext}"
+    filepath = f"/app/frontend/public/strains/{filename}"
+    
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+    
+    # Update database
+    new_image_url = f"/strains/{filename}"
+    await db.strains.update_one(
+        {"id": strain_id},
+        {"$set": {"image_url": new_image_url}}
+    )
+    
+    return {"message": "Image updated", "image_url": new_image_url}
+
+@api_router.delete("/strains/{strain_id}")
+async def delete_strain(strain_id: str):
+    """Delete a strain (admin)"""
+    result = await db.strains.delete_one({"id": strain_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Strain not found")
+    return {"message": "Strain deleted"}
+
+@api_router.put("/strains/{strain_id}")
+async def update_strain(strain_id: str, strain_input: StrainCreate):
+    """Update strain details (admin)"""
+    strain = await db.strains.find_one({"id": strain_id}, {"_id": 0})
+    if not strain:
+        raise HTTPException(status_code=404, detail="Strain not found")
+    
+    update_data = strain_input.model_dump()
+    await db.strains.update_one(
+        {"id": strain_id},
+        {"$set": update_data}
+    )
+    
+    updated = await db.strains.find_one({"id": strain_id}, {"_id": 0})
+    return updated
+
 # Include the router in the main app
 app.include_router(api_router)
 
