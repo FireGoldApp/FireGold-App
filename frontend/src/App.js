@@ -28,8 +28,16 @@ import {
   Trash2,
   Edit3,
   Save,
-  ArrowLeft
+  ArrowLeft,
+  Lock,
+  LogOut
 } from "lucide-react";
+
+// Prevent right-click on images
+const preventImageActions = (e) => {
+  e.preventDefault();
+  return false;
+};
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
