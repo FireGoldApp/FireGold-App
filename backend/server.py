@@ -512,6 +512,69 @@ async def get_inquiries():
             inq['created_at'] = datetime.fromisoformat(inq['created_at'].replace('Z', '+00:00'))
     return inquiries
 
+@api_router.post("/sample-requests/upload")
+async def create_sample_request_with_files(
+    company_name: str = Form(...),
+    contact_name: str = Form(...),
+    email: str = Form(...),
+    phone: str = Form(""),
+    strain_id: str = Form(...),
+    shipping_address: str = Form(...),
+    message: str = Form(""),
+    health_canada_license: UploadFile = File(...),
+    cra_license: UploadFile = File(...)
+):
+    """Create a new sample request with license PDF uploads"""
+    # Validate file types
+    if not health_canada_license.filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Health Canada license must be a PDF file")
+    if not cra_license.filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="CRA license must be a PDF file")
+    
+    # Get strain name
+    strain = await db.strains.find_one({"id": strain_id}, {"_id": 0})
+    strain_name = strain.get("strain_name") if strain else "Unknown"
+    
+    # Read and store files as base64 in the database
+    hc_content = await health_canada_license.read()
+    cra_content = await cra_license.read()
+    
+    request_id = str(uuid.uuid4())
+    
+    # Store the sample request with file data
+    doc = {
+        "id": request_id,
+        "company_name": company_name,
+        "contact_name": contact_name,
+        "email": email,
+        "phone": phone if phone else None,
+        "strain_id": strain_id,
+        "strain_name": strain_name,
+        "health_canada_license_filename": health_canada_license.filename,
+        "health_canada_license_data": base64.b64encode(hc_content).decode('utf-8'),
+        "cra_license_filename": cra_license.filename,
+        "cra_license_data": base64.b64encode(cra_content).decode('utf-8'),
+        "shipping_address": shipping_address,
+        "message": message if message else None,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.sample_requests.insert_one(doc)
+    
+    # Return without the file data
+    return {
+        "id": request_id,
+        "company_name": company_name,
+        "contact_name": contact_name,
+        "email": email,
+        "strain_id": strain_id,
+        "strain_name": strain_name,
+        "health_canada_license_filename": health_canada_license.filename,
+        "cra_license_filename": cra_license.filename,
+        "status": "pending"
+    }
+
 @api_router.post("/sample-requests", response_model=SampleRequest)
 async def create_sample_request(request_input: SampleRequestCreate):
     """Create a new sample request with license verification"""
