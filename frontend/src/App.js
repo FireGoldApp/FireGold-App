@@ -753,6 +753,192 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains }) => {
   );
 };
 
+// Admin Page Component
+const AdminPage = () => {
+  const [strains, setStrains] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploadingId, setUploadingId] = useState(null);
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    fetchStrains();
+    fetchStats();
+  }, []);
+
+  const fetchStrains = async () => {
+    try {
+      const response = await axios.get(`${API}/strains`);
+      setStrains(response.data);
+    } catch (error) {
+      toast.error('Failed to load strains');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get(`${API}/stats`);
+      setStats(response.data);
+    } catch (error) {
+      console.error('Failed to load stats');
+    }
+  };
+
+  const handleImageUpload = async (strainId, file) => {
+    if (!file) return;
+    
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload a JPG, PNG, or WebP image');
+      return;
+    }
+
+    setUploadingId(strainId);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      await axios.put(`${API}/strains/${strainId}/image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('Image updated successfully');
+      fetchStrains(); // Refresh to show new image
+    } catch (error) {
+      toast.error('Failed to update image');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const handleDeleteStrain = async (strainId, strainName) => {
+    if (!window.confirm(`Are you sure you want to delete "${strainName}"?`)) return;
+    
+    try {
+      await axios.delete(`${API}/strains/${strainId}`);
+      toast.success('Strain deleted');
+      fetchStrains();
+      fetchStats();
+    } catch (error) {
+      toast.error('Failed to delete strain');
+    }
+  };
+
+  return (
+    <div data-testid="admin-page" className="min-h-screen bg-obsidian">
+      {/* Header */}
+      <header className="bg-black/80 backdrop-blur-md border-b border-white/5 h-20 flex items-center justify-between px-6 md:px-12">
+        <div className="flex items-center gap-4">
+          <a href="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+            <span className="text-sm">Back to Catalog</span>
+          </a>
+        </div>
+        <div className="flex items-center gap-3">
+          <Settings className="w-6 h-6 text-gold-500" />
+          <span className="font-cinzel font-bold text-xl text-white">Admin Panel</span>
+        </div>
+        <div></div>
+      </header>
+
+      <main className="max-w-[1400px] mx-auto px-6 md:px-12 py-12">
+        {/* Stats */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="bg-charcoal border border-white/5 p-6">
+              <div className="text-zinc-500 text-xs uppercase tracking-widest mb-2">Total Strains</div>
+              <div className="text-4xl font-bold text-white font-mono">{stats.total_strains}</div>
+            </div>
+            <div className="bg-charcoal border border-white/5 p-6">
+              <div className="text-zinc-500 text-xs uppercase tracking-widest mb-2">Inquiries</div>
+              <div className="text-4xl font-bold text-gold-500 font-mono">{stats.total_inquiries}</div>
+            </div>
+            <div className="bg-charcoal border border-white/5 p-6">
+              <div className="text-zinc-500 text-xs uppercase tracking-widest mb-2">Sample Requests</div>
+              <div className="text-4xl font-bold text-cannabis-green font-mono">{stats.total_sample_requests}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Strain Image Management */}
+        <div className="mb-8">
+          <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Strain Image Management</h2>
+          <p className="text-zinc-500 text-sm">Click on any image to upload a new one. Recommended: black background, square aspect ratio.</p>
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {[...Array(12)].map((_, i) => (
+              <div key={i} className="aspect-square bg-charcoal animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {strains.map((strain) => (
+              <div 
+                key={strain.id} 
+                className="bg-charcoal border border-white/5 hover:border-gold-500/50 transition-all group relative"
+              >
+                <div className="aspect-square relative overflow-hidden">
+                  <img 
+                    src={strain.image_url}
+                    alt={strain.strain_name}
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Upload overlay */}
+                  <label className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex flex-col items-center justify-center gap-2">
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(e) => handleImageUpload(strain.id, e.target.files[0])}
+                      disabled={uploadingId === strain.id}
+                    />
+                    {uploadingId === strain.id ? (
+                      <div className="text-gold-500">Uploading...</div>
+                    ) : (
+                      <>
+                        <Image className="w-8 h-8 text-gold-500" />
+                        <span className="text-white text-xs">Change Image</span>
+                      </>
+                    )}
+                  </label>
+                </div>
+                
+                <div className="p-3">
+                  <div className="font-semibold text-white text-sm truncate">{strain.strain_name}</div>
+                  <div className="text-zinc-500 text-xs truncate">{strain.type}</div>
+                </div>
+
+                {/* Delete button */}
+                <button
+                  data-testid={`delete-strain-${strain.id}`}
+                  onClick={() => handleDeleteStrain(strain.id, strain.strain_name)}
+                  className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#0A0A0A',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: '#fff'
+          }
+        }}
+      />
+    </div>
+  );
+};
+
 // Main Catalog Page
 const CatalogPage = () => {
   const [strains, setStrains] = useState([]);
