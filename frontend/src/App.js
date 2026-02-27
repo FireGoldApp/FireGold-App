@@ -37,7 +37,9 @@ import {
   Leaf,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  ClipboardList,
+  DollarSign
 } from "lucide-react";
 
 // Prevent right-click on images
