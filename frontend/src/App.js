@@ -283,10 +283,27 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
             </div>
             
             {/* Lot Size */}
-            <div className="mb-8">
+            <div className="mb-6">
               <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-2">Available Quantity</div>
               <div className="text-white font-mono">{strain.lot_size}</div>
             </div>
+
+            {/* COA Link */}
+            {strain.coa_url && (
+              <div className="mb-6">
+                <button
+                  data-testid="view-coa-btn"
+                  onClick={handleViewCoa}
+                  disabled={coaLoading}
+                  className="w-full flex items-center justify-center gap-3 bg-cannabis-green/10 border-2 border-cannabis-green/40 hover:border-cannabis-green hover:bg-cannabis-green/20 text-cannabis-green px-6 py-3 transition-all"
+                >
+                  <FileText className="w-5 h-5" />
+                  <span className="font-bold uppercase tracking-widest text-sm">
+                    {coaLoading ? 'Loading COA...' : 'View Certificate of Analysis'}
+                  </span>
+                </button>
+              </div>
+            )}
             
             {/* Action Buttons */}
             <div className="mt-auto space-y-3">
