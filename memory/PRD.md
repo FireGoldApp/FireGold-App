@@ -24,6 +24,7 @@ Build a B2B cannabis wholesale flower database/catalog for Firegold company disp
 ## What's Been Implemented (Feb 27, 2026)
 - ✅ Full catalog with 27 strains auto-seeded from PDF data
 - ✅ **Actual Firegold Brands logo** (flame icon with wordmark) in header & footer
+- ✅ **Actual strain product images** from PDF (26 unique photos uploaded)
 - ✅ Filter sidebar (type, price tier, THC range)
 - ✅ Search by strain name
 - ✅ Strain detail modal with THC%, lineage, terpenes, effects, lot size
