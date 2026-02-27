@@ -43,6 +43,7 @@ class UserRegister(BaseModel):
     country: str
     email: EmailStr
     phone: str
+    password: str
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -890,9 +891,8 @@ async def register_user(user_data: UserRegister):
             "matched_users": [u['id'] for u in same_domain]
         })
     
-    # Generate a random password and hash it
-    temp_password = secrets.token_urlsafe(8)
-    password_hash = hash_password(temp_password)
+    # Hash the user-provided password
+    password_hash = hash_password(user_data.password)
     
     # Create user
     user = User(
