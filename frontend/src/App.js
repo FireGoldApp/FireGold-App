@@ -1702,6 +1702,49 @@ const AdminPage = () => {
     }
   };
 
+  const fetchSubmissions = async (token) => {
+    try {
+      const response = await axios.get(`${API}/grower/submissions`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSubmissions(response.data);
+    } catch (error) {
+      console.error('Failed to load submissions');
+    }
+  };
+
+  const handleSubmissionAction = async (submissionId, status) => {
+    setProcessingSubmission(true);
+    try {
+      const body = {
+        status,
+        admin_notes: adminNotes || null,
+        admin_price_per_gram: pricePerGram || null
+      };
+      await axios.put(`${API}/grower/submissions/${submissionId}/status`, body, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      toast.success(`Submission ${status}${status === 'approved' ? ' — strain added to catalog' : ''}`);
+      setReviewingSubmission(null);
+      setPricePerGram('');
+      setAdminNotes('');
+      fetchSubmissions(adminToken);
+      if (status === 'approved') {
+        fetchStrains(adminToken);
+        fetchStats(adminToken);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || `Failed to ${status} submission`);
+    } finally {
+      setProcessingSubmission(false);
+    }
+  };
+
+  const filteredSubmissions = submissions.filter(s => 
+    submissionFilter === 'all' ? true : s.status === submissionFilter
+  );
+  const pendingCount = submissions.filter(s => s.status === 'pending').length;
+
   const exportCSV = async (type) => {
     const endpoint = type === 'analytics' ? '/analytics/export/csv?days=30' : '/users/export/csv';
     try {
