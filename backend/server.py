@@ -74,6 +74,34 @@ class Inquiry(BaseModel):
     status: str = "pending"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class SampleRequestCreate(BaseModel):
+    company_name: str
+    contact_name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    strain_id: str
+    health_canada_license: str  # License number
+    cra_license: str  # CRA license number
+    shipping_address: str
+    message: Optional[str] = None
+
+class SampleRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_name: str
+    contact_name: str
+    email: str
+    phone: Optional[str] = None
+    strain_id: str
+    strain_name: Optional[str] = None
+    health_canada_license: str
+    cra_license: str
+    shipping_address: str
+    message: Optional[str] = None
+    status: str = "pending"  # pending, approved, shipped, rejected
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # Seed data from PDF
 SEED_STRAINS = [
     {
@@ -483,11 +511,37 @@ async def get_inquiries():
             inq['created_at'] = datetime.fromisoformat(inq['created_at'].replace('Z', '+00:00'))
     return inquiries
 
+@api_router.post("/sample-requests", response_model=SampleRequest)
+async def create_sample_request(request_input: SampleRequestCreate):
+    """Create a new sample request with license verification"""
+    # Get strain name for the request
+    strain = await db.strains.find_one({"id": request_input.strain_id}, {"_id": 0})
+    strain_name = strain.get("strain_name") if strain else "Unknown"
+    
+    sample_request = SampleRequest(
+        **request_input.model_dump(),
+        strain_name=strain_name
+    )
+    doc = sample_request.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.sample_requests.insert_one(doc)
+    return sample_request
+
+@api_router.get("/sample-requests", response_model=List[SampleRequest])
+async def get_sample_requests():
+    """Get all sample requests (admin)"""
+    requests = await db.sample_requests.find({}, {"_id": 0}).to_list(1000)
+    for req in requests:
+        if isinstance(req.get('created_at'), str):
+            req['created_at'] = datetime.fromisoformat(req['created_at'].replace('Z', '+00:00'))
+    return requests
+
 @api_router.get("/stats")
 async def get_stats():
     """Get catalog statistics"""
     strain_count = await db.strains.count_documents({})
     inquiry_count = await db.inquiries.count_documents({})
+    sample_request_count = await db.sample_requests.count_documents({})
     
     # Get type distribution
     pipeline = [
@@ -498,6 +552,7 @@ async def get_stats():
     return {
         "total_strains": strain_count,
         "total_inquiries": inquiry_count,
+        "total_sample_requests": sample_request_count,
         "type_distribution": type_dist
     }
 
