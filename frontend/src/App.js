@@ -6,7 +6,7 @@ import { Toaster, toast } from "sonner";
 import { 
   Search, 
   Filter, 
-  Leaf, 
+  Flame, 
   X, 
   ChevronDown, 
   Activity, 
@@ -481,8 +481,8 @@ const CatalogPage = () => {
       {/* Header */}
       <header className="fixed top-0 w-full z-40 bg-black/80 backdrop-blur-md border-b border-white/5 h-20 flex items-center justify-between px-6 md:px-12">
         <div className="flex items-center gap-3">
-          <Leaf className="w-8 h-8 text-gold-500" />
-          <span className="font-cinzel font-bold text-xl text-white tracking-wider">FIREGOLD</span>
+          <Flame className="w-8 h-8 text-gold-500" />
+          <span className="font-cinzel font-bold text-xl text-gold-grad tracking-wider">FIREGOLD</span>
         </div>
         
         {/* Search */}
@@ -611,7 +611,7 @@ const CatalogPage = () => {
               </div>
             ) : filteredStrains.length === 0 ? (
               <div className="text-center py-16">
-                <Leaf className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+                <Flame className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
                 <p className="text-zinc-500">No strains match your filters</p>
                 <button 
                   onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '' })}
@@ -641,10 +641,13 @@ const CatalogPage = () => {
       <footer className="border-t border-white/5 py-12 px-6 md:px-12">
         <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3">
-            <Leaf className="w-6 h-6 text-gold-500" />
-            <span className="font-cinzel text-lg text-white">FIREGOLD</span>
+            <Flame className="w-6 h-6 text-gold-500" />
+            <span className="font-cinzel text-lg text-gold-grad">FIREGOLD</span>
           </div>
-          <p className="text-zinc-600 text-sm">© 2026 Firegold. Premium B2B Cannabis Wholesale.</p>
+          <div className="text-center md:text-right">
+            <p className="text-zinc-500 text-sm">The Firegold Standard</p>
+            <p className="text-zinc-600 text-xs mt-1">© 2026 Firegold. Premium B2B Cannabis Wholesale.</p>
+          </div>
         </div>
       </footer>
 
