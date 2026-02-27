@@ -21,11 +21,39 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Admin credentials - set via environment or use default
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'firegold2026')
+ADMIN_TOKENS = {}  # Store valid session tokens
+
 # Create the main app without a prefix
 app = FastAPI(title="Firegold Cannabis Catalog API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# Admin authentication
+class AdminLogin(BaseModel):
+    password: str
+
+class AdminToken(BaseModel):
+    token: str
+    expires_at: datetime
+
+def verify_admin_token(authorization: str = Header(None)):
+    """Verify admin token from Authorization header"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    token = authorization.replace("Bearer ", "")
+    if token not in ADMIN_TOKENS:
+        raise HTTPException(status_code=401, detail="Invalid or expired admin token")
+    
+    token_data = ADMIN_TOKENS[token]
+    if datetime.now(timezone.utc) > token_data['expires_at']:
+        del ADMIN_TOKENS[token]
+        raise HTTPException(status_code=401, detail="Admin session expired")
+    
+    return token
 
 # Define Models
 class Strain(BaseModel):
