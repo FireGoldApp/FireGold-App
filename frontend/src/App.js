@@ -2099,6 +2099,33 @@ const AdminPage = () => {
   const [pricePerGram, setPricePerGram] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
   const [processingSubmission, setProcessingSubmission] = useState(false);
+
+  const handleCoaUpload = async (strainId, file) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('coa', file);
+    try {
+      await axios.put(`${API}/strains/${strainId}/coa`, formData, {
+        headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('COA uploaded — now live for users');
+      fetchStrains(adminToken);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to upload COA');
+    }
+  };
+
+  const handleRemoveCoa = async (strainId) => {
+    try {
+      await axios.delete(`${API}/strains/${strainId}/coa`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      toast.success('COA removed');
+      fetchStrains(adminToken);
+    } catch (err) {
+      toast.error('Failed to remove COA');
+    }
+  };
   const [showAddStrain, setShowAddStrain] = useState(false);
   const [newStrain, setNewStrain] = useState({
     strain_name: '',
