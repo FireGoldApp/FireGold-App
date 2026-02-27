@@ -64,6 +64,40 @@ const trackEvent = async (eventType, data = {}) => {
   }
 };
 
+// Session tracking - time on page
+let sessionStartTime = Date.now();
+let sessionId = null;
+let pagesVisited = [];
+let strainsViewed = [];
+
+const initSession = (sId) => {
+  sessionId = sId || localStorage.getItem('sessionId');
+  sessionStartTime = Date.now();
+  pagesVisited = [];
+  strainsViewed = [];
+};
+
+const updateSession = async () => {
+  const token = localStorage.getItem('userToken');
+  if (!token || !sessionId) return;
+  
+  const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
+  
+  try {
+    await axios.post(`${API}/analytics/session/update?session_id=${sessionId}&duration=${duration}`, null, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  } catch (err) {
+    console.debug('Session update failed:', err);
+  }
+};
+
+// Update session every 30 seconds and on page unload
+if (typeof window !== 'undefined') {
+  setInterval(updateSession, 30000);
+  window.addEventListener('beforeunload', updateSession);
+}
+
 // Strain Card Component
 const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
   const getTypeColor = (type) => {
