@@ -1726,7 +1726,7 @@ const CatalogPage = () => {
                 <Filter className="w-4 h-4 text-gold-500" />
                 <h2 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-400">Filters</h2>
               </div>
-              <FilterSidebar filters={filters} setFilters={setFilters} strains={strains} />
+              <FilterSidebar filters={filters} setFilters={handleFilterChange} strains={strains} />
             </div>
           </aside>
 
