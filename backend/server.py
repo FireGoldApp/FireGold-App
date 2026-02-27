@@ -754,8 +754,8 @@ async def get_strains(
     return strains
 
 @api_router.get("/strains/{strain_id}", response_model=Strain)
-async def get_strain(strain_id: str):
-    """Get a single strain by ID"""
+async def get_strain(strain_id: str, user_data: dict = Depends(verify_user_token)):
+    """Get a single strain by ID (requires authentication)"""
     strain = await db.strains.find_one({"id": strain_id}, {"_id": 0})
     if not strain:
         raise HTTPException(status_code=404, detail="Strain not found")
