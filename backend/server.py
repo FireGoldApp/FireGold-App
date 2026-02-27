@@ -474,6 +474,40 @@ async def root():
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
+# Admin authentication endpoints
+@api_router.post("/admin/login")
+async def admin_login(login: AdminLogin):
+    """Admin login - returns session token"""
+    if login.password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Invalid admin password")
+    
+    # Generate session token
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59)  # Expires end of day
+    
+    ADMIN_TOKENS[token] = {
+        'expires_at': expires_at,
+        'created_at': datetime.now(timezone.utc)
+    }
+    
+    return {
+        "token": token,
+        "expires_at": expires_at.isoformat(),
+        "message": "Admin login successful"
+    }
+
+@api_router.post("/admin/logout")
+async def admin_logout(token: str = Depends(verify_admin_token)):
+    """Admin logout - invalidate token"""
+    if token in ADMIN_TOKENS:
+        del ADMIN_TOKENS[token]
+    return {"message": "Logged out successfully"}
+
+@api_router.get("/admin/verify")
+async def verify_admin(token: str = Depends(verify_admin_token)):
+    """Verify admin token is valid"""
+    return {"valid": True, "message": "Admin token valid"}
+
 @api_router.post("/seed")
 async def seed_database():
     """Seed the database with initial strain data"""
