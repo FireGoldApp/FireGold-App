@@ -1352,7 +1352,10 @@ const GrowerSubmitPage = () => {
 
               {/* Health Canada License Upload */}
               <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Health Canada License</label>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                  Health Canada License
+                  {licensesOnFile?.licenses_on_file?.health_canada_license && <span className="text-cannabis-green ml-1">- on file</span>}
+                </label>
                 <div className="relative">
                   <input
                     data-testid="grower-hc-license-upload"
