@@ -713,9 +713,10 @@ async def get_strains(
     price_tier: Optional[str] = Query(None, description="Filter by price tier"),
     search: Optional[str] = Query(None, description="Search by strain name"),
     min_thc: Optional[float] = Query(None, description="Minimum THC percentage"),
-    terpene: Optional[str] = Query(None, description="Filter by terpene")
+    terpene: Optional[str] = Query(None, description="Filter by terpene"),
+    user_data: dict = Depends(verify_user_token)
 ):
-    """Get all strains with optional filters"""
+    """Get all strains with optional filters (requires authentication)"""
     query = {}
     
     if type_filter:
