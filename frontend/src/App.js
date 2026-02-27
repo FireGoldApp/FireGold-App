@@ -2516,6 +2516,202 @@ const AdminPage = () => {
             )}
           </>
         )}
+
+        {/* Grower Submissions Tab */}
+        {activeTab === 'submissions' && (
+          <>
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Grower Submissions</h2>
+                <p className="text-zinc-500 text-sm">{submissions.length} total · {pendingCount} pending authorization</p>
+              </div>
+              <div className="flex gap-2">
+                {['all', 'pending', 'approved', 'rejected'].map(f => (
+                  <button
+                    key={f}
+                    data-testid={`submission-filter-${f}`}
+                    onClick={() => setSubmissionFilter(f)}
+                    className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${
+                      submissionFilter === f ? 'bg-gold-500 text-black' : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {filteredSubmissions.length === 0 ? (
+              <div className="bg-charcoal border border-white/5 p-12 text-center">
+                <ClipboardList className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+                <p className="text-zinc-400">No {submissionFilter === 'all' ? '' : submissionFilter} submissions yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredSubmissions.map((sub) => (
+                  <div key={sub.id} data-testid={`submission-card-${sub.id}`} className={`bg-charcoal border p-6 ${
+                    sub.status === 'pending' ? 'border-gold-500/30' : sub.status === 'approved' ? 'border-cannabis-green/30' : 'border-red-500/30'
+                  }`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-cinzel font-bold text-xl text-white">{sub.strain_name}</h3>
+                          <span className={`px-3 py-1 text-xs font-bold uppercase tracking-widest ${
+                            sub.status === 'pending' ? 'bg-gold-500/20 text-gold-500' :
+                            sub.status === 'approved' ? 'bg-cannabis-green/20 text-cannabis-green' :
+                            'bg-red-500/20 text-red-500'
+                          }`}>
+                            {sub.status}
+                          </span>
+                        </div>
+                        <p className="text-zinc-400 text-sm">{sub.strain_type} · THC {sub.thc_percentage}{sub.cbd_percentage ? ` · CBD ${sub.cbd_percentage}` : ''}</p>
+                      </div>
+                      <span className="text-zinc-600 text-xs">{new Date(sub.created_at).toLocaleDateString()}</span>
+                    </div>
+
+                    {/* Strain Details Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Lineage</p>
+                        <p className="text-zinc-300 text-sm">{sub.lineage}</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Terpenes</p>
+                        <p className="text-zinc-300 text-sm">{sub.terpene_profile}</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Lot Size</p>
+                        <p className="text-zinc-300 text-sm">{sub.lot_size_kg} kg</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Method</p>
+                        <p className="text-zinc-300 text-sm">{sub.growing_method || 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="text-zinc-600 text-xs uppercase tracking-widest">Effects</p>
+                      <p className="text-zinc-300 text-sm">{sub.effects}</p>
+                    </div>
+
+                    {/* Grower Info */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 bg-zinc-900/50 p-4 border border-white/5">
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Grower</p>
+                        <p className="text-zinc-300 text-sm">{sub.grower_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Company</p>
+                        <p className="text-zinc-300 text-sm">{sub.company_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Email</p>
+                        <p className="text-zinc-300 text-sm">{sub.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Phone</p>
+                        <p className="text-zinc-300 text-sm">{sub.phone}</p>
+                      </div>
+                    </div>
+
+                    {sub.additional_notes && (
+                      <div className="mb-4">
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Notes from Grower</p>
+                        <p className="text-zinc-400 text-sm italic">{sub.additional_notes}</p>
+                      </div>
+                    )}
+
+                    {sub.admin_price_per_gram && (
+                      <div className="mb-4 bg-gold-500/10 border border-gold-500/30 p-3 inline-block">
+                        <p className="text-gold-500 text-xs uppercase tracking-widest">Admin Price/Gram</p>
+                        <p className="text-gold-500 font-mono font-bold">${sub.admin_price_per_gram}/g</p>
+                      </div>
+                    )}
+
+                    {sub.admin_notes && (
+                      <div className="mb-4">
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Admin Notes</p>
+                        <p className="text-zinc-400 text-sm">{sub.admin_notes}</p>
+                      </div>
+                    )}
+
+                    {/* Action Buttons for Pending */}
+                    {sub.status === 'pending' && (
+                      <>
+                        {reviewingSubmission === sub.id ? (
+                          <div className="border-t border-white/5 pt-4 space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block font-manrope text-xs uppercase tracking-widest text-gold-500 mb-2">
+                                  <DollarSign className="w-4 h-4 inline mr-1" /> Price per Gram (Admin Evaluation) *
+                                </label>
+                                <input
+                                  data-testid={`price-per-gram-${sub.id}`}
+                                  type="text"
+                                  value={pricePerGram}
+                                  onChange={(e) => setPricePerGram(e.target.value)}
+                                  className="w-full bg-zinc-900/50 border border-gold-500/50 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                                  placeholder="e.g., 6.50"
+                                />
+                                <p className="text-zinc-600 text-xs mt-1">Sets price tier: &lt;$5 = $, $5-$8 = $$, $8+ = $$$</p>
+                              </div>
+                              <div>
+                                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Admin Notes (optional)</label>
+                                <input
+                                  data-testid={`admin-notes-${sub.id}`}
+                                  type="text"
+                                  value={adminNotes}
+                                  onChange={(e) => setAdminNotes(e.target.value)}
+                                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                                  placeholder="Internal notes..."
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-3">
+                              <button
+                                data-testid={`approve-submission-${sub.id}`}
+                                onClick={() => handleSubmissionAction(sub.id, 'approved')}
+                                disabled={processingSubmission}
+                                className="flex-1 bg-cannabis-green hover:bg-green-600 disabled:bg-zinc-700 text-white font-bold uppercase tracking-widest px-6 py-3 transition-all flex items-center justify-center gap-2"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                {processingSubmission ? 'Processing...' : 'Approve & Add to Catalog'}
+                              </button>
+                              <button
+                                data-testid={`reject-submission-${sub.id}`}
+                                onClick={() => handleSubmissionAction(sub.id, 'rejected')}
+                                disabled={processingSubmission}
+                                className="bg-red-500/20 hover:bg-red-500/40 text-red-400 font-bold uppercase tracking-widest px-6 py-3 transition-all flex items-center justify-center gap-2"
+                              >
+                                <XCircle className="w-4 h-4" />
+                                Reject
+                              </button>
+                              <button
+                                onClick={() => { setReviewingSubmission(null); setPricePerGram(''); setAdminNotes(''); }}
+                                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-bold uppercase tracking-widest px-6 py-3 transition-all"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            data-testid={`review-submission-${sub.id}`}
+                            onClick={() => setReviewingSubmission(sub.id)}
+                            className="border-2 border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-black font-bold uppercase tracking-widest px-6 py-3 transition-all flex items-center gap-2"
+                          >
+                            <ClipboardList className="w-4 h-4" />
+                            Review & Authorize
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </main>
 
       <Toaster 
