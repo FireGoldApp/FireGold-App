@@ -156,7 +156,7 @@ SEED_STRAINS = [
         "lineage": "Falcon 9 x Grease Monkey",
         "lot_size": "35 kg",
         "effects": "Grounding, Euphoric Lift, Physical",
-        "image_url": "/strains/AIS.png"
+        "image_url": "/strains/AIS.jpg"
     },
     {
         "strain_name": "Animal Mints",
@@ -167,7 +167,7 @@ SEED_STRAINS = [
         "lineage": "Animal Cookies x SinMint Cookies",
         "lot_size": "Lot 1: 42KG, Lot 2: 45KG",
         "effects": "Mood Elevation, Uplift, Controlled Euphoria",
-        "image_url": "/strains/Animal Mitnz.png"
+        "image_url": "/strains/Animal Mints.png"
     },
     {
         "strain_name": "Black Tuna",
@@ -178,7 +178,7 @@ SEED_STRAINS = [
         "lineage": "Herijuana x Lambs Bread",
         "lot_size": "In Harvest",
         "effects": "Mental Elevation, Relaxed Body",
-        "image_url": "/strains/Black Tuna.png"
+        "image_url": "/strains/Black Tuna.jpg"
     },
     {
         "strain_name": "Bubble Gum",
@@ -189,7 +189,7 @@ SEED_STRAINS = [
         "lineage": "Unknown",
         "lot_size": "In Harvest",
         "effects": "Euphoric Mood, Grounding, Sedative",
-        "image_url": "/strains/Buuble Gum.png"
+        "image_url": "/strains/Bubble Gum.jpg"
     },
     {
         "strain_name": "BCC",
@@ -200,7 +200,7 @@ SEED_STRAINS = [
         "lineage": "Wedding Cake x Monkey Banana",
         "lot_size": "In Harvest",
         "effects": "Mood Elevation, Stress, Anxiety Relief",
-        "image_url": "/strains/BCC.png"
+        "image_url": "/strains/BCC.jpg"
     },
     {
         "strain_name": "Cadillac Rainbows",
@@ -211,7 +211,7 @@ SEED_STRAINS = [
         "lineage": "Pure Michigan x Runtz",
         "lot_size": "In Harvest",
         "effects": "Mood Elevation, Stress, Anxiety, Inflammation, Relax",
-        "image_url": "/strains/Cadillac Rainbow.png"
+        "image_url": "/strains/Cadillac Rainbows.jpg"
     },
     {
         "strain_name": "Cerberus",
