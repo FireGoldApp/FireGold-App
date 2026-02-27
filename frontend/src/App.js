@@ -1287,10 +1287,45 @@ const GrowerSubmitPage = () => {
             <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5" /> Documents
             </h3>
+
+            {/* License Recognition Banner */}
+            {licensesOnFile && (
+              <div className="bg-cannabis-green/10 border border-cannabis-green/30 p-4 mb-4" data-testid="licenses-on-file-banner">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle className="w-5 h-5 text-cannabis-green" />
+                  <span className="text-cannabis-green font-bold text-sm uppercase tracking-widest">
+                    {licensesOnFile.company_name} — Recognized
+                  </span>
+                </div>
+                <p className="text-zinc-400 text-sm mb-3">We have records from {licensesOnFile.previous_submissions} previous submission{licensesOnFile.previous_submissions > 1 ? 's' : ''} for your LP.</p>
+                <div className="flex flex-wrap gap-3">
+                  {licensesOnFile.licenses_on_file.health_canada_license && (
+                    <span className="flex items-center gap-1 bg-cannabis-green/20 text-cannabis-green text-xs px-3 py-1 font-bold">
+                      <Check className="w-3 h-3" /> Health Canada License on file
+                    </span>
+                  )}
+                  {licensesOnFile.licenses_on_file.cra_license && (
+                    <span className="flex items-center gap-1 bg-cannabis-green/20 text-cannabis-green text-xs px-3 py-1 font-bold">
+                      <Check className="w-3 h-3" /> CRA License on file
+                    </span>
+                  )}
+                  {licensesOnFile.licenses_on_file.coa && (
+                    <span className="flex items-center gap-1 bg-cannabis-green/20 text-cannabis-green text-xs px-3 py-1 font-bold">
+                      <Check className="w-3 h-3" /> COA on file
+                    </span>
+                  )}
+                </div>
+                <p className="text-zinc-500 text-xs mt-2">You can still upload new documents below to update your records.</p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* COA Upload */}
               <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Certificate of Analysis (COA)</label>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                  Certificate of Analysis (COA)
+                  {licensesOnFile?.licenses_on_file?.coa && <span className="text-cannabis-green ml-1">- on file</span>}
+                </label>
                 <div className="relative">
                   <input
                     data-testid="grower-coa-upload"
