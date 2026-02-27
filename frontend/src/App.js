@@ -687,6 +687,8 @@ const CatalogPage = () => {
   const [selectedStrains, setSelectedStrains] = useState([]);
   const [viewingStrain, setViewingStrain] = useState(null);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
+  const [showSampleModal, setShowSampleModal] = useState(false);
+  const [sampleStrain, setSampleStrain] = useState(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
