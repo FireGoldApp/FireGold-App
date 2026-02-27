@@ -1770,6 +1770,159 @@ const AuthPage = ({ onAuth }) => {
   );
 };
 
+// Submission Status Tracker (Public)
+const SubmissionTracker = () => {
+  const [searchType, setSearchType] = useState('company'); // 'company' or 'id'
+  const [searchValue, setSearchValue] = useState('');
+  const [results, setResults] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchValue.trim()) return;
+    setSearching(true);
+    setError('');
+    setResults(null);
+
+    try {
+      const param = searchType === 'company' 
+        ? `company_name=${encodeURIComponent(searchValue.trim())}`
+        : `submission_id=${encodeURIComponent(searchValue.trim())}`;
+      const res = await axios.get(`${API}/grower/track?${param}`);
+      setResults(res.data);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'No submissions found');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const statusColor = (status) => {
+    if (status === 'approved') return 'bg-cannabis-green/20 text-cannabis-green';
+    if (status === 'rejected') return 'bg-red-500/20 text-red-500';
+    return 'bg-gold-500/20 text-gold-500';
+  };
+
+  return (
+    <div className="min-h-screen bg-obsidian">
+      <header className="bg-black/80 backdrop-blur-md border-b border-white/5 h-20 flex items-center justify-between px-6 md:px-12">
+        <a href="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm">Back to Catalog</span>
+        </a>
+        <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-12" />
+        <div></div>
+      </header>
+
+      <main className="max-w-2xl mx-auto px-6 py-12">
+        <div className="text-center mb-10">
+          <div className="w-16 h-16 bg-gold-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Search className="w-8 h-8 text-gold-500" />
+          </div>
+          <h1 className="font-cinzel font-bold text-3xl text-white mb-4">Track Your Submission</h1>
+          <p className="text-zinc-400">Check the status of your strain submission by LP name or reference ID.</p>
+        </div>
+
+        <form onSubmit={handleSearch} className="bg-charcoal border border-white/10 p-6 mb-8" data-testid="tracker-form">
+          <div className="flex gap-2 mb-4">
+            <button type="button" onClick={() => setSearchType('company')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all ${searchType === 'company' ? 'bg-gold-500 text-black' : 'bg-zinc-800 text-zinc-400'}`}>
+              LP / Company Name
+            </button>
+            <button type="button" onClick={() => setSearchType('id')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all ${searchType === 'id' ? 'bg-gold-500 text-black' : 'bg-zinc-800 text-zinc-400'}`}>
+              Reference ID
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <input
+              data-testid="tracker-search-input"
+              type="text"
+              required
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              className="flex-1 bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+              placeholder={searchType === 'company' ? 'Enter LP or company name...' : 'Enter reference ID...'}
+            />
+            <button data-testid="tracker-search-btn" type="submit" disabled={searching}
+              className="bg-gold-500 hover:bg-gold-400 disabled:bg-zinc-700 text-black font-bold uppercase tracking-widest px-6 h-12 transition-all">
+              {searching ? '...' : 'Track'}
+            </button>
+          </div>
+        </form>
+
+        {error && (
+          <div className="bg-charcoal border border-red-500/30 p-6 text-center">
+            <p className="text-red-400">{error}</p>
+          </div>
+        )}
+
+        {results && (
+          <div className="space-y-6" data-testid="tracker-results">
+            {/* Licenses on File */}
+            {(results.licenses_on_file.health_canada_license || results.licenses_on_file.cra_license || results.licenses_on_file.coa) && (
+              <div className="bg-cannabis-green/10 border border-cannabis-green/30 p-5">
+                <h3 className="text-cannabis-green font-bold text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5" /> Licenses on File
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {results.licenses_on_file.health_canada_license && (
+                    <span className="flex items-center gap-1 bg-cannabis-green/20 text-cannabis-green text-xs px-3 py-1.5 font-bold">
+                      <Check className="w-3 h-3" /> Health Canada License
+                    </span>
+                  )}
+                  {results.licenses_on_file.cra_license && (
+                    <span className="flex items-center gap-1 bg-cannabis-green/20 text-cannabis-green text-xs px-3 py-1.5 font-bold">
+                      <Check className="w-3 h-3" /> CRA Excise License
+                    </span>
+                  )}
+                  {results.licenses_on_file.coa && (
+                    <span className="flex items-center gap-1 bg-cannabis-green/20 text-cannabis-green text-xs px-3 py-1.5 font-bold">
+                      <Check className="w-3 h-3" /> COA
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Submissions List */}
+            <div>
+              <h3 className="text-zinc-400 text-sm uppercase tracking-widest mb-3">{results.submissions.length} Submission{results.submissions.length !== 1 ? 's' : ''}</h3>
+              <div className="space-y-3">
+                {results.submissions.map(sub => (
+                  <div key={sub.id} data-testid={`tracker-result-${sub.id}`} className="bg-charcoal border border-white/10 p-5">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-cinzel font-bold text-lg text-white">{sub.strain_name}</h4>
+                        <p className="text-zinc-500 text-sm">{sub.company_name}</p>
+                      </div>
+                      <span className={`px-3 py-1 text-xs font-bold uppercase tracking-widest ${statusColor(sub.status)}`}>
+                        {sub.status}
+                      </span>
+                    </div>
+                    <div className="flex gap-6 text-xs text-zinc-500">
+                      <span>Submitted: {new Date(sub.submitted_at).toLocaleDateString()}</span>
+                      {sub.price_per_gram && <span className="text-gold-500">Price: ${sub.price_per_gram}/g</span>}
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-zinc-600 font-mono text-xs">Ref: {sub.id}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <a href="/submit-strain" className="block w-full bg-cannabis-green hover:bg-green-600 text-white text-center font-bold uppercase tracking-widest px-8 py-4 transition-all">
+              Submit Another Strain
+            </a>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
 // Admin Login Component
 const AdminLogin = ({ onLogin }) => {
   const [password, setPassword] = useState('');
