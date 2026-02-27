@@ -3494,7 +3494,7 @@ const CatalogPage = () => {
       <main className="max-w-[1600px] mx-auto px-6 md:px-12 pb-24">
         {/* Mobile Search */}
         <div className="md:hidden mb-6">
-          <div className="relative w-full">
+          <div className="relative w-full mb-3">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <input
               data-testid="mobile-search-input"
@@ -3505,6 +3505,14 @@ const CatalogPage = () => {
               className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 pl-10 pr-4 transition-colors outline-none"
             />
           </div>
+          <a
+            href="/submit-strain"
+            data-testid="submit-strain-cta-mobile"
+            className="flex items-center justify-center gap-2 border-2 border-cannabis-green text-cannabis-green font-bold uppercase tracking-widest px-5 py-3 text-xs transition-all w-full"
+          >
+            <Leaf className="w-4 h-4" />
+            Submit Your Strain
+          </a>
         </div>
 
         <div className="flex gap-12">
