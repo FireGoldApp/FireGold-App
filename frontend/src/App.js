@@ -1748,6 +1748,53 @@ const AdminPage = () => {
             </div>
           </>
         )}
+
+        {/* Flags Tab */}
+        {activeTab === 'flags' && (
+          <>
+            <div className="mb-8">
+              <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Registration Flags</h2>
+              <p className="text-zinc-500 text-sm">Duplicate company names, phone numbers, and email domains are flagged</p>
+            </div>
+
+            {flags.length === 0 ? (
+              <div className="bg-charcoal border border-white/5 p-12 text-center">
+                <ShieldCheck className="w-12 h-12 text-cannabis-green mx-auto mb-4" />
+                <p className="text-zinc-400">No flags detected. All registrations look clean.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {flags.map((flag, i) => (
+                  <div key={flag.id || i} className="bg-charcoal border border-yellow-500/30 p-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className={`inline-block px-3 py-1 text-xs font-bold uppercase tracking-widest mb-2 ${
+                          flag.flag_type === 'duplicate_company' ? 'bg-yellow-500/20 text-yellow-500' :
+                          flag.flag_type === 'duplicate_phone' ? 'bg-red-500/20 text-red-500' :
+                          'bg-blue-500/20 text-blue-500'
+                        }`}>
+                          {flag.flag_type.replace(/_/g, ' ')}
+                        </span>
+                        <p className="text-white">{flag.flag_reason}</p>
+                        <p className="text-zinc-500 text-sm mt-2">
+                          User ID: {flag.user_id}
+                        </p>
+                        {flag.matched_user_ids && flag.matched_user_ids.length > 0 && (
+                          <p className="text-zinc-500 text-sm">
+                            Matches with: {flag.matched_user_ids.join(', ')}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-zinc-600 text-xs">
+                        {new Date(flag.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </main>
 
       <Toaster 
