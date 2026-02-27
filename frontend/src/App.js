@@ -1486,6 +1486,40 @@ const AuthPage = ({ onAuth }) => {
               />
             </div>
 
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                <Lock className="w-4 h-4 inline mr-1" /> Password *
+              </label>
+              <input
+                data-testid="register-password"
+                type="password"
+                required
+                minLength={6}
+                value={registerData.password}
+                onChange={(e) => setRegisterData(prev => ({ ...prev, password: e.target.value }))}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                placeholder="Choose a password (min 6 characters)"
+              />
+            </div>
+
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                <Lock className="w-4 h-4 inline mr-1" /> Confirm Password *
+              </label>
+              <input
+                data-testid="register-confirm-password"
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`w-full bg-zinc-900/50 border ${confirmPassword && confirmPassword !== registerData.password ? 'border-red-500' : 'border-zinc-800'} focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none`}
+                placeholder="Confirm your password"
+              />
+              {confirmPassword && confirmPassword !== registerData.password && (
+                <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
+              )}
+            </div>
+
             {error && (
               <div className="text-red-500 text-sm text-center">{error}</div>
             )}
