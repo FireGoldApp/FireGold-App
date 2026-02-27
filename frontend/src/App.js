@@ -175,7 +175,37 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
 
 // Strain Detail Modal
 const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onRequestSample }) => {
+  const [showCoa, setShowCoa] = useState(false);
+  const [coaLoading, setCoaLoading] = useState(false);
+  const [coaBlobUrl, setCoaBlobUrl] = useState(null);
+
   if (!strain) return null;
+
+  const handleViewCoa = async () => {
+    setCoaLoading(true);
+    try {
+      const token = localStorage.getItem('userToken');
+      const response = await axios.get(`${API}/strains/${strain.id}/coa`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      const blobUrl = URL.createObjectURL(response.data);
+      setCoaBlobUrl(blobUrl);
+      setShowCoa(true);
+    } catch {
+      toast.error('Unable to load COA');
+    } finally {
+      setCoaLoading(false);
+    }
+  };
+
+  const closeCoa = () => {
+    setShowCoa(false);
+    if (coaBlobUrl) {
+      URL.revokeObjectURL(coaBlobUrl);
+      setCoaBlobUrl(null);
+    }
+  };
 
   return (
     <div 
