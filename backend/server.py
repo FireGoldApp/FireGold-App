@@ -708,6 +708,176 @@ async def get_users(token: str = Depends(verify_admin_token)):
             user['created_at'] = datetime.fromisoformat(user['created_at'].replace('Z', '+00:00'))
     return users
 
+# Analytics Tracking Endpoints
+@api_router.post("/analytics/track")
+async def track_event(
+    event_input: TrackEventInput,
+    user_data: dict = Depends(verify_user_token),
+    user_agent: Optional[str] = Header(None)
+):
+    """Track user analytics event"""
+    event = AnalyticsEvent(
+        user_id=user_data.get('user_id'),
+        user_email=user_data.get('email'),
+        user_company=user_data.get('company'),
+        event_type=event_input.event_type,
+        event_data=event_input.event_data or {},
+        page=event_input.page,
+        strain_id=event_input.strain_id,
+        strain_name=event_input.strain_name,
+        thc_percentage=event_input.thc_percentage,
+        strain_type=event_input.strain_type,
+        price_tier=event_input.price_tier,
+        search_query=event_input.search_query,
+        filters_applied=event_input.filters_applied,
+        user_agent=user_agent
+    )
+    
+    doc = event.model_dump()
+    doc['timestamp'] = doc['timestamp'].isoformat()
+    await db.analytics.insert_one(doc)
+    
+    return {"tracked": True}
+
+@api_router.get("/analytics/dashboard")
+async def get_analytics_dashboard(
+    days: int = Query(30, description="Number of days to analyze"),
+    token: str = Depends(verify_admin_token)
+):
+    """Get analytics dashboard data (admin only)"""
+    from_date = datetime.now(timezone.utc) - timedelta(days=days)
+    from_date_str = from_date.isoformat()
+    
+    # Total events
+    total_events = await db.analytics.count_documents({"timestamp": {"$gte": from_date_str}})
+    
+    # Unique users
+    unique_users_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}}},
+        {"$group": {"_id": "$user_id"}},
+        {"$count": "count"}
+    ]
+    unique_users_result = await db.analytics.aggregate(unique_users_pipeline).to_list(1)
+    unique_users = unique_users_result[0]['count'] if unique_users_result else 0
+    
+    # Event type breakdown
+    event_types_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}}},
+        {"$group": {"_id": "$event_type", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    event_types = await db.analytics.aggregate(event_types_pipeline).to_list(100)
+    
+    # Most viewed strains
+    strain_views_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}, "event_type": "strain_view", "strain_name": {"$ne": None}}},
+        {"$group": {"_id": {"strain_name": "$strain_name", "strain_id": "$strain_id"}, "views": {"$sum": 1}}},
+        {"$sort": {"views": -1}},
+        {"$limit": 10}
+    ]
+    top_strains = await db.analytics.aggregate(strain_views_pipeline).to_list(10)
+    
+    # THC potency interest (what THC ranges are users viewing)
+    thc_interest_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}, "thc_percentage": {"$ne": None}}},
+        {"$group": {"_id": "$thc_percentage", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    thc_interest = await db.analytics.aggregate(thc_interest_pipeline).to_list(10)
+    
+    # Strain type interest
+    type_interest_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}, "strain_type": {"$ne": None}}},
+        {"$group": {"_id": "$strain_type", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    type_interest = await db.analytics.aggregate(type_interest_pipeline).to_list(20)
+    
+    # Price tier interest
+    price_interest_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}, "price_tier": {"$ne": None}}},
+        {"$group": {"_id": "$price_tier", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    price_interest = await db.analytics.aggregate(price_interest_pipeline).to_list(10)
+    
+    # Search queries
+    search_queries_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}, "event_type": "search", "search_query": {"$ne": None}}},
+        {"$group": {"_id": "$search_query", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 15}
+    ]
+    top_searches = await db.analytics.aggregate(search_queries_pipeline).to_list(15)
+    
+    # Filter usage
+    filter_usage_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}, "event_type": "filter_apply"}},
+        {"$group": {"_id": "$filters_applied", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    filter_usage = await db.analytics.aggregate(filter_usage_pipeline).to_list(10)
+    
+    # User engagement by company
+    company_engagement_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}, "user_company": {"$ne": None}}},
+        {"$group": {"_id": "$user_company", "events": {"$sum": 1}, "strains_viewed": {"$addToSet": "$strain_id"}}},
+        {"$project": {"_id": 1, "events": 1, "unique_strains": {"$size": "$strains_viewed"}}},
+        {"$sort": {"events": -1}},
+        {"$limit": 10}
+    ]
+    company_engagement = await db.analytics.aggregate(company_engagement_pipeline).to_list(10)
+    
+    # Daily activity trend
+    daily_trend_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}}},
+        {"$project": {"date": {"$substr": ["$timestamp", 0, 10]}}},
+        {"$group": {"_id": "$date", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    daily_trend = await db.analytics.aggregate(daily_trend_pipeline).to_list(60)
+    
+    return {
+        "period_days": days,
+        "summary": {
+            "total_events": total_events,
+            "unique_users": unique_users
+        },
+        "event_breakdown": event_types,
+        "top_strains": [{"strain_name": s['_id']['strain_name'], "strain_id": s['_id']['strain_id'], "views": s['views']} for s in top_strains],
+        "thc_interest": [{"thc": t['_id'], "count": t['count']} for t in thc_interest],
+        "strain_type_interest": [{"type": t['_id'], "count": t['count']} for t in type_interest],
+        "price_tier_interest": [{"tier": p['_id'], "count": p['count']} for p in price_interest],
+        "top_searches": [{"query": s['_id'], "count": s['count']} for s in top_searches],
+        "filter_patterns": filter_usage,
+        "company_engagement": [{"company": c['_id'], "events": c['events'], "unique_strains": c['unique_strains']} for c in company_engagement],
+        "daily_trend": daily_trend
+    }
+
+@api_router.get("/analytics/user/{user_id}")
+async def get_user_analytics(user_id: str, token: str = Depends(verify_admin_token)):
+    """Get analytics for a specific user (admin only)"""
+    events = await db.analytics.find(
+        {"user_id": user_id}, 
+        {"_id": 0}
+    ).sort("timestamp", -1).to_list(500)
+    
+    # User journey summary
+    strains_viewed = list(set([e.get('strain_name') for e in events if e.get('strain_name')]))
+    searches = list(set([e.get('search_query') for e in events if e.get('search_query')]))
+    
+    return {
+        "user_id": user_id,
+        "total_events": len(events),
+        "strains_viewed": strains_viewed,
+        "search_queries": searches,
+        "recent_activity": events[:50]
+    }
+
+from datetime import timedelta
+
 @api_router.post("/seed")
 async def seed_database():
     """Seed the database with initial strain data"""
