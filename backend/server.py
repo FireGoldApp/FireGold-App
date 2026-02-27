@@ -83,6 +83,26 @@ def verify_admin_token(authorization: str = Header(None)):
     
     return token
 
+def verify_user_token(authorization: str = Header(None)):
+    """Verify user token from Authorization header"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication required. Please login or register.")
+    
+    token = authorization.replace("Bearer ", "")
+    if token not in USER_TOKENS:
+        raise HTTPException(status_code=401, detail="Invalid or expired session. Please login again.")
+    
+    token_data = USER_TOKENS[token]
+    if datetime.now(timezone.utc) > token_data['expires_at']:
+        del USER_TOKENS[token]
+        raise HTTPException(status_code=401, detail="Session expired. Please login again.")
+    
+    return token_data
+
+def hash_password(password: str) -> str:
+    """Hash a password using SHA256"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
 # Define Models
 class Strain(BaseModel):
     model_config = ConfigDict(extra="ignore")
