@@ -914,6 +914,16 @@ const CatalogPage = () => {
         onClose={() => setViewingStrain(null)}
         onAddToInquiry={toggleStrainSelection}
         isInInquiry={viewingStrain ? selectedStrains.includes(viewingStrain.id) : false}
+        onRequestSample={handleRequestSample}
+      />
+
+      <SampleRequestModal
+        isOpen={showSampleModal}
+        onClose={() => {
+          setShowSampleModal(false);
+          setSampleStrain(null);
+        }}
+        strain={sampleStrain}
       />
 
       <InquiryModal 
