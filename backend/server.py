@@ -651,7 +651,10 @@ async def submit_strain(
     is_irradiated: str = Form(""),
     willing_to_irradiate: str = Form(""),
     additional_notes: str = Form(""),
-    strain_image: Optional[UploadFile] = File(None)
+    strain_image: Optional[UploadFile] = File(None),
+    coa_file: Optional[UploadFile] = File(None),
+    health_canada_license: Optional[UploadFile] = File(None),
+    cra_license: Optional[UploadFile] = File(None)
 ):
     """Public endpoint for growers to submit their strains for consideration"""
     import shutil
@@ -668,6 +671,23 @@ async def submit_strain(
     if existing:
         raise HTTPException(status_code=400, detail="This strain has already been submitted and is pending review.")
     
+    os.makedirs("/app/uploads/submissions", exist_ok=True)
+    os.makedirs("/app/frontend/public/submissions", exist_ok=True)
+    
+    # Helper to save uploaded file
+    def save_upload(upload_file, subfolder, allowed_exts):
+        if not upload_file or not upload_file.filename:
+            return None
+        file_ext = os.path.splitext(upload_file.filename)[1].lower()
+        if file_ext not in allowed_exts:
+            return None
+        safe_name = f"{uuid.uuid4()}{file_ext}"
+        os.makedirs(f"/app/uploads/submissions/{subfolder}", exist_ok=True)
+        save_path = f"/app/uploads/submissions/{subfolder}/{safe_name}"
+        with open(save_path, "wb") as buffer:
+            shutil.copyfileobj(upload_file.file, buffer)
+        return f"/uploads/submissions/{subfolder}/{safe_name}"
+    
     # Handle image upload
     image_path = None
     if strain_image and strain_image.filename:
@@ -676,18 +696,20 @@ async def submit_strain(
         if file_ext not in allowed_ext:
             raise HTTPException(status_code=400, detail="Image must be JPG, PNG, or WebP")
         
-        os.makedirs("/app/uploads/submissions", exist_ok=True)
         safe_name = f"{uuid.uuid4()}{file_ext}"
         save_path = f"/app/uploads/submissions/{safe_name}"
         with open(save_path, "wb") as buffer:
             shutil.copyfileobj(strain_image.file, buffer)
-        image_path = f"/uploads/submissions/{safe_name}"
         
-        # Also copy to frontend public for serving
-        os.makedirs("/app/frontend/public/submissions", exist_ok=True)
         pub_path = f"/app/frontend/public/submissions/{safe_name}"
         shutil.copy2(save_path, pub_path)
         image_path = f"/submissions/{safe_name}"
+    
+    # Handle document uploads
+    pdf_exts = ['.pdf']
+    coa_path = save_upload(coa_file, "docs", pdf_exts)
+    hc_license_path = save_upload(health_canada_license, "docs", pdf_exts)
+    cra_license_path = save_upload(cra_license, "docs", pdf_exts)
     
     sub_id = str(uuid.uuid4())
     doc = {
