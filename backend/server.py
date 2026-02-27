@@ -1736,6 +1736,69 @@ async def update_strain_image(
     
     return {"message": "Image updated", "image_url": new_image_url}
 
+@api_router.put("/strains/{strain_id}/coa")
+async def upload_strain_coa(
+    strain_id: str,
+    coa: UploadFile = File(...),
+    token: str = Depends(verify_admin_token)
+):
+    """Upload redacted COA PDF for a strain (admin only)"""
+    import shutil
+    if not coa.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="COA must be a PDF file")
+    
+    strain = await db.strains.find_one({"id": strain_id}, {"_id": 0})
+    if not strain:
+        raise HTTPException(status_code=404, detail="Strain not found")
+    
+    os.makedirs("/app/uploads/coa", exist_ok=True)
+    safe_name = f"{strain_id}.pdf"
+    save_path = f"/app/uploads/coa/{safe_name}"
+    with open(save_path, "wb") as buffer:
+        shutil.copyfileobj(coa.file, buffer)
+    
+    coa_path = f"/uploads/coa/{safe_name}"
+    await db.strains.update_one(
+        {"id": strain_id},
+        {"$set": {"coa_url": coa_path}}
+    )
+    
+    return {"message": "COA uploaded", "coa_url": coa_path}
+
+@api_router.delete("/strains/{strain_id}/coa")
+async def remove_strain_coa(strain_id: str, token: str = Depends(verify_admin_token)):
+    """Remove COA from a strain (admin only)"""
+    strain = await db.strains.find_one({"id": strain_id}, {"_id": 0})
+    if not strain:
+        raise HTTPException(status_code=404, detail="Strain not found")
+    
+    # Delete the file if it exists
+    file_path = f"/app/uploads/coa/{strain_id}.pdf"
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    
+    await db.strains.update_one(
+        {"id": strain_id},
+        {"$set": {"coa_url": None}}
+    )
+    return {"message": "COA removed"}
+
+@api_router.get("/strains/{strain_id}/coa")
+async def view_strain_coa(strain_id: str, user_data: dict = Depends(verify_user_token)):
+    """View COA PDF for a strain (authenticated users)"""
+    from fastapi.responses import FileResponse
+    strain = await db.strains.find_one({"id": strain_id}, {"_id": 0})
+    if not strain:
+        raise HTTPException(status_code=404, detail="Strain not found")
+    if not strain.get("coa_url"):
+        raise HTTPException(status_code=404, detail="No COA available for this strain")
+    
+    file_path = f"/app/uploads/coa/{strain_id}.pdf"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="COA file not found")
+    
+    return FileResponse(file_path, media_type="application/pdf", headers={"Content-Disposition": "inline"})
+
 @api_router.delete("/strains/{strain_id}")
 async def delete_strain(strain_id: str, token: str = Depends(verify_admin_token)):
     """Delete a strain (admin only)"""
