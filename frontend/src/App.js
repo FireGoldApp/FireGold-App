@@ -1643,7 +1643,7 @@ const CatalogPage = () => {
               type="text"
               placeholder="Search strains..."
               value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              onChange={(e) => handleSearch(e.target.value)}
               className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-10 pl-10 pr-4 transition-colors outline-none text-sm"
             />
           </div>
