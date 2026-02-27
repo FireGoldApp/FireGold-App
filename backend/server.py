@@ -908,6 +908,15 @@ async def reseed_database():
     
     return {"message": f"Reseeded {len(SEED_STRAINS)} strains with updated images"}
 
+@api_router.get("/strains/admin", response_model=List[Strain])
+async def get_strains_admin(token: str = Depends(verify_admin_token)):
+    """Get all strains for admin (no user auth required)"""
+    strains = await db.strains.find({}, {"_id": 0}).to_list(1000)
+    for strain in strains:
+        if isinstance(strain.get('created_at'), str):
+            strain['created_at'] = datetime.fromisoformat(strain['created_at'].replace('Z', '+00:00'))
+    return strains
+
 @api_router.get("/strains", response_model=List[Strain])
 async def get_strains(
     type_filter: Optional[str] = Query(None, description="Filter by strain type"),
