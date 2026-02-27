@@ -966,6 +966,140 @@ async def get_user_analytics(user_id: str, token: str = Depends(verify_admin_tok
         "recent_activity": events[:50]
     }
 
+# CSV Export Endpoints
+@api_router.get("/analytics/export/csv")
+async def export_analytics_csv(
+    days: int = Query(30, description="Number of days to export"),
+    token: str = Depends(verify_admin_token)
+):
+    """Export analytics data to CSV (admin only)"""
+    from_date = datetime.now(timezone.utc) - timedelta(days=days)
+    from_date_str = from_date.isoformat()
+    
+    events = await db.analytics.find(
+        {"timestamp": {"$gte": from_date_str}},
+        {"_id": 0}
+    ).sort("timestamp", -1).to_list(10000)
+    
+    # Create CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow([
+        'Timestamp', 'User ID', 'User Email', 'Company', 'Event Type',
+        'Strain Name', 'Strain Type', 'THC %', 'Price Tier', 
+        'Search Query', 'Page', 'Session Duration (s)'
+    ])
+    
+    # Data rows
+    for event in events:
+        writer.writerow([
+            event.get('timestamp', ''),
+            event.get('user_id', ''),
+            event.get('user_email', ''),
+            event.get('user_company', ''),
+            event.get('event_type', ''),
+            event.get('strain_name', ''),
+            event.get('strain_type', ''),
+            event.get('thc_percentage', ''),
+            event.get('price_tier', ''),
+            event.get('search_query', ''),
+            event.get('page', ''),
+            event.get('session_duration', '')
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode()),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=firegold_analytics_{days}days.csv"}
+    )
+
+@api_router.get("/users/export/csv")
+async def export_users_csv(token: str = Depends(verify_admin_token)):
+    """Export registered users to CSV (admin only)"""
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(10000)
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow([
+        'User ID', 'First Name', 'Last Name', 'Company', 'Country',
+        'Email', 'Phone', 'Status', 'Has Flags', 'Registered At'
+    ])
+    
+    # Data rows
+    for user in users:
+        writer.writerow([
+            user.get('id', ''),
+            user.get('first_name', ''),
+            user.get('last_name', ''),
+            user.get('company', ''),
+            user.get('country', ''),
+            user.get('email', ''),
+            user.get('phone', ''),
+            user.get('status', 'active'),
+            user.get('has_flags', False),
+            user.get('created_at', '')
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode()),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=firegold_users.csv"}
+    )
+
+@api_router.get("/analytics/flags")
+async def get_registration_flags(token: str = Depends(verify_admin_token)):
+    """Get all registration flags (admin only)"""
+    flags = await db.registration_flags.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return flags
+
+@api_router.get("/analytics/sessions")
+async def get_user_sessions(
+    days: int = Query(7, description="Number of days"),
+    token: str = Depends(verify_admin_token)
+):
+    """Get user session data (admin only)"""
+    from_date = datetime.now(timezone.utc) - timedelta(days=days)
+    from_date_str = from_date.isoformat()
+    
+    sessions = await db.user_sessions.find(
+        {"session_start": {"$gte": from_date_str}},
+        {"_id": 0}
+    ).sort("session_start", -1).to_list(500)
+    
+    return sessions
+
+# Session tracking endpoint
+@api_router.post("/analytics/session/update")
+async def update_session(
+    session_id: str,
+    duration: int = Query(0, description="Session duration in seconds"),
+    pages: List[str] = Query(default=[]),
+    strains: List[str] = Query(default=[]),
+    user_data: dict = Depends(verify_user_token)
+):
+    """Update user session data"""
+    await db.user_sessions.update_one(
+        {"id": session_id, "user_id": user_data.get('user_id')},
+        {
+            "$set": {
+                "total_duration": duration,
+                "session_end": datetime.now(timezone.utc).isoformat()
+            },
+            "$addToSet": {
+                "pages_visited": {"$each": pages},
+                "strains_viewed": {"$each": strains}
+            },
+            "$inc": {"actions_count": 1}
+        }
+    )
+    return {"updated": True}
+
 from datetime import timedelta
 
 @api_router.post("/seed")
