@@ -135,6 +135,13 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
           <span className="text-gold-500 font-mono text-sm">{strain.price_tier}</span>
         </div>
         
+        {/* COA Badge */}
+        {strain.coa_url && (
+          <div className="absolute top-14 right-4 bg-cannabis-green/90 backdrop-blur-sm px-2 py-0.5 border border-cannabis-green">
+            <span className="text-white font-mono text-xs font-bold">COA</span>
+          </div>
+        )}
+        
         {/* Selection checkbox */}
         <div 
           className="absolute top-4 left-4"
