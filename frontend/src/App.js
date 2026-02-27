@@ -970,8 +970,11 @@ const GrowerSubmitPage = () => {
             <p className="text-gold-500 text-xs uppercase tracking-widest mb-1">Status</p>
             <p className="text-gold-500 font-bold">Pending Admin Authorization</p>
           </div>
-          <a href="/" className="block w-full bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all text-center">
+          <a href="/" className="block w-full bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all text-center mb-3">
             Back to Catalog
+          </a>
+          <a href="/track" className="block w-full border-2 border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-black font-bold uppercase tracking-widest px-8 py-3 transition-all text-center">
+            Track Submission Status
           </a>
         </div>
       </div>
