@@ -964,13 +964,10 @@ const CatalogPage = () => {
       {/* Footer */}
       <footer className="border-t border-white/5 py-12 px-6 md:px-12">
         <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3">
-            <Flame className="w-6 h-6 text-gold-500" />
-            <span className="font-cinzel text-lg text-gold-grad">FIREGOLD</span>
-          </div>
+          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-12 w-auto" />
           <div className="text-center md:text-right">
             <p className="text-zinc-500 text-sm">The Firegold Standard</p>
-            <p className="text-zinc-600 text-xs mt-1">© 2026 Firegold. Premium B2B Cannabis Wholesale.</p>
+            <p className="text-zinc-600 text-xs mt-1">© 2026 Firegold Brands. Premium B2B Cannabis Wholesale.</p>
           </div>
         </div>
       </footer>
