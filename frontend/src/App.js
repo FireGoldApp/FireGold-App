@@ -1129,10 +1129,10 @@ const GrowerSubmitPage = () => {
             </div>
           </div>
 
-          {/* Availability */}
+          {/* Availability & Export */}
           <div>
             <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
-              <Package className="w-5 h-5" /> Availability
+              <Package className="w-5 h-5" /> Availability & Export
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -1151,6 +1151,18 @@ const GrowerSubmitPage = () => {
                 {lotError && <p className="text-red-500 text-xs mt-1">{lotError}</p>}
               </div>
               <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Country of Export *</label>
+                <input
+                  data-testid="grower-export-country-input"
+                  type="text"
+                  required
+                  value={formData.export_country}
+                  onChange={(e) => setFormData(prev => ({ ...prev, export_country: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="e.g., Canada, Germany, Australia"
+                />
+              </div>
+              <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Growing Method</label>
                 <select
                   data-testid="grower-method-select"
@@ -1162,6 +1174,74 @@ const GrowerSubmitPage = () => {
                   <option value="Outdoor">Outdoor</option>
                   <option value="Greenhouse">Greenhouse</option>
                 </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Irradiation */}
+          <div>
+            <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5" /> Irradiation & Microbials
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Has the flower been irradiated for micros? *</label>
+                <select
+                  data-testid="grower-irradiated-select"
+                  required
+                  value={formData.is_irradiated}
+                  onChange={(e) => setFormData(prev => ({ ...prev, is_irradiated: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                >
+                  <option value="">Select...</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Willing to irradiate if required? *</label>
+                <select
+                  data-testid="grower-willing-irradiate-select"
+                  required
+                  value={formData.willing_to_irradiate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, willing_to_irradiate: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                >
+                  <option value="">Select...</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Strain Image Upload */}
+          <div>
+            <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
+              <Image className="w-5 h-5" /> Strain Image
+            </h3>
+            <div className="relative">
+              <input
+                data-testid="grower-image-upload"
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp"
+                onChange={(e) => setStrainImage(e.target.files[0] || null)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              <div className={`w-full border-2 border-dashed ${strainImage ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-6 transition-colors text-center`}>
+                {strainImage ? (
+                  <div className="flex items-center justify-center gap-3 text-cannabis-green">
+                    <Check className="w-5 h-5" />
+                    <span className="font-medium">{strainImage.name}</span>
+                    <span className="text-zinc-500 text-sm">({(strainImage.size / 1024).toFixed(1)} KB)</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-zinc-500">
+                    <Upload className="w-8 h-8" />
+                    <span>Upload a photo of your flower (JPG, PNG, WebP)</span>
+                    <span className="text-xs text-zinc-600">Black background recommended</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
