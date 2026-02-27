@@ -61,7 +61,15 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - Shows green "Recognized" banner with badges: "HC License on file", "CRA License on file", "COA on file"
   - Works across multiple people from the same LP
   - Labels show "- on file" for individual upload fields
-- [x] **Submission Status Tracker** (Feb 27, 2026)
+- [x] **COA (Certificate of Analysis) Viewer** (Feb 27, 2026)
+  - Strain cards show green "COA" badge when a COA is available
+  - Strain detail modal has "View Certificate of Analysis" button
+  - In-app PDF viewer opens as full-screen overlay with close button (no download/navigation away)
+  - Admin uploads redacted COA PDFs per strain from the Images/Strain Management tab
+  - Grower-submitted COA is NOT auto-attached — admin redacts first, then uploads clean version
+  - Admin can remove COA from any strain
+  - User authentication required to view COAs
+  - Backend: 12/12 tests passed, Frontend: all flows verified
   - Public page at /track for growers to check submission status
   - Search by LP/Company Name or Reference ID
   - Shows "Licenses on File" section with green badges
