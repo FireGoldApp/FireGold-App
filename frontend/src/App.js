@@ -2695,7 +2695,27 @@ const AdminPage = () => {
                         <p className="text-zinc-600 text-xs uppercase tracking-widest">Method</p>
                         <p className="text-zinc-300 text-sm">{sub.growing_method || 'N/A'}</p>
                       </div>
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Export Country</p>
+                        <p className="text-zinc-300 text-sm">{sub.export_country || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Irradiated</p>
+                        <p className={`text-sm font-medium ${sub.is_irradiated === 'Yes' ? 'text-cannabis-green' : sub.is_irradiated === 'No' ? 'text-red-400' : 'text-zinc-500'}`}>{sub.is_irradiated || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Willing to Irradiate</p>
+                        <p className={`text-sm font-medium ${sub.willing_to_irradiate === 'Yes' ? 'text-cannabis-green' : sub.willing_to_irradiate === 'No' ? 'text-red-400' : 'text-zinc-500'}`}>{sub.willing_to_irradiate || 'N/A'}</p>
+                      </div>
                     </div>
+
+                    {/* Submitted Image */}
+                    {sub.image_path && (
+                      <div className="mb-4">
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2">Submitted Image</p>
+                        <img src={sub.image_path} alt={sub.strain_name} className="w-32 h-32 object-cover border border-white/10" />
+                      </div>
+                    )}
 
                     <div className="mb-4">
                       <p className="text-zinc-600 text-xs uppercase tracking-widest">Effects</p>
