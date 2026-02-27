@@ -711,8 +711,8 @@ async def get_sample_requests():
     return requests
 
 @api_router.get("/stats")
-async def get_stats():
-    """Get catalog statistics"""
+async def get_stats(token: str = Depends(verify_admin_token)):
+    """Get catalog statistics (admin only)"""
     strain_count = await db.strains.count_documents({})
     inquiry_count = await db.inquiries.count_documents({})
     sample_request_count = await db.sample_requests.count_documents({})
@@ -733,9 +733,10 @@ async def get_stats():
 @api_router.put("/strains/{strain_id}/image")
 async def update_strain_image(
     strain_id: str,
-    image: UploadFile = File(...)
+    image: UploadFile = File(...),
+    token: str = Depends(verify_admin_token)
 ):
-    """Update strain image (admin)"""
+    """Update strain image (admin only)"""
     # Validate file type
     allowed_types = ['.jpg', '.jpeg', '.png', '.webp']
     file_ext = os.path.splitext(image.filename)[1].lower()
