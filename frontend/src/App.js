@@ -1594,9 +1594,17 @@ const AdminPage = () => {
         {/* Images Tab */}
         {activeTab === 'images' && (
           <>
-            <div className="mb-8">
-              <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Strain Image Management</h2>
-              <p className="text-zinc-500 text-sm">Click on any image to upload a new one. Recommended: black background, square aspect ratio.</p>
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Strain Management</h2>
+                <p className="text-zinc-500 text-sm">Add new strains, update images, or remove discontinued products</p>
+              </div>
+              <button
+                onClick={() => setShowAddStrain(true)}
+                className="bg-cannabis-green hover:bg-green-600 text-white px-6 py-3 font-bold uppercase tracking-widest text-sm flex items-center gap-2 transition-colors"
+              >
+                <span className="text-xl">+</span> Add New Strain
+              </button>
             </div>
 
             {loading ? (
@@ -1641,12 +1649,17 @@ const AdminPage = () => {
                     <div className="p-3">
                       <div className="font-semibold text-white text-sm truncate">{strain.strain_name}</div>
                       <div className="text-zinc-500 text-xs truncate">{strain.type}</div>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-gold-500 font-mono text-xs">{strain.price_tier}</span>
+                        <span className="text-zinc-600 text-xs">{strain.thc_percentage}</span>
+                      </div>
                     </div>
 
+                    {/* Delete button - more visible */}
                     <button
-                      data-testid={`delete-strain-${strain.id}`}
-                      onClick={() => handleDeleteStrain(strain.id, strain.strain_name)}
-                      className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => confirmDeleteStrain(strain.id, strain.strain_name)}
+                      className="absolute top-2 right-2 w-8 h-8 bg-red-500/90 hover:bg-red-600 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                      title="Remove strain"
                     >
                       <Trash2 className="w-4 h-4 text-white" />
                     </button>
@@ -1655,6 +1668,200 @@ const AdminPage = () => {
               </div>
             )}
           </>
+        )}
+
+        {/* Add Strain Modal */}
+        {showAddStrain && (
+          <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-charcoal border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-8">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Add New Strain</h2>
+                    <p className="text-zinc-400 text-sm">Fill in all details for the new cultivar</p>
+                  </div>
+                  <button 
+                    onClick={() => setShowAddStrain(false)}
+                    className="w-10 h-10 flex items-center justify-center hover:bg-zinc-800 transition-all"
+                  >
+                    <X className="w-5 h-5 text-zinc-400" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleAddStrain} className="space-y-6">
+                  {/* Strain Name */}
+                  <div>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                      Strain Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newStrain.strain_name}
+                      onChange={(e) => setNewStrain(prev => ({ ...prev, strain_name: e.target.value }))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                      placeholder="e.g., Blue Dream"
+                    />
+                  </div>
+
+                  {/* Type and THC */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                        Type *
+                      </label>
+                      <select
+                        value={newStrain.type}
+                        onChange={(e) => setNewStrain(prev => ({ ...prev, type: e.target.value }))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 transition-colors outline-none"
+                      >
+                        <option value="Balanced Hybrid">Balanced Hybrid</option>
+                        <option value="Hybrid, Indica Leaning">Hybrid, Indica Leaning</option>
+                        <option value="Hybrid, Sativa Leaning">Hybrid, Sativa Leaning</option>
+                        <option value="Indica Dominant">Indica Dominant</option>
+                        <option value="Sativa Dominant">Sativa Dominant</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                        THC % *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newStrain.thc_percentage}
+                        onChange={(e) => setNewStrain(prev => ({ ...prev, thc_percentage: e.target.value }))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                        placeholder="e.g., 28.5%"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Price Tier and Lot Size */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                        Price Tier *
+                      </label>
+                      <select
+                        value={newStrain.price_tier}
+                        onChange={(e) => setNewStrain(prev => ({ ...prev, price_tier: e.target.value }))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 transition-colors outline-none"
+                      >
+                        <option value="$">$ - Value</option>
+                        <option value="$$">$$ - Standard</option>
+                        <option value="$$$">$$$ - Premium</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                        Lot Size / Availability *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newStrain.lot_size}
+                        onChange={(e) => setNewStrain(prev => ({ ...prev, lot_size: e.target.value }))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                        placeholder="e.g., 35 kg or In Harvest"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Lineage */}
+                  <div>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                      Lineage *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newStrain.lineage}
+                      onChange={(e) => setNewStrain(prev => ({ ...prev, lineage: e.target.value }))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                      placeholder="e.g., Blueberry x Haze"
+                    />
+                  </div>
+
+                  {/* Terpenes */}
+                  <div>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                      Terpene Profile (comma separated) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newStrain.terpene_profile}
+                      onChange={(e) => setNewStrain(prev => ({ ...prev, terpene_profile: e.target.value }))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                      placeholder="e.g., Limonene, Caryophyllene, Myrcene"
+                    />
+                  </div>
+
+                  {/* Effects */}
+                  <div>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                      Effects *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newStrain.effects}
+                      onChange={(e) => setNewStrain(prev => ({ ...prev, effects: e.target.value }))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                      placeholder="e.g., Mood Elevation, Relaxation, Creativity"
+                    />
+                  </div>
+
+                  {/* Image Upload */}
+                  <div>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                      Strain Image * (Black background recommended)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp"
+                        onChange={(e) => setNewStrainImage(e.target.files[0])}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      <div className={`w-full border-2 border-dashed ${newStrainImage ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-6 transition-colors text-center`}>
+                        {newStrainImage ? (
+                          <div className="flex items-center justify-center gap-3 text-cannabis-green">
+                            <Check className="w-5 h-5" />
+                            <span className="font-medium">{newStrainImage.name}</span>
+                            <span className="text-zinc-500 text-sm">({(newStrainImage.size / 1024).toFixed(1)} KB)</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-2 text-zinc-500">
+                            <Upload className="w-8 h-8" />
+                            <span>Click to upload image (JPG, PNG, WebP)</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddStrain(false)}
+                      className="flex-1 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 font-bold uppercase tracking-widest px-8 py-4 transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={addingStrain}
+                      className="flex-1 bg-cannabis-green hover:bg-green-600 disabled:bg-zinc-700 text-white font-bold uppercase tracking-widest px-8 py-4 transition-all"
+                    >
+                      {addingStrain ? 'Adding...' : 'Add Strain'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Analytics Tab */}
