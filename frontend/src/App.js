@@ -1311,6 +1311,14 @@ const AuthPage = ({ onAuth }) => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (registerData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (registerData.password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
     setLoading(true);
     setError('');
 
@@ -1320,8 +1328,8 @@ const AuthPage = ({ onAuth }) => {
       localStorage.setItem('userData', JSON.stringify(response.data.user));
       localStorage.setItem('sessionId', response.data.session_id);
       initSession(response.data.session_id);
-      setTempPassword(response.data.temp_password);
-      toast.success('Registration successful! Save your password shown below.');
+      onAuth(response.data.token, response.data.user);
+      toast.success('Registration successful! Welcome to Firegold.');
     } catch (err) {
       setError(err.response?.data?.detail || 'Registration failed');
     } finally {
