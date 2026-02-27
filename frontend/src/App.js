@@ -727,6 +727,12 @@ const CatalogPage = () => {
     );
   };
 
+  const handleRequestSample = (strain) => {
+    setViewingStrain(null); // Close detail modal
+    setSampleStrain(strain);
+    setShowSampleModal(true);
+  };
+
   return (
     <div data-testid="catalog-page" className="min-h-screen bg-obsidian">
       {/* Header */}
