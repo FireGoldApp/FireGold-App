@@ -876,8 +876,32 @@ const GrowerSubmitPage = () => {
     setSubmitting(true);
 
     try {
-      const payload = { ...formData, lot_size_kg: lotKg };
-      const response = await axios.post(`${API}/grower/submit`, payload);
+      const submitData = new FormData();
+      submitData.append('grower_name', formData.grower_name);
+      submitData.append('company_name', formData.company_name);
+      submitData.append('email', formData.email);
+      submitData.append('phone', formData.phone);
+      submitData.append('license_number', formData.license_number || '');
+      submitData.append('strain_name', formData.strain_name);
+      submitData.append('strain_type', formData.strain_type);
+      submitData.append('thc_percentage', formData.thc_percentage);
+      submitData.append('cbd_percentage', formData.cbd_percentage || '');
+      submitData.append('terpene_profile', formData.terpene_profile);
+      submitData.append('lineage', formData.lineage);
+      submitData.append('lot_size_kg', lotKg);
+      submitData.append('effects', formData.effects);
+      submitData.append('growing_method', formData.growing_method || '');
+      submitData.append('export_country', formData.export_country || '');
+      submitData.append('is_irradiated', formData.is_irradiated || '');
+      submitData.append('willing_to_irradiate', formData.willing_to_irradiate || '');
+      submitData.append('additional_notes', formData.additional_notes || '');
+      if (strainImage) {
+        submitData.append('strain_image', strainImage);
+      }
+
+      const response = await axios.post(`${API}/grower/submit`, submitData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setSubmissionId(response.data.submission_id);
       setSubmitted(true);
       toast.success('Strain submitted for review!');
