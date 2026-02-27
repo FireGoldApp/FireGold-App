@@ -1174,6 +1174,9 @@ const AdminPage = () => {
   const [uploadingId, setUploadingId] = useState(null);
   const [stats, setStats] = useState(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [analytics, setAnalytics] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users'
 
   useEffect(() => {
     // Check for existing token
