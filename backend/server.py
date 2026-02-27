@@ -616,11 +616,51 @@ async def verify_admin(token: str = Depends(verify_admin_token)):
 # User authentication endpoints
 @api_router.post("/auth/register")
 async def register_user(user_data: UserRegister):
-    """Register a new user"""
+    """Register a new user with duplicate detection"""
     # Check if email already exists
     existing = await db.users.find_one({"email": user_data.email.lower()})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered. Please login.")
+    
+    # Check for duplicates and flag them
+    flags = []
+    
+    # Check duplicate company name
+    same_company = await db.users.find(
+        {"company": {"$regex": f"^{user_data.company}$", "$options": "i"}},
+        {"_id": 0, "id": 1, "company": 1, "email": 1}
+    ).to_list(100)
+    if same_company:
+        flags.append({
+            "type": "duplicate_company",
+            "reason": f"Company '{user_data.company}' already registered",
+            "matched_users": [u['id'] for u in same_company]
+        })
+    
+    # Check duplicate phone
+    same_phone = await db.users.find(
+        {"phone": user_data.phone},
+        {"_id": 0, "id": 1, "phone": 1, "email": 1}
+    ).to_list(100)
+    if same_phone:
+        flags.append({
+            "type": "duplicate_phone", 
+            "reason": f"Phone '{user_data.phone}' already registered",
+            "matched_users": [u['id'] for u in same_phone]
+        })
+    
+    # Check same email domain (potential multiple registrations from same company)
+    email_domain = user_data.email.split('@')[1].lower()
+    same_domain = await db.users.find(
+        {"email": {"$regex": f"@{email_domain}$", "$options": "i"}},
+        {"_id": 0, "id": 1, "email": 1, "company": 1}
+    ).to_list(100)
+    if same_domain:
+        flags.append({
+            "type": "same_email_domain",
+            "reason": f"Email domain '@{email_domain}' has {len(same_domain)} other registration(s)",
+            "matched_users": [u['id'] for u in same_domain]
+        })
     
     # Generate a random password and hash it
     temp_password = secrets.token_urlsafe(8)
@@ -639,7 +679,20 @@ async def register_user(user_data: UserRegister):
     
     doc = user.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
+    doc['has_flags'] = len(flags) > 0
     await db.users.insert_one(doc)
+    
+    # Store flags if any
+    for flag in flags:
+        flag_doc = RegistrationFlag(
+            user_id=user.id,
+            flag_type=flag['type'],
+            flag_reason=flag['reason'],
+            matched_user_ids=flag['matched_users']
+        )
+        flag_dict = flag_doc.model_dump()
+        flag_dict['created_at'] = flag_dict['created_at'].isoformat()
+        await db.registration_flags.insert_one(flag_dict)
     
     # Generate session token
     token = secrets.token_urlsafe(32)
@@ -653,9 +706,19 @@ async def register_user(user_data: UserRegister):
         'expires_at': expires_at
     }
     
+    # Create session tracking
+    session = UserSession(
+        user_id=user.id,
+        user_email=user.email
+    )
+    session_doc = session.model_dump()
+    session_doc['session_start'] = session_doc['session_start'].isoformat()
+    await db.user_sessions.insert_one(session_doc)
+    
     return {
         "message": "Registration successful",
         "token": token,
+        "session_id": session.id,
         "user": {
             "id": user.id,
             "first_name": user.first_name,
@@ -663,7 +726,8 @@ async def register_user(user_data: UserRegister):
             "company": user.company,
             "email": user.email
         },
-        "temp_password": temp_password  # Send this to user for future logins
+        "temp_password": temp_password,  # Send this to user for future logins
+        "flags_detected": len(flags)  # Let admin know if flags were raised
     }
 
 @api_router.post("/auth/login")
