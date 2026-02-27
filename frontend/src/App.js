@@ -1485,6 +1485,19 @@ const AdminPage = () => {
           >
             <User className="w-4 h-4 inline mr-2" />Users
           </button>
+          <button
+            onClick={() => setActiveTab('flags')}
+            className={`px-6 py-2 font-bold uppercase tracking-widest text-sm transition-all relative ${
+              activeTab === 'flags' ? 'bg-gold-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 inline mr-2" />Flags
+            {flags.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                {flags.length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Images Tab */}
