@@ -53,16 +53,28 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - Users now set their own password during registration (min 6 chars + confirm)
   - No more generated temp passwords — users go directly to catalog after registration
   - Login works with the user-chosen password
+- [x] **P1 Add Strain Admin Form** (Feb 27, 2026)
+  - Admin can add new strains via modal form with all fields + image upload
+  - Duplicate strain name validation
+- [x] **Smart License Recognition** (Feb 27, 2026)
+  - Auto-checks LP/company name against DB when grower fills submission form
+  - Shows green "Recognized" banner with badges: "HC License on file", "CRA License on file", "COA on file"
+  - Works across multiple people from the same LP
+  - Labels show "- on file" for individual upload fields
+- [x] **Submission Status Tracker** (Feb 27, 2026)
+  - Public page at /track for growers to check submission status
+  - Search by LP/Company Name or Reference ID
+  - Shows "Licenses on File" section with green badges
+  - Displays all submissions with status badges (Pending/Approved/Rejected)
+  - Linked from grower submission confirmation page
 
 ### Routes
 - `/` — Catalog (requires user auth)
 - `/admin` — Admin panel (requires admin password)
 - `/submit-strain` — Public grower submission form
+- `/track` — Public submission status tracker
 
 ## Prioritized Backlog
-
-### P1 — Add Strain Form (UI Wiring)
-Backend endpoint and basic UI exist. Form submission logic and state management need full implementation and testing.
 
 ### P2 — Email-Based Password Delivery
 Requires user to provide Resend API key. User has deferred. Password is now user-chosen, so email delivery is less critical but could be used for welcome emails or verification.
