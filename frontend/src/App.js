@@ -1998,6 +1998,20 @@ const AdminPage = () => {
               </span>
             )}
           </button>
+          <button
+            onClick={() => { setActiveTab('submissions'); fetchSubmissions(adminToken); }}
+            data-testid="admin-tab-submissions"
+            className={`px-6 py-2 font-bold uppercase tracking-widest text-sm transition-all relative ${
+              activeTab === 'submissions' ? 'bg-gold-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <ClipboardList className="w-4 h-4 inline mr-2" />Submissions
+            {pendingCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-cannabis-green text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                {pendingCount}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Images Tab */}
