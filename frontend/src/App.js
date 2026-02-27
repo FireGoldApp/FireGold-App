@@ -293,34 +293,63 @@ const SampleRequestModal = ({ isOpen, onClose, strain }) => {
     contact_name: '',
     email: '',
     phone: '',
-    health_canada_license: '',
-    cra_license: '',
     shipping_address: '',
     message: ''
   });
+  const [healthCanadaFile, setHealthCanadaFile] = useState(null);
+  const [craFile, setCraFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleFileChange = (e, setFile) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast.error('Please upload a PDF file');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast.error('File size must be less than 10MB');
+        return;
+      }
+      setFile(file);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.health_canada_license || !formData.cra_license) {
-      toast.error('Health Canada License and CRA License are required for sample requests');
+    if (!healthCanadaFile || !craFile) {
+      toast.error('Please upload both Health Canada License and CRA License PDFs');
       return;
     }
     
     setIsSubmitting(true);
 
     try {
-      await axios.post(`${API}/sample-requests`, {
-        ...formData,
-        strain_id: strain.id
+      // Create FormData for file upload
+      const submitData = new FormData();
+      submitData.append('company_name', formData.company_name);
+      submitData.append('contact_name', formData.contact_name);
+      submitData.append('email', formData.email);
+      submitData.append('phone', formData.phone || '');
+      submitData.append('strain_id', strain.id);
+      submitData.append('shipping_address', formData.shipping_address);
+      submitData.append('message', formData.message || '');
+      submitData.append('health_canada_license', healthCanadaFile);
+      submitData.append('cra_license', craFile);
+
+      await axios.post(`${API}/sample-requests/upload`, submitData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
+      
       toast.success('Sample request submitted! We will verify your licenses and contact you.');
       onClose();
       setFormData({ 
         company_name: '', contact_name: '', email: '', phone: '',
-        health_canada_license: '', cra_license: '', shipping_address: '', message: '' 
+        shipping_address: '', message: '' 
       });
+      setHealthCanadaFile(null);
+      setCraFile(null);
     } catch (error) {
       toast.error('Failed to submit sample request. Please try again.');
     } finally {
@@ -365,7 +394,7 @@ const SampleRequestModal = ({ isOpen, onClose, strain }) => {
               <div>
                 <h4 className="text-gold-500 font-semibold text-sm mb-1">License Verification Required</h4>
                 <p className="text-zinc-400 text-xs">
-                  Sample requests require valid Health Canada and CRA licenses. Your licenses will be verified before samples are shipped.
+                  Sample requests require valid Health Canada and CRA license documents (PDF). Your licenses will be verified before samples are shipped.
                 </p>
               </div>
             </div>
@@ -433,40 +462,75 @@ const SampleRequestModal = ({ isOpen, onClose, strain }) => {
               </div>
             </div>
 
-            {/* License Information */}
+            {/* License Upload Section */}
             <div className="border-t border-white/5 pt-6">
               <h3 className="font-manrope text-sm uppercase tracking-widest text-gold-500 mb-4 flex items-center gap-2">
-                <FileCheck className="w-4 h-4" /> License Information
+                <FileCheck className="w-4 h-4" /> License Documents (PDF)
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Health Canada License Upload */}
                 <div>
                   <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
-                    Health Canada License # *
+                    Health Canada License *
                   </label>
-                  <input
-                    data-testid="sample-hc-license-input"
-                    type="text"
-                    required
-                    value={formData.health_canada_license}
-                    onChange={(e) => setFormData(prev => ({ ...prev, health_canada_license: e.target.value }))}
-                    className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none font-mono"
-                    placeholder="LIC-XXXXX-XXXXX"
-                  />
+                  <div className="relative">
+                    <input
+                      data-testid="sample-hc-license-upload"
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => handleFileChange(e, setHealthCanadaFile)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className={`w-full border-2 border-dashed ${healthCanadaFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors`}>
+                      {healthCanadaFile ? (
+                        <div className="flex items-center gap-3 text-cannabis-green">
+                          <Check className="w-5 h-5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{healthCanadaFile.name}</p>
+                            <p className="text-xs text-zinc-500">{(healthCanadaFile.size / 1024).toFixed(1)} KB</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 text-zinc-500">
+                          <Upload className="w-6 h-6" />
+                          <span className="text-xs">Click to upload PDF</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <p className="text-zinc-600 text-xs mt-1">Cannabis license issued by Health Canada</p>
                 </div>
+
+                {/* CRA License Upload */}
                 <div>
                   <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
-                    CRA License # *
+                    CRA Excise License *
                   </label>
-                  <input
-                    data-testid="sample-cra-license-input"
-                    type="text"
-                    required
-                    value={formData.cra_license}
-                    onChange={(e) => setFormData(prev => ({ ...prev, cra_license: e.target.value }))}
-                    className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none font-mono"
-                    placeholder="CRA-XXXXX-XXXXX"
-                  />
+                  <div className="relative">
+                    <input
+                      data-testid="sample-cra-license-upload"
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => handleFileChange(e, setCraFile)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className={`w-full border-2 border-dashed ${craFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors`}>
+                      {craFile ? (
+                        <div className="flex items-center gap-3 text-cannabis-green">
+                          <Check className="w-5 h-5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{craFile.name}</p>
+                            <p className="text-xs text-zinc-500">{(craFile.size / 1024).toFixed(1)} KB</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 text-zinc-500">
+                          <Upload className="w-6 h-6" />
+                          <span className="text-xs">Click to upload PDF</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <p className="text-zinc-600 text-xs mt-1">Cannabis excise license from CRA</p>
                 </div>
               </div>
@@ -504,15 +568,15 @@ const SampleRequestModal = ({ isOpen, onClose, strain }) => {
             <button
               data-testid="submit-sample-request-btn"
               type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-zinc-700 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-2"
+              disabled={isSubmitting || !healthCanadaFile || !craFile}
+              className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-zinc-700 disabled:cursor-not-allowed text-black font-bold uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-2"
             >
               <Package className="w-4 h-4" />
               {isSubmitting ? 'Submitting...' : 'Submit Sample Request'}
             </button>
 
             <p className="text-zinc-600 text-xs text-center">
-              By submitting, you confirm that the license information provided is accurate and valid.
+              By submitting, you confirm that the license documents provided are accurate and valid.
             </p>
           </form>
         </div>
