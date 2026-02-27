@@ -631,30 +631,96 @@ async def health_check():
 
 # Grower Submission Endpoints (Public - no auth required)
 @api_router.post("/grower/submit")
-async def submit_strain(submission: GrowerSubmissionInput):
+async def submit_strain(
+    grower_name: str = Form(...),
+    company_name: str = Form(...),
+    email: str = Form(...),
+    phone: str = Form(...),
+    license_number: str = Form(""),
+    strain_name: str = Form(...),
+    strain_type: str = Form(...),
+    thc_percentage: str = Form(...),
+    cbd_percentage: str = Form(""),
+    terpene_profile: str = Form(...),
+    lineage: str = Form(...),
+    lot_size_kg: float = Form(...),
+    effects: str = Form(...),
+    growing_method: str = Form(""),
+    export_country: str = Form(""),
+    is_irradiated: str = Form(""),
+    willing_to_irradiate: str = Form(""),
+    additional_notes: str = Form(""),
+    strain_image: Optional[UploadFile] = File(None)
+):
     """Public endpoint for growers to submit their strains for consideration"""
+    import shutil
     # Enforce minimum lot size of 30 kg
-    if submission.lot_size_kg < 30:
+    if lot_size_kg < 30:
         raise HTTPException(status_code=400, detail="Minimum lot size is 30 kilograms.")
     
     # Check if same strain from same company already submitted
     existing = await db.grower_submissions.find_one({
-        "company_name": {"$regex": f"^{submission.company_name}$", "$options": "i"},
-        "strain_name": {"$regex": f"^{submission.strain_name}$", "$options": "i"},
+        "company_name": {"$regex": f"^{company_name}$", "$options": "i"},
+        "strain_name": {"$regex": f"^{strain_name}$", "$options": "i"},
         "status": "pending"
     })
     if existing:
         raise HTTPException(status_code=400, detail="This strain has already been submitted and is pending review.")
     
-    grower_sub = GrowerSubmission(**submission.model_dump())
-    doc = grower_sub.model_dump()
-    doc['created_at'] = doc['created_at'].isoformat()
+    # Handle image upload
+    image_path = None
+    if strain_image and strain_image.filename:
+        allowed_ext = ['.jpg', '.jpeg', '.png', '.webp']
+        file_ext = os.path.splitext(strain_image.filename)[1].lower()
+        if file_ext not in allowed_ext:
+            raise HTTPException(status_code=400, detail="Image must be JPG, PNG, or WebP")
+        
+        os.makedirs("/app/uploads/submissions", exist_ok=True)
+        safe_name = f"{uuid.uuid4()}{file_ext}"
+        save_path = f"/app/uploads/submissions/{safe_name}"
+        with open(save_path, "wb") as buffer:
+            shutil.copyfileobj(strain_image.file, buffer)
+        image_path = f"/uploads/submissions/{safe_name}"
+        
+        # Also copy to frontend public for serving
+        os.makedirs("/app/frontend/public/submissions", exist_ok=True)
+        pub_path = f"/app/frontend/public/submissions/{safe_name}"
+        shutil.copy2(save_path, pub_path)
+        image_path = f"/submissions/{safe_name}"
+    
+    sub_id = str(uuid.uuid4())
+    doc = {
+        "id": sub_id,
+        "grower_name": grower_name,
+        "company_name": company_name,
+        "email": email,
+        "phone": phone,
+        "license_number": license_number or None,
+        "strain_name": strain_name,
+        "strain_type": strain_type,
+        "thc_percentage": thc_percentage,
+        "cbd_percentage": cbd_percentage or None,
+        "terpene_profile": terpene_profile,
+        "lineage": lineage,
+        "lot_size_kg": lot_size_kg,
+        "effects": effects,
+        "growing_method": growing_method or None,
+        "export_country": export_country or None,
+        "is_irradiated": is_irradiated or None,
+        "willing_to_irradiate": willing_to_irradiate or None,
+        "image_path": image_path,
+        "additional_notes": additional_notes or None,
+        "status": "pending",
+        "admin_notes": None,
+        "admin_price_per_gram": None,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
     await db.grower_submissions.insert_one(doc)
     
     return {
         "message": "Submission received! We will review your strain and contact you.",
-        "submission_id": grower_sub.id,
-        "strain_name": grower_sub.strain_name
+        "submission_id": sub_id,
+        "strain_name": strain_name
     }
 
 @api_router.get("/grower/submissions")
