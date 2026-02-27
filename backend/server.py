@@ -623,6 +623,64 @@ async def root():
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
+# Grower Submission Endpoints (Public - no auth required)
+@api_router.post("/grower/submit")
+async def submit_strain(submission: GrowerSubmissionInput):
+    """Public endpoint for growers to submit their strains for consideration"""
+    # Check if same strain from same company already submitted
+    existing = await db.grower_submissions.find_one({
+        "company_name": {"$regex": f"^{submission.company_name}$", "$options": "i"},
+        "strain_name": {"$regex": f"^{submission.strain_name}$", "$options": "i"},
+        "status": "pending"
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="This strain has already been submitted and is pending review.")
+    
+    grower_sub = GrowerSubmission(**submission.model_dump())
+    doc = grower_sub.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.grower_submissions.insert_one(doc)
+    
+    return {
+        "message": "Submission received! We will review your strain and contact you.",
+        "submission_id": grower_sub.id,
+        "strain_name": grower_sub.strain_name
+    }
+
+@api_router.get("/grower/submissions")
+async def get_grower_submissions(
+    status: Optional[str] = Query(None, description="Filter by status"),
+    token: str = Depends(verify_admin_token)
+):
+    """Get all grower submissions (admin only)"""
+    query = {}
+    if status:
+        query["status"] = status
+    
+    submissions = await db.grower_submissions.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return submissions
+
+@api_router.put("/grower/submissions/{submission_id}/status")
+async def update_submission_status(
+    submission_id: str,
+    status: str = Query(..., description="New status: approved, rejected"),
+    admin_notes: Optional[str] = Query(None),
+    token: str = Depends(verify_admin_token)
+):
+    """Update grower submission status (admin only)"""
+    if status not in ["approved", "rejected", "pending"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    result = await db.grower_submissions.update_one(
+        {"id": submission_id},
+        {"$set": {"status": status, "admin_notes": admin_notes}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    
+    return {"message": f"Submission {status}", "submission_id": submission_id}
+
 # Admin authentication endpoints
 @api_router.post("/admin/login")
 async def admin_login(login: AdminLogin):
