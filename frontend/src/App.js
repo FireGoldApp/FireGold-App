@@ -1355,42 +1355,6 @@ const AuthPage = ({ onAuth }) => {
     }
   };
 
-  const proceedAfterRegister = () => {
-    const token = localStorage.getItem('userToken');
-    const user = JSON.parse(localStorage.getItem('userData'));
-    onAuth(token, user);
-  };
-
-  // Show password after successful registration
-  if (tempPassword) {
-    return (
-      <div className="min-h-screen bg-obsidian flex items-center justify-center p-6">
-        <div className="bg-charcoal border border-white/10 p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-cannabis-green/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check className="w-8 h-8 text-cannabis-green" />
-          </div>
-          <h2 className="font-cinzel font-bold text-2xl text-white mb-4">Registration Complete!</h2>
-          <p className="text-zinc-400 mb-6">Save your password for future logins:</p>
-          
-          <div className="bg-zinc-900 border border-gold-500/50 p-4 mb-6">
-            <p className="text-gold-500 font-mono text-xl tracking-wider">{tempPassword}</p>
-          </div>
-          
-          <p className="text-zinc-500 text-sm mb-6">
-            Write this down! You'll need it to login next time.
-          </p>
-          
-          <button
-            onClick={proceedAfterRegister}
-            className="w-full bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all"
-          >
-            Continue to Catalog
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-obsidian flex items-center justify-center p-6">
       <div className="bg-charcoal border border-white/10 p-8 max-w-lg w-full">
