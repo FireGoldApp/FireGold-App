@@ -901,6 +901,15 @@ const GrowerSubmitPage = () => {
       if (strainImage) {
         submitData.append('strain_image', strainImage);
       }
+      if (coaFile) {
+        submitData.append('coa_file', coaFile);
+      }
+      if (hcLicenseFile) {
+        submitData.append('health_canada_license', hcLicenseFile);
+      }
+      if (craLicenseFile) {
+        submitData.append('cra_license', craLicenseFile);
+      }
 
       const response = await axios.post(`${API}/grower/submit`, submitData, {
         headers: { 'Content-Type': 'multipart/form-data' }
