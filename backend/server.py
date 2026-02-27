@@ -459,6 +459,21 @@ async def seed_database():
     
     return {"message": f"Seeded {len(SEED_STRAINS)} strains"}
 
+@api_router.post("/reseed")
+async def reseed_database():
+    """Clear and reseed the database with updated strain data"""
+    # Delete all existing strains
+    await db.strains.delete_many({})
+    
+    # Re-seed with new data
+    for strain_data in SEED_STRAINS:
+        strain = Strain(**strain_data)
+        doc = strain.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        await db.strains.insert_one(doc)
+    
+    return {"message": f"Reseeded {len(SEED_STRAINS)} strains with updated images"}
+
 @api_router.get("/strains", response_model=List[Strain])
 async def get_strains(
     type_filter: Optional[str] = Query(None, description="Filter by strain type"),
