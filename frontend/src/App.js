@@ -770,6 +770,311 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains }) => {
   );
 };
 
+// Auth Page Component (Register/Login)
+const AuthPage = ({ onAuth }) => {
+  const [mode, setMode] = useState('register'); // 'register' or 'login'
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [registerData, setRegisterData] = useState({
+    first_name: '',
+    last_name: '',
+    company: '',
+    country: '',
+    email: '',
+    phone: ''
+  });
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: ''
+  });
+  const [tempPassword, setTempPassword] = useState('');
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.post(`${API}/auth/register`, registerData);
+      localStorage.setItem('userToken', response.data.token);
+      localStorage.setItem('userData', JSON.stringify(response.data.user));
+      setTempPassword(response.data.temp_password);
+      toast.success('Registration successful! Save your password shown below.');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.post(`${API}/auth/login`, loginData);
+      localStorage.setItem('userToken', response.data.token);
+      localStorage.setItem('userData', JSON.stringify(response.data.user));
+      onAuth(response.data.token, response.data.user);
+      toast.success('Welcome back!');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const proceedAfterRegister = () => {
+    const token = localStorage.getItem('userToken');
+    const user = JSON.parse(localStorage.getItem('userData'));
+    onAuth(token, user);
+  };
+
+  // Show password after successful registration
+  if (tempPassword) {
+    return (
+      <div className="min-h-screen bg-obsidian flex items-center justify-center p-6">
+        <div className="bg-charcoal border border-white/10 p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-cannabis-green/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Check className="w-8 h-8 text-cannabis-green" />
+          </div>
+          <h2 className="font-cinzel font-bold text-2xl text-white mb-4">Registration Complete!</h2>
+          <p className="text-zinc-400 mb-6">Save your password for future logins:</p>
+          
+          <div className="bg-zinc-900 border border-gold-500/50 p-4 mb-6">
+            <p className="text-gold-500 font-mono text-xl tracking-wider">{tempPassword}</p>
+          </div>
+          
+          <p className="text-zinc-500 text-sm mb-6">
+            Write this down! You'll need it to login next time.
+          </p>
+          
+          <button
+            onClick={proceedAfterRegister}
+            className="w-full bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all"
+          >
+            Continue to Catalog
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-obsidian flex items-center justify-center p-6">
+      <div className="bg-charcoal border border-white/10 p-8 max-w-lg w-full">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-16" />
+        </div>
+
+        {/* Mode Toggle */}
+        <div className="flex gap-2 mb-8">
+          <button
+            onClick={() => { setMode('register'); setError(''); }}
+            className={`flex-1 py-3 font-bold uppercase tracking-widest text-sm transition-all ${
+              mode === 'register' 
+                ? 'bg-gold-500 text-black' 
+                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+          >
+            <UserPlus className="w-4 h-4 inline mr-2" />
+            Register
+          </button>
+          <button
+            onClick={() => { setMode('login'); setError(''); }}
+            className={`flex-1 py-3 font-bold uppercase tracking-widest text-sm transition-all ${
+              mode === 'login' 
+                ? 'bg-gold-500 text-black' 
+                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+          >
+            <User className="w-4 h-4 inline mr-2" />
+            Login
+          </button>
+        </div>
+
+        {mode === 'register' ? (
+          <form onSubmit={handleRegister} className="space-y-4">
+            <p className="text-zinc-400 text-sm text-center mb-6">
+              Register to access our premium cultivar catalog
+            </p>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                  First Name *
+                </label>
+                <input
+                  data-testid="register-firstname"
+                  type="text"
+                  required
+                  value={registerData.first_name}
+                  onChange={(e) => setRegisterData(prev => ({ ...prev, first_name: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                  Last Name *
+                </label>
+                <input
+                  data-testid="register-lastname"
+                  type="text"
+                  required
+                  value={registerData.last_name}
+                  onChange={(e) => setRegisterData(prev => ({ ...prev, last_name: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                  placeholder="Doe"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                <Building2 className="w-4 h-4 inline mr-1" /> LP / Company Name *
+              </label>
+              <input
+                data-testid="register-company"
+                type="text"
+                required
+                value={registerData.company}
+                onChange={(e) => setRegisterData(prev => ({ ...prev, company: e.target.value }))}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                placeholder="Licensed Producer or Company"
+              />
+            </div>
+
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                <Globe className="w-4 h-4 inline mr-1" /> Country *
+              </label>
+              <input
+                data-testid="register-country"
+                type="text"
+                required
+                value={registerData.country}
+                onChange={(e) => setRegisterData(prev => ({ ...prev, country: e.target.value }))}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                placeholder="Canada"
+              />
+            </div>
+
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                <Mail className="w-4 h-4 inline mr-1" /> Email *
+              </label>
+              <input
+                data-testid="register-email"
+                type="email"
+                required
+                value={registerData.email}
+                onChange={(e) => setRegisterData(prev => ({ ...prev, email: e.target.value }))}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                placeholder="email@company.com"
+              />
+            </div>
+
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                <Phone className="w-4 h-4 inline mr-1" /> Phone *
+              </label>
+              <input
+                data-testid="register-phone"
+                type="tel"
+                required
+                value={registerData.phone}
+                onChange={(e) => setRegisterData(prev => ({ ...prev, phone: e.target.value }))}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                placeholder="+1 (555) 000-0000"
+              />
+            </div>
+
+            {error && (
+              <div className="text-red-500 text-sm text-center">{error}</div>
+            )}
+
+            <button
+              data-testid="register-submit"
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-zinc-700 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all mt-6"
+            >
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleLogin} className="space-y-4">
+            <p className="text-zinc-400 text-sm text-center mb-6">
+              Welcome back! Enter your credentials to continue.
+            </p>
+
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                <Mail className="w-4 h-4 inline mr-1" /> Email
+              </label>
+              <input
+                data-testid="login-email"
+                type="email"
+                required
+                value={loginData.email}
+                onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                placeholder="email@company.com"
+              />
+            </div>
+
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                <Lock className="w-4 h-4 inline mr-1" /> Password
+              </label>
+              <input
+                data-testid="login-password"
+                type="password"
+                required
+                value={loginData.password}
+                onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                placeholder="Your password"
+              />
+            </div>
+
+            {error && (
+              <div className="text-red-500 text-sm text-center">{error}</div>
+            )}
+
+            <button
+              data-testid="login-submit"
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-zinc-700 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all mt-6"
+            >
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+          </form>
+        )}
+
+        <p className="text-zinc-600 text-xs text-center mt-6">
+          By registering, you agree to our terms of service.
+        </p>
+      </div>
+
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#0A0A0A',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: '#fff'
+          }
+        }}
+      />
+    </div>
+  );
+};
+
 // Admin Login Component
 const AdminLogin = ({ onLogin }) => {
   const [password, setPassword] = useState('');
