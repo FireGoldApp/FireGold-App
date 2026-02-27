@@ -858,6 +858,30 @@ const GrowerSubmitPage = () => {
   const [coaFile, setCoaFile] = useState(null);
   const [hcLicenseFile, setHcLicenseFile] = useState(null);
   const [craLicenseFile, setCraLicenseFile] = useState(null);
+  const [licensesOnFile, setLicensesOnFile] = useState(null);
+  const [checkingLicenses, setCheckingLicenses] = useState(false);
+
+  // Debounced license check when company name changes
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      const name = formData.company_name.trim();
+      if (name.length >= 2) {
+        setCheckingLicenses(true);
+        try {
+          const res = await axios.get(`${API}/grower/check-licenses?company_name=${encodeURIComponent(name)}`);
+          if (res.data.recognized) {
+            setLicensesOnFile(res.data);
+          } else {
+            setLicensesOnFile(null);
+          }
+        } catch { setLicensesOnFile(null); }
+        setCheckingLicenses(false);
+      } else {
+        setLicensesOnFile(null);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [formData.company_name]);
 
   const handleLotSizeChange = (val) => {
     setFormData(prev => ({ ...prev, lot_size_kg: val }));
