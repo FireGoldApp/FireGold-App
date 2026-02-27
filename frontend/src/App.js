@@ -806,8 +806,7 @@ const CatalogPage = () => {
       {/* Header */}
       <header className="fixed top-0 w-full z-40 bg-black/80 backdrop-blur-md border-b border-white/5 h-20 flex items-center justify-between px-6 md:px-12">
         <div className="flex items-center gap-3">
-          <Flame className="w-8 h-8 text-gold-500" />
-          <span className="font-cinzel font-bold text-xl text-gold-grad tracking-wider">FIREGOLD</span>
+          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-14 w-auto" />
         </div>
         
         {/* Search */}
