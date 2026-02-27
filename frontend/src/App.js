@@ -855,6 +855,9 @@ const GrowerSubmitPage = () => {
   const [submissionId, setSubmissionId] = useState('');
   const [lotError, setLotError] = useState('');
   const [strainImage, setStrainImage] = useState(null);
+  const [coaFile, setCoaFile] = useState(null);
+  const [hcLicenseFile, setHcLicenseFile] = useState(null);
+  const [craLicenseFile, setCraLicenseFile] = useState(null);
 
   const handleLotSizeChange = (val) => {
     setFormData(prev => ({ ...prev, lot_size_kg: val }));
