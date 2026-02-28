@@ -2812,6 +2812,34 @@ const AdminPage = () => {
           </div>
         )}
 
+        {/* Total Inventory Summary */}
+        {inventory && inventory.total_inventory_kg > 0 && (
+          <div data-testid="inventory-summary" className="mb-12 bg-charcoal border border-gold-500/20 p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <Package className="w-5 h-5 text-gold-500" />
+              <h2 className="font-cinzel font-bold text-lg text-white">Total Inventory</h2>
+              <span className="ml-auto bg-gold-500/10 text-gold-500 text-xs font-bold px-3 py-1 font-mono">
+                {inventory.total_inventory_kg.toFixed(1)} kg total
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-cannabis-green/10 border border-cannabis-green/30 p-4 text-center">
+                <div className="text-cannabis-green font-bold text-3xl font-mono">{inventory.total_grade_a.toFixed(1)}</div>
+                <div className="text-cannabis-green/70 text-xs uppercase tracking-widest mt-1">Grade A (kg)</div>
+              </div>
+              <div className="bg-gold-500/10 border border-gold-500/30 p-4 text-center">
+                <div className="text-gold-500 font-bold text-3xl font-mono">{inventory.total_grade_b.toFixed(1)}</div>
+                <div className="text-gold-500/70 text-xs uppercase tracking-widest mt-1">Grade B (kg)</div>
+              </div>
+              <div className="bg-zinc-700/20 border border-zinc-600/30 p-4 text-center">
+                <div className="text-zinc-400 font-bold text-3xl font-mono">{inventory.total_grade_c.toFixed(1)}</div>
+                <div className="text-zinc-500 text-xs uppercase tracking-widest mt-1">Grade C (kg)</div>
+              </div>
+            </div>
+            <p className="text-zinc-600 text-xs mt-3">{inventory.strains_with_grades} of {inventory.total_strains} strains have grade data</p>
+          </div>
+        )}
+
         {/* Tab Navigation */}
         <div className="flex gap-2 mb-8 border-b border-white/5 pb-4">
           <button
