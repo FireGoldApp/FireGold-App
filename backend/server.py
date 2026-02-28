@@ -2019,6 +2019,31 @@ async def get_strain_directory(token: str = Depends(verify_admin_token)):
     
     return directory
 
+@api_router.get("/admin/inventory-summary")
+async def get_inventory_summary(token: str = Depends(verify_admin_token)):
+    """Get total inventory summary aggregated across all catalog strains"""
+    pipeline = [
+        {"$group": {
+            "_id": None,
+            "total_grade_a": {"$sum": {"$ifNull": ["$grade_a_kg", 0]}},
+            "total_grade_b": {"$sum": {"$ifNull": ["$grade_b_kg", 0]}},
+            "total_grade_c": {"$sum": {"$ifNull": ["$grade_c_kg", 0]}},
+            "strains_with_grades": {"$sum": {"$cond": [
+                {"$or": [
+                    {"$gt": [{"$ifNull": ["$grade_a_kg", 0]}, 0]},
+                    {"$gt": [{"$ifNull": ["$grade_b_kg", 0]}, 0]},
+                    {"$gt": [{"$ifNull": ["$grade_c_kg", 0]}, 0]}
+                ]}, 1, 0
+            ]}},
+            "total_strains": {"$sum": 1}
+        }}
+    ]
+    result = await db.strains.aggregate(pipeline).to_list(1)
+    data = result[0] if result else {"total_grade_a": 0, "total_grade_b": 0, "total_grade_c": 0, "strains_with_grades": 0, "total_strains": 0}
+    data.pop("_id", None)
+    data["total_inventory_kg"] = data["total_grade_a"] + data["total_grade_b"] + data["total_grade_c"]
+    return data
+
 @api_router.get("/admin/strain-directory/csv")
 async def export_strain_directory_csv(token: str = Depends(verify_admin_token)):
     """Export full strain directory with all submission details as CSV"""
