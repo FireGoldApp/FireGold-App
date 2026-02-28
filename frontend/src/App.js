@@ -1426,6 +1426,20 @@ const GrowerSubmitPage = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Harvest Date */}
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Harvest Date *</label>
+                <input
+                  data-testid="grower-harvest-date-input"
+                  type="date"
+                  required
+                  value={formData.harvest_date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, harvest_date: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                />
+              </div>
+
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Country of Export *</label>
                 <input
