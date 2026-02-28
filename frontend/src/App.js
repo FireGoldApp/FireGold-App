@@ -2403,6 +2403,7 @@ const AdminPage = () => {
     fetchUsers(token);
     fetchFlags(token);
     fetchSubmissions(token);
+    fetchInventory(token);
   };
 
   const handleLogout = async () => {
