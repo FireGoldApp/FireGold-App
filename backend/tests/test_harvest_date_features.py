@@ -278,7 +278,10 @@ class TestCleanup:
     
     def test_cleanup_test_strains(self, admin_token):
         """Remove TEST_ prefixed strains created during testing"""
-        response = requests.get(f"{BASE_URL}/api/strains")
+        response = requests.get(
+            f"{BASE_URL}/api/strains/admin",
+            headers={"Authorization": f"Bearer {admin_token}"}
+        )
         if response.status_code == 200:
             strains = response.json()
             test_strains = [s for s in strains if s.get("strain_name", "").startswith("TEST_")]
