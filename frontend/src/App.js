@@ -4256,6 +4256,142 @@ const AdminPage = () => {
             )}
           </>
         )}
+
+        {/* Directory Tab */}
+        {activeTab === 'directory' && (
+          <>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+              <div>
+                <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Strain Directory</h2>
+                <p className="text-zinc-500 text-sm">{directory.length} strains · Quick access to all documents & grower contacts</p>
+              </div>
+              <input
+                data-testid="directory-search"
+                type="text"
+                placeholder="Search strains..."
+                value={directorySearch}
+                onChange={(e) => setDirectorySearch(e.target.value)}
+                className="bg-zinc-900 border border-white/10 focus:border-gold-500 text-white px-4 py-2 text-sm outline-none w-full md:w-64"
+              />
+            </div>
+
+            {directory.length === 0 ? (
+              <div className="bg-charcoal border border-white/5 p-12 text-center">
+                <FileText className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+                <p className="text-zinc-400">Loading directory...</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {directory
+                  .filter(s => !directorySearch || s.strain_name.toLowerCase().includes(directorySearch.toLowerCase()))
+                  .map((entry) => (
+                  <div key={entry.id} data-testid={`directory-entry-${entry.id}`} className="bg-charcoal border border-white/5 hover:border-white/10 transition-colors">
+                    {/* Strain Header */}
+                    <div className="flex items-center gap-4 p-4 border-b border-white/5">
+                      {entry.image_url && (
+                        <img src={entry.image_url} alt={entry.strain_name} className="w-12 h-12 object-cover border border-white/10 flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-cinzel font-bold text-lg text-white truncate">{entry.strain_name}</h3>
+                        <p className="text-zinc-500 text-xs">{entry.type} · THC {entry.thc_percentage} · {entry.lot_size}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-0">
+                      {/* Documents Column */}
+                      <div className="p-4 border-b md:border-b-0 md:border-r border-white/5">
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest mb-3 font-bold">Documents</p>
+                        <div className="flex flex-wrap gap-2">
+                          {entry.coa_url ? (
+                            <button
+                              data-testid={`dir-coa-${entry.id}`}
+                              onClick={() => {
+                                const token = localStorage.getItem('userToken') || adminToken;
+                                axios.get(`${API}/strains/${entry.id}/coa`, {
+                                  headers: { Authorization: `Bearer ${token}` },
+                                  responseType: 'blob'
+                                }).then(res => {
+                                  const url = URL.createObjectURL(res.data);
+                                  window.open(url, '_blank');
+                                }).catch(() => toast.error('Unable to load COA'));
+                              }}
+                              className="flex items-center gap-2 bg-cannabis-green/15 border border-cannabis-green/40 hover:bg-cannabis-green/30 px-3 py-2 text-xs text-cannabis-green transition-colors"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              COA
+                            </button>
+                          ) : (
+                            <span className="flex items-center gap-2 bg-zinc-900 border border-white/5 px-3 py-2 text-xs text-zinc-600">
+                              <FileText className="w-3.5 h-3.5" />
+                              No COA
+                            </span>
+                          )}
+                          {entry.health_canada_license_path ? (
+                            <button
+                              data-testid={`dir-hc-${entry.id}`}
+                              onClick={() => window.open(`${API}/files/${entry.health_canada_license_path.replace('/uploads/', '')}?token=${adminToken}`, '_blank')}
+                              className="flex items-center gap-2 bg-blue-500/15 border border-blue-500/40 hover:bg-blue-500/30 px-3 py-2 text-xs text-blue-400 transition-colors"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              HC License
+                            </button>
+                          ) : (
+                            <span className="flex items-center gap-2 bg-zinc-900 border border-white/5 px-3 py-2 text-xs text-zinc-600">
+                              <FileText className="w-3.5 h-3.5" />
+                              No HC License
+                            </span>
+                          )}
+                          {entry.cra_license_path ? (
+                            <button
+                              data-testid={`dir-cra-${entry.id}`}
+                              onClick={() => window.open(`${API}/files/${entry.cra_license_path.replace('/uploads/', '')}?token=${adminToken}`, '_blank')}
+                              className="flex items-center gap-2 bg-purple-500/15 border border-purple-500/40 hover:bg-purple-500/30 px-3 py-2 text-xs text-purple-400 transition-colors"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              CRA License
+                            </button>
+                          ) : (
+                            <span className="flex items-center gap-2 bg-zinc-900 border border-white/5 px-3 py-2 text-xs text-zinc-600">
+                              <FileText className="w-3.5 h-3.5" />
+                              No CRA License
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Grower/LP Contact Column */}
+                      <div className="p-4">
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest mb-3 font-bold">Grower / LP Contact</p>
+                        {entry.grower_name ? (
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                            <div>
+                              <p className="text-zinc-600 text-[10px] uppercase tracking-widest">Name</p>
+                              <p className="text-zinc-200 text-sm">{entry.grower_name}</p>
+                            </div>
+                            <div>
+                              <p className="text-zinc-600 text-[10px] uppercase tracking-widest">Company</p>
+                              <p className="text-zinc-200 text-sm">{entry.company_name}</p>
+                            </div>
+                            <div>
+                              <p className="text-zinc-600 text-[10px] uppercase tracking-widest">Email</p>
+                              <a href={`mailto:${entry.grower_email}`} className="text-gold-500 text-sm hover:underline">{entry.grower_email}</a>
+                            </div>
+                            <div>
+                              <p className="text-zinc-600 text-[10px] uppercase tracking-widest">Phone</p>
+                              <a href={`tel:${entry.grower_phone}`} className="text-gold-500 text-sm hover:underline">{entry.grower_phone || 'N/A'}</a>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-zinc-600 text-sm italic">No grower submission linked</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </main>
 
       <Toaster 
