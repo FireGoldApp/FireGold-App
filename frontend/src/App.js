@@ -2099,6 +2099,43 @@ const AdminPage = () => {
   const [engagementData, setEngagementData] = useState(null);
   const [globalData, setGlobalData] = useState(null);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [editingStrain, setEditingStrain] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEditStrain = (strain) => {
+    setEditingStrain(strain.id);
+    setEditForm({
+      strain_name: strain.strain_name || '',
+      type: strain.type || '',
+      thc_percentage: strain.thc_percentage || '',
+      cbd_percentage: strain.cbd_percentage || '',
+      price_tier: strain.price_tier || '$$',
+      terpene_profile: Array.isArray(strain.terpene_profile) ? strain.terpene_profile.join(', ') : (strain.terpene_profile || ''),
+      lineage: strain.lineage || '',
+      lot_size: strain.lot_size || '',
+      effects: strain.effects || ''
+    });
+  };
+
+  const saveEditStrain = async () => {
+    setSavingEdit(true);
+    try {
+      const payload = {
+        ...editForm,
+        terpene_profile: editForm.terpene_profile.split(',').map(t => t.trim()).filter(Boolean)
+      };
+      await axios.put(`${API}/strains/${editingStrain}`, payload, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      toast.success('Strain updated');
+      setEditingStrain(null);
+      fetchStrains(adminToken);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update');
+    }
+    setSavingEdit(false);
+  };
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users', 'flags', 'submissions'
   const [flags, setFlags] = useState([]);
