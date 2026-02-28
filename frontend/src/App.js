@@ -3999,8 +3999,51 @@ const AdminPage = () => {
                       </div>
                     </div>
 
-                    {/* Grower Types & Growth */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Grower Types & Growth & Grade Distribution */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Grade Distribution */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Grade Distribution</h3>
+                        {globalData.supply.grade_distribution ? (
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2">Submissions</p>
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-cannabis-green text-sm">Grade A</span>
+                                  <span className="text-white font-mono">{globalData.supply.grade_distribution.submissions?.total_grade_a || 0} kg</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-gold-500 text-sm">Grade B</span>
+                                  <span className="text-white font-mono">{globalData.supply.grade_distribution.submissions?.total_grade_b || 0} kg</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-zinc-400 text-sm">Grade C</span>
+                                  <span className="text-white font-mono">{globalData.supply.grade_distribution.submissions?.total_grade_c || 0} kg</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="border-t border-white/5 pt-3">
+                              <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2">Catalog (Approved)</p>
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-cannabis-green text-sm">Grade A</span>
+                                  <span className="text-white font-mono">{globalData.supply.grade_distribution.catalog?.total_grade_a || 0} kg</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-gold-500 text-sm">Grade B</span>
+                                  <span className="text-white font-mono">{globalData.supply.grade_distribution.catalog?.total_grade_b || 0} kg</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-zinc-400 text-sm">Grade C</span>
+                                  <span className="text-white font-mono">{globalData.supply.grade_distribution.catalog?.total_grade_c || 0} kg</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : <p className="text-zinc-600 text-sm">No grade data</p>}
+                      </div>
+
                       {/* Grower Submission Types */}
                       <div className="bg-charcoal border border-white/5 p-6">
                         <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Submitted Strain Types</h3>
