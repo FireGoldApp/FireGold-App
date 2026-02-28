@@ -454,7 +454,27 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
         </div>
       </div>
 
-      {filters.type || filters.priceTier || filters.minThc || filters.search ? (
+      <div>
+        <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Flower Grade</h3>
+        <div className="space-y-2">
+          {['A', 'B', 'C'].map((grade) => (
+            <button
+              key={grade}
+              data-testid={`filter-grade-${grade.toLowerCase()}`}
+              onClick={() => setFilters(prev => ({ ...prev, grade: prev.grade === grade ? '' : grade }))}
+              className={`block w-full text-left px-4 py-2 border ${
+                filters.grade === grade
+                  ? 'border-gold-500 text-gold-500 bg-gold-500/10'
+                  : 'border-zinc-800 text-zinc-400 hover:border-gold-500/50'
+              } transition-all`}
+            >
+              Grade {grade}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filters.type || filters.priceTier || filters.minThc || filters.search || filters.grade ? (
         <button
           data-testid="clear-filters-btn"
           onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '' })}
