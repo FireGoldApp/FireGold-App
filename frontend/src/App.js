@@ -4636,12 +4636,13 @@ const CatalogPage = () => {
   // Track filter changes
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
-    if (newFilters.type || newFilters.priceTier || newFilters.minThc) {
+    if (newFilters.type || newFilters.priceTier || newFilters.minThc || newFilters.grade) {
       trackEvent('filter_apply', {
         filters_applied: {
           type: newFilters.type || null,
           price_tier: newFilters.priceTier || null,
-          min_thc: newFilters.minThc || null
+          min_thc: newFilters.minThc || null,
+          grade: newFilters.grade || null
         }
       });
     }
