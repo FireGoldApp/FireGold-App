@@ -4159,26 +4159,84 @@ const AdminPage = () => {
                     <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Company</th>
                     <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Country</th>
                     <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Email</th>
-                    <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Phone</th>
+                    <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Status</th>
                     <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Registered</th>
+                    <th className="text-right text-zinc-500 text-xs uppercase tracking-widest p-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((user, i) => (
-                    <tr key={user.id || i} className="border-t border-white/5 hover:bg-zinc-900/50">
+                    <tr key={user.id || i} className={`border-t border-white/5 hover:bg-zinc-900/50 ${user.status === 'suspended' ? 'opacity-60' : ''} ${user.status === 'removed' ? 'opacity-30' : ''}`}>
                       <td className="p-4 text-white">{user.first_name} {user.last_name}</td>
                       <td className="p-4 text-zinc-400">{user.company}</td>
                       <td className="p-4 text-zinc-400">{user.country}</td>
                       <td className="p-4 text-zinc-400">{user.email}</td>
-                      <td className="p-4 text-zinc-400">{user.phone}</td>
+                      <td className="p-4">
+                        {user.status === 'suspended' ? (
+                          <span data-testid={`user-status-${user.id}`} className="bg-yellow-500/20 text-yellow-500 text-xs font-bold uppercase tracking-widest px-2 py-1">Paused</span>
+                        ) : user.status === 'removed' ? (
+                          <span data-testid={`user-status-${user.id}`} className="bg-red-500/20 text-red-500 text-xs font-bold uppercase tracking-widest px-2 py-1">Removed</span>
+                        ) : (
+                          <span data-testid={`user-status-${user.id}`} className="bg-cannabis-green/20 text-cannabis-green text-xs font-bold uppercase tracking-widest px-2 py-1">Active</span>
+                        )}
+                      </td>
                       <td className="p-4 text-zinc-500 text-sm">
                         {new Date(user.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="p-4 text-right">
+                        {user.status !== 'removed' && (
+                          <div className="flex gap-2 justify-end">
+                            {user.status === 'suspended' ? (
+                              <button
+                                data-testid={`user-activate-${user.id}`}
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${API}/admin/users/${user.id}/status`, { status: 'active' }, { headers: { Authorization: `Bearer ${adminToken}` } });
+                                    toast.success('User access restored');
+                                    fetchUsers(adminToken);
+                                  } catch { toast.error('Failed to restore access'); }
+                                }}
+                                className="bg-cannabis-green/20 hover:bg-cannabis-green/30 text-cannabis-green text-xs font-bold uppercase tracking-widest px-3 py-1.5 transition-colors"
+                              >
+                                Restore
+                              </button>
+                            ) : (
+                              <button
+                                data-testid={`user-pause-${user.id}`}
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${API}/admin/users/${user.id}/status`, { status: 'suspended' }, { headers: { Authorization: `Bearer ${adminToken}` } });
+                                    toast.success('User access paused');
+                                    fetchUsers(adminToken);
+                                  } catch { toast.error('Failed to pause access'); }
+                                }}
+                                className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-500 text-xs font-bold uppercase tracking-widest px-3 py-1.5 transition-colors"
+                              >
+                                Pause Access
+                              </button>
+                            )}
+                            <button
+                              data-testid={`user-remove-${user.id}`}
+                              onClick={async () => {
+                                if (!window.confirm(`Remove ${user.first_name} ${user.last_name} (${user.email})? This will revoke their access permanently.`)) return;
+                                try {
+                                  await axios.delete(`${API}/admin/users/${user.id}`, { headers: { Authorization: `Bearer ${adminToken}` } });
+                                  toast.success('User removed');
+                                  fetchUsers(adminToken);
+                                } catch { toast.error('Failed to remove user'); }
+                              }}
+                              className="bg-red-500/20 hover:bg-red-500/30 text-red-500 text-xs font-bold uppercase tracking-widest px-3 py-1.5 transition-colors"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan="6" className="p-8 text-center text-zinc-600">No users registered yet</td>
+                      <td colSpan="7" className="p-8 text-center text-zinc-600">No users registered yet</td>
                     </tr>
                   )}
                 </tbody>
