@@ -2304,6 +2304,7 @@ const AdminPage = () => {
   const [processingSubmission, setProcessingSubmission] = useState(false);
   const [directory, setDirectory] = useState([]);
   const [directorySearch, setDirectorySearch] = useState('');
+  const [inventory, setInventory] = useState(null);
 
   const fetchDirectory = async (token) => {
     try {
