@@ -3170,6 +3170,14 @@ const AdminPage = () => {
                     </div>
                   </div>
 
+                  {/* Harvest Date */}
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Harvest Date</label>
+                    <input data-testid="edit-strain-harvest-date" type="date" value={editForm.harvest_date}
+                      onChange={e => setEditForm(p => ({...p, harvest_date: e.target.value}))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" />
+                  </div>
+
                   <div className="flex gap-3 pt-4">
                     <button
                       data-testid="save-edit-strain-btn"
