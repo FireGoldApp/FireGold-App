@@ -4203,6 +4203,24 @@ const AdminPage = () => {
                       </div>
                     </div>
 
+                    {/* Grade Breakdown */}
+                    {(sub.grade_a_kg || sub.grade_b_kg || sub.grade_c_kg) && (
+                      <div className="grid grid-cols-3 gap-3 mb-4">
+                        <div className="bg-cannabis-green/10 border border-cannabis-green/30 p-3 text-center">
+                          <p className="text-cannabis-green font-bold font-mono text-lg">{sub.grade_a_kg || 0}</p>
+                          <p className="text-cannabis-green/70 text-[10px] uppercase tracking-widest">Grade A (kg)</p>
+                        </div>
+                        <div className="bg-gold-500/10 border border-gold-500/30 p-3 text-center">
+                          <p className="text-gold-500 font-bold font-mono text-lg">{sub.grade_b_kg || 0}</p>
+                          <p className="text-gold-500/70 text-[10px] uppercase tracking-widest">Grade B (kg)</p>
+                        </div>
+                        <div className="bg-zinc-700/30 border border-zinc-600/30 p-3 text-center">
+                          <p className="text-zinc-400 font-bold font-mono text-lg">{sub.grade_c_kg || 0}</p>
+                          <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Grade C (kg)</p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Submitted Image */}
                     {sub.image_path && (
                       <div className="mb-4">
