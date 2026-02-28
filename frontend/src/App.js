@@ -311,7 +311,7 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
                   data-testid="view-coa-btn"
                   onClick={handleViewCoa}
                   disabled={coaLoading}
-                  className="w-full flex items-center justify-center gap-3 bg-cannabis-green/10 border-2 border-cannabis-green/40 hover:border-cannabis-green hover:bg-cannabis-green/20 text-cannabis-green px-6 py-3 transition-all"
+                  className="w-full flex items-center justify-center gap-3 bg-cannabis-green text-black hover:bg-cannabis-green/90 px-6 py-3 transition-all"
                 >
                   <FileText className="w-5 h-5" />
                   <span className="font-bold uppercase tracking-widest text-sm">
