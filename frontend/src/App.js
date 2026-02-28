@@ -213,13 +213,26 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
   return (
     <div 
       data-testid="strain-detail-modal"
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-0 md:p-4"
       onClick={onClose}
     >
       <div 
-        className="bg-charcoal border border-white/10 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-charcoal border border-white/10 max-w-4xl w-full h-full md:h-auto md:max-h-[90vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Sticky back/close bar - always visible on mobile */}
+        <div className="sticky top-0 z-10 bg-charcoal/95 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center justify-between md:hidden">
+          <button
+            data-testid="mobile-back-btn"
+            onClick={onClose}
+            className="flex items-center gap-2 text-zinc-300 active:text-gold-500 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="text-sm font-manrope uppercase tracking-widest">Back</span>
+          </button>
+          <span className="text-gold-500 font-cinzel font-bold text-sm truncate max-w-[50%]">{strain.strain_name}</span>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Image */}
           <div className="aspect-square relative">
@@ -234,7 +247,7 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
             <button 
               data-testid="close-modal-btn"
               onClick={onClose}
-              className="absolute top-4 right-4 w-10 h-10 bg-black/80 backdrop-blur-sm flex items-center justify-center hover:bg-gold-500 hover:text-black transition-all"
+              className="absolute top-4 right-4 w-10 h-10 bg-black/80 backdrop-blur-sm hidden md:flex items-center justify-center hover:bg-gold-500 hover:text-black transition-all"
             >
               <X className="w-5 h-5" />
             </button>
