@@ -89,10 +89,24 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
 - `/submit-strain` — Public grower submission form
 - `/track` — Public submission status tracker
 
+- [x] **Mobile Back Button Fix** (Feb 28, 2026)
+  - Added sticky header bar with "← BACK" button on mobile viewports (md:hidden)
+  - Shows strain name on right side for context
+  - Desktop X close button hidden on mobile, visible on desktop (hidden md:flex)
+  - Users can now easily close strain detail modal on phones without refreshing
+- [x] **Admin Edit Strain** (Feb 28, 2026)
+  - Admin can edit strain details (name, type, THC, CBD, price tier, terpenes, lineage, lot size, effects) from Images tab
+  - PUT /api/strains/{strain_id} endpoint with admin auth protection
+  - Uses exclude_unset=True to preserve image_url and coa_url when not in update payload
+  - Edit form pre-fills with current strain data
+
 ## Prioritized Backlog
 
 ### P2 — Email-Based Password Delivery
 Requires user to provide Resend API key. User has deferred. Password is now user-chosen, so email delivery is less critical but could be used for welcome emails or verification.
+
+### P2 — Backend Refactoring
+Break monolithic server.py into /routes, /models, /services directories for maintainability.
 
 ### Content — Strain Image Backgrounds
 AIS and Animal Mints have white backgrounds. Admin can update via image management. User decided to "leave for now".
@@ -105,7 +119,7 @@ AIS and Animal Mints have white backgrounds. Admin can update via image manageme
 
 ## Key API Endpoints
 - User Auth: POST /api/auth/register, POST /api/auth/login
-- Strains: GET /api/strains (protected), GET /api/strains/admin
+- Strains: GET /api/strains (protected), GET /api/strains/admin, PUT /api/strains/{id} (admin edit)
 - Admin: POST /api/admin/login, GET /api/admin/verify
 - Grower: POST /api/grower/submit, GET /api/grower/submissions, PUT /api/grower/submissions/{id}/status
 - Analytics: POST /api/analytics/track, GET /api/analytics/dashboard, GET /api/analytics/export/csv
