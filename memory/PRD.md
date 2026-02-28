@@ -104,6 +104,12 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - Both POST /api/inquiries and POST /api/sample-requests/upload require user auth token
   - Forms auto-fill company name, contact name, and email from logged-in user data
   - Frontend sends Authorization header with all submissions
+- [x] **Admin Strain Directory** (Feb 28, 2026)
+  - New "Directory" tab in admin panel with full list of all strains
+  - Each entry shows: strain image/name/type/THC/lot size, COA link, HC License link, CRA License link, grower/LP contact info
+  - COA endpoint updated to accept both user and admin tokens (verify_any_token)
+  - Search filter to quickly find strains by name
+  - Backend: GET /api/admin/strain-directory enriches strains with matching grower submission data
 
 ## Prioritized Backlog
 
