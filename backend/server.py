@@ -197,6 +197,7 @@ class Strain(BaseModel):
     grade_a_kg: Optional[float] = None
     grade_b_kg: Optional[float] = None
     grade_c_kg: Optional[float] = None
+    harvest_date: Optional[str] = None  # Harvest date of the flower
     image_url: Optional[str] = None
     coa_url: Optional[str] = None  # Path to redacted COA PDF
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -214,6 +215,7 @@ class StrainCreate(BaseModel):
     grade_a_kg: Optional[float] = None
     grade_b_kg: Optional[float] = None
     grade_c_kg: Optional[float] = None
+    harvest_date: Optional[str] = None
     image_url: Optional[str] = None
 
 # Grower Submission Model
