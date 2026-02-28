@@ -1054,6 +1054,9 @@ const GrowerSubmitPage = () => {
       submitData.append('is_irradiated', formData.is_irradiated || '');
       submitData.append('willing_to_irradiate', formData.willing_to_irradiate || '');
       submitData.append('additional_notes', formData.additional_notes || '');
+      submitData.append('grade_a_kg', parseFloat(formData.grade_a_kg) || 0);
+      submitData.append('grade_b_kg', parseFloat(formData.grade_b_kg) || 0);
+      submitData.append('grade_c_kg', parseFloat(formData.grade_c_kg) || 0);
       if (strainImage) {
         submitData.append('strain_image', strainImage);
       }
