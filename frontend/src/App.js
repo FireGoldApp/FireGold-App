@@ -1112,6 +1112,7 @@ const GrowerSubmitPage = () => {
       submitData.append('grade_a_kg', parseFloat(formData.grade_a_kg) || 0);
       submitData.append('grade_b_kg', parseFloat(formData.grade_b_kg) || 0);
       submitData.append('grade_c_kg', parseFloat(formData.grade_c_kg) || 0);
+      submitData.append('harvest_date', formData.harvest_date || '');
       if (strainImage) {
         submitData.append('strain_image', strainImage);
       }
