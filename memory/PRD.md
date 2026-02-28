@@ -110,6 +110,16 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - COA endpoint updated to accept both user and admin tokens (verify_any_token)
   - Search filter to quickly find strains by name
   - Backend: GET /api/admin/strain-directory enriches strains with matching grower submission data
+- [x] **CSV Export** (Feb 28, 2026)
+  - "Export CSV" button on Directory tab downloads full strain directory as CSV
+  - 26 columns: strain details, grower/LP contact (name, company, email, phone, license#), submission date/status, growing method, export country, irradiation status, admin pricing/notes, document availability (COA, HC License, CRA License)
+  - Backend: GET /api/admin/strain-directory/csv
+- [x] **COA Redaction Workflow** (Feb 28, 2026)
+  - Pending submissions with COA show redaction prompt: "Upload redacted COA before approving"
+  - Admin can upload redacted PDF to replace original COA on the submission
+  - UI shows green "Redacted COA uploaded" checkmark after upload, with "Replace" option
+  - COA document link labeled "(Original)" or "(Redacted)" based on status
+  - Backend: PUT /api/admin/submissions/{id}/redacted-coa
 
 ## Prioritized Backlog
 
