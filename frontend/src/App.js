@@ -530,7 +530,10 @@ const SampleRequestModal = ({ isOpen, onClose, strain, userData, userToken }) =>
       submitData.append('cra_license', craFile);
 
       await axios.post(`${API}/sample-requests/upload`, submitData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${userToken}`
+        }
       });
       
       toast.success('Sample request submitted! We will verify your licenses and contact you.');
