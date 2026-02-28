@@ -789,6 +789,7 @@ async def submit_strain(
         "grade_a_kg": grade_a_kg if grade_a_kg > 0 else None,
         "grade_b_kg": grade_b_kg if grade_b_kg > 0 else None,
         "grade_c_kg": grade_c_kg if grade_c_kg > 0 else None,
+        "harvest_date": harvest_date or None,
         "image_path": image_path,
         "coa_path": coa_path,
         "health_canada_license_path": hc_license_path,
