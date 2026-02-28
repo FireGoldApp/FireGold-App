@@ -128,7 +128,11 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - Admin: Grade inputs in strain edit form, grade display in submission review
   - Analytics: Grade Distribution panel in Global Insights (submissions + catalog totals)
   - CSV export: Grade A, B, C columns included
-  - Backend: All models updated (Strain, StrainCreate, GrowerSubmission, GrowerSubmissionInput)
+- [x] **Total Inventory Summary** (Feb 28, 2026)
+  - Prominent dashboard card at top of admin panel showing aggregated Grade A/B/C volumes across all catalog strains
+  - Displays total kg per grade with color-coded boxes + total kg badge
+  - Shows "X of Y strains have grade data" footer
+  - Backend: GET /api/admin/inventory-summary endpoint with MongoDB aggregation
 
 ## Prioritized Backlog
 
