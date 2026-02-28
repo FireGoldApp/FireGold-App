@@ -120,6 +120,15 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - UI shows green "Redacted COA uploaded" checkmark after upload, with "Replace" option
   - COA document link labeled "(Original)" or "(Redacted)" based on status
   - Backend: PUT /api/admin/submissions/{id}/redacted-coa
+- [x] **Flower Grade System (A/B/C)** (Feb 28, 2026)
+  - Grower submission form: 3 grade inputs (Grade A, B, C in kg) under "Flower Grade Breakdown"
+  - Catalog: Grade badges on strain cards (color-coded: green=A, gold=B, gray=C)
+  - Catalog: Grade filter in sidebar — filter by Grade A, B, or C availability
+  - Strain detail modal: Grade Breakdown section with colored boxes
+  - Admin: Grade inputs in strain edit form, grade display in submission review
+  - Analytics: Grade Distribution panel in Global Insights (submissions + catalog totals)
+  - CSV export: Grade A, B, C columns included
+  - Backend: All models updated (Strain, StrainCreate, GrowerSubmission, GrowerSubmissionInput)
 
 ## Prioritized Backlog
 
