@@ -313,6 +313,33 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
               <div className="text-white font-mono">{strain.lot_size}</div>
             </div>
 
+            {/* Grade Breakdown */}
+            {(strain.grade_a_kg || strain.grade_b_kg || strain.grade_c_kg) && (
+              <div className="mb-6">
+                <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-3">Grade Breakdown</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {strain.grade_a_kg > 0 && (
+                    <div className="bg-cannabis-green/10 border border-cannabis-green/30 p-3 text-center">
+                      <div className="text-cannabis-green font-bold text-lg font-mono">{strain.grade_a_kg}</div>
+                      <div className="text-cannabis-green/70 text-[10px] uppercase tracking-widest">Grade A (kg)</div>
+                    </div>
+                  )}
+                  {strain.grade_b_kg > 0 && (
+                    <div className="bg-gold-500/10 border border-gold-500/30 p-3 text-center">
+                      <div className="text-gold-500 font-bold text-lg font-mono">{strain.grade_b_kg}</div>
+                      <div className="text-gold-500/70 text-[10px] uppercase tracking-widest">Grade B (kg)</div>
+                    </div>
+                  )}
+                  {strain.grade_c_kg > 0 && (
+                    <div className="bg-zinc-700/30 border border-zinc-600/30 p-3 text-center">
+                      <div className="text-zinc-400 font-bold text-lg font-mono">{strain.grade_c_kg}</div>
+                      <div className="text-zinc-500 text-[10px] uppercase tracking-widest">Grade C (kg)</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* COA Link */}
             {strain.coa_url && (
               <div className="mb-6">
