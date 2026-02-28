@@ -243,6 +243,7 @@ class GrowerSubmission(BaseModel):
     grade_a_kg: Optional[float] = None  # kg of Grade A flower
     grade_b_kg: Optional[float] = None  # kg of Grade B flower
     grade_c_kg: Optional[float] = None  # kg of Grade C flower
+    harvest_date: Optional[str] = None  # Harvest date of the crop
     image_path: Optional[str] = None  # Path to uploaded image
     additional_notes: Optional[str] = None
     # Status
