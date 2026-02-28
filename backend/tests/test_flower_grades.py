@@ -116,6 +116,8 @@ class TestApprovedStrainGrades:
     
     def test_approve_submission_transfers_grades(self, admin_token):
         """Test that approving a submission creates strain with grade fields"""
+        headers = {"Authorization": f"Bearer {admin_token}"}
+        
         # Create a new submission
         unique_id = str(uuid.uuid4())[:8]
         form_data = {
@@ -139,7 +141,6 @@ class TestApprovedStrainGrades:
         submission_id = response.json()["submission_id"]
         
         # Approve the submission
-        headers = {"Authorization": f"Bearer {admin_token}"}
         approve_response = requests.put(
             f"{BASE_URL}/api/grower/submissions/{submission_id}/status",
             json={"status": "approved", "admin_price_per_gram": "$6.50"},
@@ -147,9 +148,9 @@ class TestApprovedStrainGrades:
         )
         assert approve_response.status_code == 200
         
-        # Verify the strain was created with grades
-        strains_response = requests.get(f"{BASE_URL}/api/strains", headers=headers)
-        assert strains_response.status_code == 200
+        # Verify the strain was created with grades (use admin strains endpoint)
+        strains_response = requests.get(f"{BASE_URL}/api/strains/admin", headers=headers)
+        assert strains_response.status_code == 200, f"Admin strains failed: {strains_response.text}"
         strains = strains_response.json()
         
         # Find our approved strain
