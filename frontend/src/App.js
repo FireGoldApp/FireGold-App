@@ -4267,14 +4267,38 @@ const AdminPage = () => {
                 <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Strain Directory</h2>
                 <p className="text-zinc-500 text-sm">{directory.length} strains · Quick access to all documents & grower contacts</p>
               </div>
-              <input
-                data-testid="directory-search"
-                type="text"
-                placeholder="Search strains..."
-                value={directorySearch}
-                onChange={(e) => setDirectorySearch(e.target.value)}
-                className="bg-zinc-900 border border-white/10 focus:border-gold-500 text-white px-4 py-2 text-sm outline-none w-full md:w-64"
-              />
+              <div className="flex gap-3 items-center w-full md:w-auto">
+                <input
+                  data-testid="directory-search"
+                  type="text"
+                  placeholder="Search strains..."
+                  value={directorySearch}
+                  onChange={(e) => setDirectorySearch(e.target.value)}
+                  className="bg-zinc-900 border border-white/10 focus:border-gold-500 text-white px-4 py-2 text-sm outline-none flex-1 md:w-64"
+                />
+                <button
+                  data-testid="directory-csv-export"
+                  onClick={async () => {
+                    try {
+                      const response = await axios.get(`${API}/admin/strain-directory/csv`, {
+                        headers: { Authorization: `Bearer ${adminToken}` },
+                        responseType: 'blob'
+                      });
+                      const url = URL.createObjectURL(response.data);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `firegold_strain_directory_${new Date().toISOString().slice(0,10)}.csv`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success('CSV downloaded');
+                    } catch { toast.error('Failed to export CSV'); }
+                  }}
+                  className="bg-gold-500 hover:bg-gold-600 text-black px-4 py-2 font-bold uppercase tracking-widest text-xs flex items-center gap-2 transition-colors whitespace-nowrap"
+                >
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </button>
+              </div>
             </div>
 
             {directory.length === 0 ? (
