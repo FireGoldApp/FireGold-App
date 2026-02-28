@@ -4687,6 +4687,10 @@ const CatalogPage = () => {
         const thcVal = parseFloat(strain.thc_percentage.replace('%', '').replace('+', ''));
         if (thcVal < filters.minThc) return false;
       }
+      if (filters.grade) {
+        const gradeKey = `grade_${filters.grade.toLowerCase()}_kg`;
+        if (!strain[gradeKey] || strain[gradeKey] <= 0) return false;
+      }
       return true;
     });
   }, [strains, filters]);
