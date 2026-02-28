@@ -1,0 +1,97 @@
+{
+  "summary": "Tested new Strain Directory feature in admin panel. Backend API (GET /api/admin/strain-directory) passes all 9 tests - returns strains with document paths and grower contact fields. Frontend Directory tab renders correctly with search filter. BUG FOUND: COA button in Directory tab fails with 401 because it uses admin token which the COA endpoint (/api/strains/{id}/coa) doesn't accept.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/strains/{strain_id}/coa",
+        "issue": "Only accepts user tokens (verify_user_token) but admin panel passes admin token. Admin trying to view COA from Directory tab gets 401.",
+        "priority": "HIGH"
+      }
+    ]
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Admin Directory COA button click",
+        "issue": "COA button uses `localStorage.getItem('userToken') || adminToken` but /api/strains/{id}/coa endpoint only validates user tokens, not admin tokens. Admin panel gets 401 when clicking COA button.",
+        "affected_selectors": ["dir-coa-{id}"]
+      }
+    ],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✅ Backend: GET /api/admin/strain-directory returns 401 without auth",
+    "✅ Backend: GET /api/admin/strain-directory returns 401 with invalid token",
+    "✅ Backend: GET /api/admin/strain-directory returns 27 strains with valid admin token",
+    "✅ Backend: Each strain entry has required fields (id, strain_name, type, thc_percentage, lot_size)",
+    "✅ Backend: Each strain entry has document path fields (coa_url, health_canada_license_path, cra_license_path)",
+    "✅ Backend: Each strain entry has grower contact fields (grower_name, company_name, grower_email, grower_phone)",
+    "✅ Backend: Strains without grower submissions have null grower fields (graceful handling)",
+    "✅ Backend: Each strain entry has image_url field",
+    "✅ Backend: Each strain entry has coa_url field",
+    "✅ Frontend: Directory tab button appears in admin panel tab bar (data-testid=admin-tab-directory)",
+    "✅ Frontend: Directory tab is clickable and loads content",
+    "✅ Frontend: Directory shows all 27 strains",
+    "✅ Frontend: Each entry shows strain name, type, THC%, lot size",
+    "✅ Frontend: Document section shows COA/HC License/CRA License buttons",
+    "✅ Frontend: COA button appears when coa_url exists",
+    "✅ Frontend: 'No HC License'/'No CRA License' labels show when no document uploaded",
+    "✅ Frontend: Grower/LP Contact section displays 'No grower submission linked' for seeded strains",
+    "✅ Frontend: Search input filters strains by name (tested with 'Jealousy')"
+  ],
+
+  "failed_tests": [
+    "❌ Frontend: COA button click returns 401 (admin token not accepted by /api/strains/{id}/coa)"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_strain_directory.py",
+    "/app/test_reports/pytest/pytest_strain_directory.xml"
+  ],
+
+  "action_items": [
+    "FIX: Modify GET /api/strains/{strain_id}/coa endpoint to accept both admin tokens and user tokens. Currently it only uses verify_user_token dependency. Option 1: Create a combined auth function that checks both ADMIN_TOKENS and USER_TOKENS. Option 2: Create a separate admin endpoint for COA viewing."
+  ],
+
+  "critical_code_review_comments": [
+    "Line 2259-2273 in server.py: COA endpoint uses verify_user_token but admin panel needs to access COA too. Should accept either token type.",
+    "Line 4309-4316 in App.js: Directory COA button correctly tries `adminToken` but backend rejects it."
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_strain_directory.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (9/9 pytest tests passed)",
+    "frontend": "95% (18/19 tests passed - COA button click fails due to backend auth issue)"
+  },
+
+  "test_credentials": {
+    "admin_password": "firegold2026"
+  },
+
+  "seed_data_creation": "No new seed data created. Used existing 27 seeded strains.",
+
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+
+  "context_for_next_testing_agent": "Directory feature mostly working. The GET /api/admin/strain-directory endpoint returns all strains enriched with document paths (coa_url, health_canada_license_path, cra_license_path) and grower contact fields (grower_name, company_name, grower_email, grower_phone). Frontend Directory tab renders correctly with search filter. ONE BUG: COA button in Directory tab fails because the COA viewing endpoint (/api/strains/{id}/coa line 2259) uses verify_user_token which doesn't accept admin tokens stored in ADMIN_TOKENS. Fix needed: Either create verify_any_token function that checks both token stores, or create an admin-specific COA endpoint.",
+
+  "rca_of_the_issue": {
+    "bug": "COA button 401 error in admin Directory tab",
+    "root_cause": "GET /api/strains/{strain_id}/coa uses verify_user_token dependency (line 2260) which only validates tokens in USER_TOKENS dict. Admin panel uses tokens from ADMIN_TOKENS dict, which verify_user_token doesn't check.",
+    "reproduction_steps": [
+      "1. Login to admin panel at /admin with password 'firegold2026'",
+      "2. Click Directory tab",
+      "3. Click COA button on any strain that has COA (e.g., Jealousy)",
+      "4. Observe 401 error in console"
+    ],
+    "mitigation": "Modify the /api/strains/{strain_id}/coa endpoint to accept both admin and user tokens. Create a new dependency function verify_any_token that checks USER_TOKENS first, then ADMIN_TOKENS."
+  }
+}
