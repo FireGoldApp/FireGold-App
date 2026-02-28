@@ -273,6 +273,7 @@ class GrowerSubmissionInput(BaseModel):
     grade_a_kg: Optional[float] = None
     grade_b_kg: Optional[float] = None
     grade_c_kg: Optional[float] = None
+    harvest_date: Optional[str] = None
     additional_notes: Optional[str] = None
 
 class InquiryCreate(BaseModel):
