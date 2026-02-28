@@ -197,8 +197,11 @@ class TestHarvestDateFeatures:
         assert response.status_code == 200, f"Approval failed: {response.text}"
         print(f"✅ Submission {submission_id} approved")
         
-        # 3. Verify new strain was created with harvest_date
-        response = requests.get(f"{BASE_URL}/api/strains")
+        # 3. Verify new strain was created with harvest_date (using admin endpoint)
+        response = requests.get(
+            f"{BASE_URL}/api/strains/admin",
+            headers={"Authorization": f"Bearer {admin_token}"}
+        )
         assert response.status_code == 200
         strains = response.json()
         
