@@ -2180,7 +2180,7 @@ const AdminPage = () => {
     setSavingEdit(false);
   };
   const [users, setUsers] = useState([]);
-  const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users', 'flags', 'submissions'
+  const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users', 'flags', 'submissions', 'directory'
   const [flags, setFlags] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [submissionFilter, setSubmissionFilter] = useState('all');
@@ -2188,6 +2188,19 @@ const AdminPage = () => {
   const [pricePerGram, setPricePerGram] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
   const [processingSubmission, setProcessingSubmission] = useState(false);
+  const [directory, setDirectory] = useState([]);
+  const [directorySearch, setDirectorySearch] = useState('');
+
+  const fetchDirectory = async (token) => {
+    try {
+      const response = await axios.get(`${API}/admin/strain-directory`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDirectory(response.data);
+    } catch (error) {
+      console.error('Failed to load directory');
+    }
+  };
 
   const handleCoaUpload = async (strainId, file) => {
     if (!file) return;
