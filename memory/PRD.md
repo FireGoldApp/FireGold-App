@@ -61,7 +61,14 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - Shows green "Recognized" banner with badges: "HC License on file", "CRA License on file", "COA on file"
   - Works across multiple people from the same LP
   - Labels show "- on file" for individual upload fields
-- [x] **COA (Certificate of Analysis) Viewer** (Feb 27, 2026)
+- [x] **Enhanced Analytics Dashboard** (Feb 28, 2026)
+  - 4 sub-tabs: Overview, User Activity, Engagement, Global Insights
+  - **Overview**: Top viewed strains (with bar charts), THC potency interest, strain type preference, price tier interest, top searches, most active companies, event breakdown
+  - **User Activity**: Sortable table (by login count, total events, last active, strains viewed) showing every user's logins, events, strains viewed, searches, COA views, sample requests, time spent, last active. Click any user for detailed drill-down with activity timeline, event breakdown, top strains per user
+  - **Engagement**: Total sessions, avg/max session duration, sample request conversion rate, active users, peak usage hours chart, conversion funnel visualization, top navigation flows, daily activity sparkline
+  - **Global Insights**: Platform totals, users by country, export destinations, company activity by region (table), demand signals (most requested samples, terpene interest, strain type demand, price tier demand), supply-side (submission pipeline, lot size analysis with avg/min/max/total kg, irradiation stats, grower types), registration growth timeline
+  - Two CSV exports: Export Events CSV, Export Users CSV
+  - 20/20 backend tests + all frontend flows verified
   - Strain cards show green "COA" badge when a COA is available
   - Strain detail modal has "View Certificate of Analysis" button
   - In-app PDF viewer opens as full-screen overlay with close button (no download/navigation away)
