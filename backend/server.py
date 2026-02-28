@@ -162,6 +162,20 @@ def verify_user_token(authorization: str = Header(None)):
     
     return token_data
 
+def verify_any_token(authorization: str = Header(None)):
+    """Verify either user or admin token from Authorization header"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication required.")
+    token = authorization.replace("Bearer ", "")
+    for store in [USER_TOKENS, ADMIN_TOKENS]:
+        if token in store:
+            data = store[token]
+            if datetime.now(timezone.utc) > data['expires_at']:
+                del store[token]
+                raise HTTPException(status_code=401, detail="Session expired.")
+            return data
+    raise HTTPException(status_code=401, detail="Invalid or expired session.")
+
 def hash_password(password: str) -> str:
     """Hash a password using SHA256"""
     return hashlib.sha256(password.encode()).hexdigest()
