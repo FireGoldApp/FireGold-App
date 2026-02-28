@@ -194,6 +194,9 @@ class Strain(BaseModel):
     lineage: str
     lot_size: str
     effects: str
+    grade_a_kg: Optional[float] = None
+    grade_b_kg: Optional[float] = None
+    grade_c_kg: Optional[float] = None
     image_url: Optional[str] = None
     coa_url: Optional[str] = None  # Path to redacted COA PDF
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -208,6 +211,9 @@ class StrainCreate(BaseModel):
     lineage: str
     lot_size: str
     effects: str
+    grade_a_kg: Optional[float] = None
+    grade_b_kg: Optional[float] = None
+    grade_c_kg: Optional[float] = None
     image_url: Optional[str] = None
 
 # Grower Submission Model
