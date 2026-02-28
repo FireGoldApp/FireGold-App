@@ -8,7 +8,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://strain-portal-dev.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://strain-marketplace.preview.emergentagent.com')
 ADMIN_PASSWORD = "firegold2026"
 
 
