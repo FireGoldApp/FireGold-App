@@ -1713,6 +1713,32 @@ async def get_global_analytics(token: str = Depends(verify_admin_token)):
     ]
     irradiation_stats = await db.grower_submissions.aggregate(irrad_pipeline).to_list(5)
     
+    # Grade distribution analytics
+    grade_pipeline = [
+        {"$match": {"$or": [{"grade_a_kg": {"$gt": 0}}, {"grade_b_kg": {"$gt": 0}}, {"grade_c_kg": {"$gt": 0}}]}},
+        {"$group": {
+            "_id": None,
+            "total_grade_a": {"$sum": {"$ifNull": ["$grade_a_kg", 0]}},
+            "total_grade_b": {"$sum": {"$ifNull": ["$grade_b_kg", 0]}},
+            "total_grade_c": {"$sum": {"$ifNull": ["$grade_c_kg", 0]}},
+            "submissions_with_grades": {"$sum": 1}
+        }}
+    ]
+    grade_stats = await db.grower_submissions.aggregate(grade_pipeline).to_list(1)
+    
+    # Grade distribution from catalog strains
+    catalog_grade_pipeline = [
+        {"$match": {"$or": [{"grade_a_kg": {"$gt": 0}}, {"grade_b_kg": {"$gt": 0}}, {"grade_c_kg": {"$gt": 0}}]}},
+        {"$group": {
+            "_id": None,
+            "total_grade_a": {"$sum": {"$ifNull": ["$grade_a_kg", 0]}},
+            "total_grade_b": {"$sum": {"$ifNull": ["$grade_b_kg", 0]}},
+            "total_grade_c": {"$sum": {"$ifNull": ["$grade_c_kg", 0]}},
+            "strains_with_grades": {"$sum": 1}
+        }}
+    ]
+    catalog_grades = await db.strains.aggregate(catalog_grade_pipeline).to_list(1)
+    
     # --- Terpene Interest ---
     terpene_pipeline = [
         {"$match": {"event_type": "strain_view", "terpene_profile": {"$ne": None}}},
