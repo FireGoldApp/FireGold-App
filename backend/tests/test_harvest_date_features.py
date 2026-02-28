@@ -27,8 +27,11 @@ class TestHarvestDateFeatures:
     @pytest.fixture(scope="class")
     def test_strain_id(self, admin_token):
         """Get or create a test strain ID for updating"""
-        # Get first strain from catalog
-        response = requests.get(f"{BASE_URL}/api/strains")
+        # Get first strain from catalog (using admin endpoint which is admin-only)
+        response = requests.get(
+            f"{BASE_URL}/api/strains/admin",
+            headers={"Authorization": f"Bearer {admin_token}"}
+        )
         assert response.status_code == 200, f"Failed to get strains: {response.text}"
         strains = response.json()
         assert len(strains) > 0, "No strains available for testing"
