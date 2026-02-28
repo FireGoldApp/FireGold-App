@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="3" failures="0" skipped="0" tests="7" time="1.617" timestamp="2026-02-28T02:30:47.707757+00:00" hostname="agent-env-e19a1bd6-39dc-4a16-bfbc-26fc1bf81aa8"><testcase classname="backend.tests.test_mobile_back_and_edit.TestAdminAuth" name="test_admin_login_success" time="0.275" /><testcase classname="backend.tests.test_mobile_back_and_edit.TestAdminAuth" name="test_admin_login_failure" time="0.111" /><testcase classname="backend.tests.test_mobile_back_and_edit.TestStrainEditEndpoint" name="test_edit_strain_preserves_image_url" time="0.249"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_mobile_back_and_edit.py:54: in setup
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_mobile_back_and_edit.TestStrainEditEndpoint" name="test_edit_strain_requires_admin_auth" time="0.211"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_mobile_back_and_edit.py:54: in setup
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_mobile_back_and_edit.TestStrainEditEndpoint" name="test_edit_nonexistent_strain_returns_404" time="0.252"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_mobile_back_and_edit.py:54: in setup
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_mobile_back_and_edit.TestUserAuth" name="test_strains_requires_auth" time="0.139" /><testcase classname="backend.tests.test_mobile_back_and_edit.TestUserAuth" name="test_strains_accessible_with_user_token" time="0.215" /></testsuite></testsuites>
