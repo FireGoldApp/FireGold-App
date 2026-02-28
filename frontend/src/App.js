@@ -2276,6 +2276,19 @@ const AdminPage = () => {
     setLoadingReport(false);
   };
 
+  const fetchGlobalInsights = async () => {
+    setLoadingReport(true);
+    try {
+      const response = await axios.get(`${API}/analytics/global`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setGlobalData(response.data);
+    } catch (error) {
+      console.error('Failed to load global insights');
+    }
+    setLoadingReport(false);
+  };
+
   const exportUserActivityCSV = async () => {
     try {
       const response = await axios.get(`${API}/analytics/users-export/csv`, {
