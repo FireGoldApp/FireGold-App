@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="7" time="1.874" timestamp="2026-02-28T05:05:01.664551+00:00" hostname="agent-env-e19a1bd6-39dc-4a16-bfbc-26fc1bf81aa8"><testcase classname="tests.test_flower_grades.TestSubmissionGrades" name="test_submit_strain_with_grades_success" time="0.458" /><testcase classname="tests.test_flower_grades.TestSubmissionGrades" name="test_admin_view_submission_with_grades" time="0.253" /><testcase classname="tests.test_flower_grades.TestApprovedStrainGrades" name="test_approve_submission_transfers_grades" time="0.389"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">tests/test_flower_grades.py:152: in test_approve_submission_transfers_grades
+    assert strains_response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_flower_grades.TestStrainUpdateGrades" name="test_update_strain_grades" time="0.149"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">tests/test_flower_grades.py:180: in test_update_strain_grades
+    assert strains_response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_flower_grades.TestCSVExportGrades" name="test_csv_has_grade_columns" time="0.163" /><testcase classname="tests.test_flower_grades.TestGlobalInsightsGradeDistribution" name="test_global_insights_has_grade_distribution" time="0.144"><failure message="AssertionError: Global insights failed: {&quot;detail&quot;:&quot;Not Found&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_flower_grades.py:261: in test_global_insights_has_grade_distribution
+    assert response.status_code == 200, f"Global insights failed: {response.text}"
+E   AssertionError: Global insights failed: {"detail":"Not Found"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_flower_grades.TestGradeZeroHandling" name="test_zero_grades_stored_as_null" time="0.223" /></testsuite></testsuites>
