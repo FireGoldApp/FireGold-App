@@ -171,6 +171,13 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
           </span>
           <span className="font-mono text-xs text-zinc-500">{strain.lot_size}</span>
         </div>
+        {(strain.grade_a_kg || strain.grade_b_kg || strain.grade_c_kg) && (
+          <div className="flex gap-1.5 mt-2">
+            {strain.grade_a_kg > 0 && <span className="bg-cannabis-green/20 text-cannabis-green text-[10px] font-bold px-1.5 py-0.5">A: {strain.grade_a_kg}kg</span>}
+            {strain.grade_b_kg > 0 && <span className="bg-gold-500/20 text-gold-500 text-[10px] font-bold px-1.5 py-0.5">B: {strain.grade_b_kg}kg</span>}
+            {strain.grade_c_kg > 0 && <span className="bg-zinc-600/30 text-zinc-400 text-[10px] font-bold px-1.5 py-0.5">C: {strain.grade_c_kg}kg</span>}
+          </div>
+        )}
       </div>
     </div>
   );
