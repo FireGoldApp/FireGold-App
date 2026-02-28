@@ -4158,8 +4158,8 @@ const AdminPage = () => {
               </button>
             </div>
 
-            <div className="bg-charcoal border border-white/5 overflow-hidden">
-              <table className="w-full">
+            <div className="bg-charcoal border border-white/5 overflow-x-auto">
+              <table className="w-full min-w-[900px]">
                 <thead className="bg-zinc-900">
                   <tr>
                     <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Name</th>
