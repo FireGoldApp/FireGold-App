@@ -1189,6 +1189,42 @@ async def get_users(token: str = Depends(verify_admin_token)):
             user['created_at'] = datetime.fromisoformat(user['created_at'].replace('Z', '+00:00'))
     return users
 
+@api_router.put("/admin/users/{user_id}/status")
+async def update_user_status(user_id: str, status: dict, token: str = Depends(verify_admin_token)):
+    """Pause or reactivate a user's access (admin only)"""
+    new_status = status.get("status")
+    if new_status not in ("active", "suspended"):
+        raise HTTPException(status_code=400, detail="Status must be 'active' or 'suspended'")
+    
+    result = await db.users.update_one({"id": user_id}, {"$set": {"status": new_status}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Invalidate any active tokens for this user if suspending
+    if new_status == "suspended":
+        to_remove = [t for t, d in USER_TOKENS.items() if d.get('user_id') == user_id]
+        for t in to_remove:
+            del USER_TOKENS[t]
+    
+    return {"message": f"User status updated to {new_status}"}
+
+@api_router.delete("/admin/users/{user_id}")
+async def remove_user(user_id: str, token: str = Depends(verify_admin_token)):
+    """Remove a user permanently (admin only)"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Mark as removed instead of deleting (preserves analytics history)
+    await db.users.update_one({"id": user_id}, {"$set": {"status": "removed"}})
+    
+    # Invalidate any active tokens
+    to_remove = [t for t, d in USER_TOKENS.items() if d.get('user_id') == user_id]
+    for t in to_remove:
+        del USER_TOKENS[t]
+    
+    return {"message": "User removed"}
+
 # Analytics Tracking Endpoints
 @api_router.post("/analytics/track")
 async def track_event(
