@@ -175,9 +175,9 @@ class TestStrainUpdateGrades:
         """Test that PUT /api/strains/{strain_id} can update grade_a_kg, grade_b_kg, grade_c_kg"""
         headers = {"Authorization": f"Bearer {admin_token}"}
         
-        # Get an existing strain
-        strains_response = requests.get(f"{BASE_URL}/api/strains", headers=headers)
-        assert strains_response.status_code == 200
+        # Get an existing strain (use admin endpoint)
+        strains_response = requests.get(f"{BASE_URL}/api/strains/admin", headers=headers)
+        assert strains_response.status_code == 200, f"Admin strains failed: {strains_response.text}"
         strains = strains_response.json()
         assert len(strains) > 0, "No strains in database to test"
         
@@ -254,9 +254,9 @@ class TestGlobalInsightsGradeDistribution:
     """Test grade distribution in analytics endpoint"""
     
     def test_global_insights_has_grade_distribution(self, admin_token):
-        """Test that GET /api/analytics/global-insights returns grade_distribution in supply section"""
+        """Test that GET /api/analytics/global returns grade_distribution in supply section"""
         headers = {"Authorization": f"Bearer {admin_token}"}
-        response = requests.get(f"{BASE_URL}/api/analytics/global-insights", headers=headers)
+        response = requests.get(f"{BASE_URL}/api/analytics/global", headers=headers)
         
         assert response.status_code == 200, f"Global insights failed: {response.text}"
         data = response.json()
