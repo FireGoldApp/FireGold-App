@@ -1965,6 +1965,96 @@ async def get_strain_directory(token: str = Depends(verify_admin_token)):
     
     return directory
 
+@api_router.get("/admin/strain-directory/csv")
+async def export_strain_directory_csv(token: str = Depends(verify_admin_token)):
+    """Export full strain directory with all submission details as CSV"""
+    strains = await db.strains.find({}, {"_id": 0}).to_list(1000)
+    submissions = await db.grower_submissions.find({}, {"_id": 0}).to_list(1000)
+    
+    sub_by_strain = {}
+    for sub in submissions:
+        name = sub.get("strain_name", "").strip().lower()
+        if name not in sub_by_strain or sub.get("status") == "approved":
+            sub_by_strain[name] = sub
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Strain Name", "Type", "THC %", "CBD %", "Lot Size", "Effects", "Lineage",
+        "Terpene Profile", "Price Tier",
+        "Grower/LP Name", "Company", "Email", "Phone", "License Number",
+        "Submission Date", "Submission Status", "Growing Method",
+        "Export Country", "Irradiated", "Willing to Irradiate",
+        "Admin Price/Gram", "Admin Notes", "Additional Notes",
+        "Has COA", "Has HC License", "Has CRA License"
+    ])
+    
+    for strain in strains:
+        key = strain.get("strain_name", "").strip().lower()
+        sub = sub_by_strain.get(key, {})
+        writer.writerow([
+            strain.get("strain_name", ""),
+            strain.get("type", ""),
+            strain.get("thc_percentage", ""),
+            strain.get("cbd_percentage", ""),
+            strain.get("lot_size", ""),
+            strain.get("effects", ""),
+            strain.get("lineage", ""),
+            ", ".join(strain.get("terpene_profile", [])) if isinstance(strain.get("terpene_profile"), list) else strain.get("terpene_profile", ""),
+            strain.get("price_tier", ""),
+            sub.get("grower_name", ""),
+            sub.get("company_name", ""),
+            sub.get("email", ""),
+            sub.get("phone", ""),
+            sub.get("license_number", ""),
+            sub.get("created_at", ""),
+            sub.get("status", ""),
+            sub.get("growing_method", ""),
+            sub.get("export_country", ""),
+            sub.get("is_irradiated", ""),
+            sub.get("willing_to_irradiate", ""),
+            sub.get("admin_price_per_gram", ""),
+            sub.get("admin_notes", ""),
+            sub.get("additional_notes", ""),
+            "Yes" if strain.get("coa_url") or sub.get("coa_path") else "No",
+            "Yes" if sub.get("health_canada_license_path") else "No",
+            "Yes" if sub.get("cra_license_path") else "No",
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=firegold_strain_directory_{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"}
+    )
+
+@api_router.put("/admin/submissions/{submission_id}/redacted-coa")
+async def upload_redacted_coa(submission_id: str, coa: UploadFile = File(...), token: str = Depends(verify_admin_token)):
+    """Upload a redacted COA to replace the original on a submission"""
+    submission = await db.grower_submissions.find_one({"id": submission_id}, {"_id": 0})
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    
+    if not coa.filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="COA must be a PDF file")
+    
+    # Save redacted COA, overwriting the original
+    coa_dir = Path("/app/uploads/submissions/coa")
+    coa_dir.mkdir(parents=True, exist_ok=True)
+    coa_path = coa_dir / f"{submission_id}.pdf"
+    
+    content = await coa.read()
+    with open(coa_path, "wb") as f:
+        f.write(content)
+    
+    coa_url = f"/uploads/submissions/coa/{submission_id}.pdf"
+    await db.grower_submissions.update_one(
+        {"id": submission_id},
+        {"$set": {"coa_path": coa_url, "coa_redacted": True}}
+    )
+    
+    return {"message": "Redacted COA uploaded successfully", "coa_path": coa_url}
+
 @api_router.get("/strains/admin", response_model=List[Strain])
 async def get_strains_admin(token: str = Depends(verify_admin_token)):
     """Get all strains for admin (no user auth required)"""
