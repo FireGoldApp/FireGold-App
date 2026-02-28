@@ -238,6 +238,9 @@ class GrowerSubmission(BaseModel):
     export_country: Optional[str] = None  # Country of export
     is_irradiated: Optional[str] = None  # Yes/No - has flower been irradiated for micros
     willing_to_irradiate: Optional[str] = None  # Yes/No - willing to irradiate if required
+    grade_a_kg: Optional[float] = None  # kg of Grade A flower
+    grade_b_kg: Optional[float] = None  # kg of Grade B flower
+    grade_c_kg: Optional[float] = None  # kg of Grade C flower
     image_path: Optional[str] = None  # Path to uploaded image
     additional_notes: Optional[str] = None
     # Status
@@ -264,6 +267,9 @@ class GrowerSubmissionInput(BaseModel):
     export_country: Optional[str] = None
     is_irradiated: Optional[str] = None
     willing_to_irradiate: Optional[str] = None
+    grade_a_kg: Optional[float] = None
+    grade_b_kg: Optional[float] = None
+    grade_c_kg: Optional[float] = None
     additional_notes: Optional[str] = None
 
 class InquiryCreate(BaseModel):
