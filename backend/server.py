@@ -2231,7 +2231,7 @@ async def update_strain(strain_id: str, strain_input: StrainCreate, token: str =
     if not strain:
         raise HTTPException(status_code=404, detail="Strain not found")
     
-    update_data = strain_input.model_dump()
+    update_data = strain_input.model_dump(exclude_unset=True)
     await db.strains.update_one(
         {"id": strain_id},
         {"$set": update_data}
