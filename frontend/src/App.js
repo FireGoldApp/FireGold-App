@@ -5050,14 +5050,19 @@ const CatalogPage = () => {
           style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1647268465509-f0229a865b6f)' }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-obsidian via-transparent to-obsidian" />
-        <div className="relative z-10 text-center px-6">
-          <h1 className="font-cinzel font-bold text-4xl md:text-6xl lg:text-7xl text-gold-grad tracking-tight mb-4">
-            Cultivar Selection
-          </h1>
-          <p className="font-manrope text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto">
-            Premium wholesale cannabis flower for discerning B2B partners
-          </p>
-          <p className="font-mono text-gold-500/60 text-sm mt-4">February 2026 Catalog</p>
+        <div className="relative z-10 flex items-center gap-8 px-6 max-w-5xl mx-auto">
+          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-28 md:h-40 w-auto flex-shrink-0 hidden sm:block" />
+          <div className="text-center sm:text-left">
+            <h1 className="font-cinzel font-bold text-4xl md:text-6xl lg:text-7xl text-gold-grad tracking-tight mb-4">
+              Cultivar Selection
+            </h1>
+            <p className="font-manrope text-zinc-400 text-lg md:text-xl max-w-2xl">
+              Premium wholesale cannabis flower for discerning B2B partners
+            </p>
+            <p className="font-mono text-gold-500/60 text-sm mt-4">
+              {new Date().toLocaleString('en-US', { month: 'long' })} {new Date().getFullYear()} Catalog
+            </p>
+          </div>
         </div>
       </section>
 
