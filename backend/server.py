@@ -2142,7 +2142,7 @@ async def export_strain_directory_csv(token: str = Depends(verify_admin_token)):
     writer = csv.writer(output)
     writer.writerow([
         "Strain Name", "Type", "THC %", "CBD %", "Lot Size", "Effects", "Lineage",
-        "Terpene Profile", "Price Tier",
+        "Terpene Profile", "Price Tier", "Harvest Date",
         "Grade A (kg)", "Grade B (kg)", "Grade C (kg)",
         "Grower/LP Name", "Company", "Email", "Phone", "License Number",
         "Submission Date", "Submission Status", "Growing Method",
