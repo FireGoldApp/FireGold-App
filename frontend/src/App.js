@@ -1975,7 +1975,14 @@ const AuthPage = ({ onAuth }) => {
             </div>
 
             {error && (
-              <div className="text-red-500 text-sm text-center">{error}</div>
+              <div data-testid="login-error" className={`text-sm text-center p-3 ${error.includes('warren@firegold.ca') ? 'bg-red-500/10 border border-red-500/30 text-red-400' : 'text-red-500'}`}>
+                {error.includes('warren@firegold.ca') ? (
+                  <div>
+                    <p className="font-bold mb-1">{error.split('Please')[0]}</p>
+                    <p>Please contact <a href="mailto:warren@firegold.ca" className="text-gold-500 underline hover:text-gold-400">warren@firegold.ca</a> to request new access.</p>
+                  </div>
+                ) : error}
+              </div>
             )}
 
             <button
