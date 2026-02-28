@@ -2944,7 +2944,8 @@ const AdminPage = () => {
                 {[
                   { key: 'overview', label: 'Overview' },
                   { key: 'users', label: 'User Activity' },
-                  { key: 'engagement', label: 'Engagement' }
+                  { key: 'engagement', label: 'Engagement' },
+                  { key: 'global', label: 'Global Insights' }
                 ].map(tab => (
                   <button
                     key={tab.key}
