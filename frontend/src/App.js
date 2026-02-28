@@ -2777,14 +2777,24 @@ const AdminPage = () => {
                       </div>
                     </div>
 
-                    {/* Delete button - more visible */}
-                    <button
-                      onClick={() => confirmDeleteStrain(strain.id, strain.strain_name)}
-                      className="absolute top-2 right-2 w-8 h-8 bg-red-500/90 hover:bg-red-600 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                      title="Remove strain"
-                    >
-                      <Trash2 className="w-4 h-4 text-white" />
-                    </button>
+                    {/* Action buttons - visible on hover */}
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={() => openEditStrain(strain)}
+                        data-testid={`edit-strain-${strain.id}`}
+                        className="w-8 h-8 bg-gold-500/90 hover:bg-gold-500 rounded flex items-center justify-center"
+                        title="Edit strain details"
+                      >
+                        <Edit2 className="w-4 h-4 text-black" />
+                      </button>
+                      <button
+                        onClick={() => confirmDeleteStrain(strain.id, strain.strain_name)}
+                        className="w-8 h-8 bg-red-500/90 hover:bg-red-600 rounded flex items-center justify-center"
+                        title="Remove strain"
+                      >
+                        <Trash2 className="w-4 h-4 text-white" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
