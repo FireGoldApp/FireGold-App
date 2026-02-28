@@ -2097,6 +2097,7 @@ const AdminPage = () => {
   const [userActivitySort, setUserActivitySort] = useState('login_count');
   const [selectedUserDetail, setSelectedUserDetail] = useState(null);
   const [engagementData, setEngagementData] = useState(null);
+  const [globalData, setGlobalData] = useState(null);
   const [loadingReport, setLoadingReport] = useState(false);
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users', 'flags', 'submissions'
