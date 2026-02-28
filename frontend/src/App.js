@@ -256,7 +256,7 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
             <button 
               data-testid="close-modal-btn"
               onClick={onClose}
-              className="absolute top-4 right-4 w-10 h-10 bg-black/80 backdrop-blur-sm hidden md:flex items-center justify-center hover:bg-gold-500 hover:text-black transition-all"
+              className="absolute top-4 right-4 w-10 h-10 bg-gold-500 text-black hidden md:flex items-center justify-center hover:bg-red-600 hover:text-black transition-all"
             >
               <X className="w-5 h-5" />
             </button>
