@@ -139,6 +139,14 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - Paused/removed users see at login: "Please contact warren@firegold.ca to request new access" with clickable mailto link
   - Active tokens invalidated immediately on pause/remove
   - Backend: PUT /api/admin/users/{id}/status, DELETE /api/admin/users/{id}
+- [x] **Landing Page Logo & Dynamic Month** (Feb 28, 2026)
+  - Firegold logo placed beside "Cultivar Selection" heading in hero section
+  - "February 2026 Catalog" auto-updates to current month/year using JavaScript Date
+- [x] **Harvest Date** (Feb 28, 2026)
+  - Added to grower submission form (required date picker)
+  - Flows through to strain when submission is approved
+  - Displayed on strain detail modal pages
+  - Included in admin edit form and CSV export
 
 ## Prioritized Backlog
 
