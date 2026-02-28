@@ -2271,8 +2271,8 @@ async def remove_strain_coa(strain_id: str, token: str = Depends(verify_admin_to
     return {"message": "COA removed"}
 
 @api_router.get("/strains/{strain_id}/coa")
-async def view_strain_coa(strain_id: str, user_data: dict = Depends(verify_user_token)):
-    """View COA PDF for a strain (authenticated users)"""
+async def view_strain_coa(strain_id: str, user_data: dict = Depends(verify_any_token)):
+    """View COA PDF for a strain (authenticated users or admins)"""
     from fastapi.responses import FileResponse
     strain = await db.strains.find_one({"id": strain_id}, {"_id": 0})
     if not strain:
