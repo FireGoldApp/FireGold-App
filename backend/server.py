@@ -1591,6 +1591,39 @@ async def get_engagement_metrics(
 async def export_user_activity_csv(token: str = Depends(verify_admin_token)):
     """Export user activity report to CSV"""
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    user_ids = [u['id'] for u in users]
+    
+    # Batch all queries
+    events_agg = await db.analytics.aggregate([
+        {"$match": {"user_id": {"$in": user_ids}}},
+        {"$group": {"_id": "$user_id", "total_events": {"$sum": 1}, "last_active": {"$max": "$timestamp"}}}
+    ]).to_list(1000)
+    events_map = {e["_id"]: e for e in events_agg}
+    
+    sessions_agg = await db.user_sessions.aggregate([
+        {"$match": {"user_id": {"$in": user_ids}}},
+        {"$group": {"_id": "$user_id", "login_count": {"$sum": 1}}}
+    ]).to_list(1000)
+    sessions_map = {s["_id"]: s["login_count"] for s in sessions_agg}
+    
+    strains_agg = await db.analytics.aggregate([
+        {"$match": {"user_id": {"$in": user_ids}, "event_type": "strain_view", "strain_name": {"$ne": None}}},
+        {"$group": {"_id": {"user_id": "$user_id", "strain": "$strain_name"}}},
+        {"$group": {"_id": "$_id.user_id", "count": {"$sum": 1}}}
+    ]).to_list(1000)
+    strains_map = {s["_id"]: s["count"] for s in strains_agg}
+    
+    search_agg = await db.analytics.aggregate([
+        {"$match": {"user_id": {"$in": user_ids}, "event_type": "search"}},
+        {"$group": {"_id": "$user_id", "count": {"$sum": 1}}}
+    ]).to_list(1000)
+    search_map = {s["_id"]: s["count"] for s in search_agg}
+    
+    sample_agg = await db.sample_requests.aggregate([
+        {"$match": {"user_id": {"$in": user_ids}}},
+        {"$group": {"_id": "$user_id", "count": {"$sum": 1}}}
+    ]).to_list(1000)
+    sample_map = {s["_id"]: s["count"] for s in sample_agg}
     
     output = io.StringIO()
     writer = csv.writer(output)
@@ -1598,29 +1631,19 @@ async def export_user_activity_csv(token: str = Depends(verify_admin_token)):
     
     for user in users:
         uid = user['id']
-        total_events = await db.analytics.count_documents({"user_id": uid})
-        login_count = await db.user_sessions.count_documents({"user_id": uid})
-        last_event = await db.analytics.find_one({"user_id": uid}, {"_id": 0, "timestamp": 1}, sort=[("timestamp", -1)])
-        strain_result = await db.analytics.aggregate([
-            {"$match": {"user_id": uid, "event_type": "strain_view", "strain_name": {"$ne": None}}},
-            {"$group": {"_id": "$strain_name"}},
-            {"$count": "count"}
-        ]).to_list(1)
-        search_count = await db.analytics.count_documents({"user_id": uid, "event_type": "search"})
-        sample_count = await db.sample_requests.count_documents({"user_id": uid})
-        
+        ev = events_map.get(uid, {})
         writer.writerow([
             f"{user.get('first_name','')} {user.get('last_name','')}",
             user.get('company', ''),
             user.get('email', ''),
             user.get('country', ''),
             user.get('registration_date', user.get('created_at', '')),
-            login_count,
-            total_events,
-            strain_result[0]['count'] if strain_result else 0,
-            search_count,
-            sample_count,
-            last_event.get('timestamp', '') if last_event else ''
+            sessions_map.get(uid, 0),
+            ev.get("total_events", 0),
+            strains_map.get(uid, 0),
+            search_map.get(uid, 0),
+            sample_map.get(uid, 0),
+            ev.get("last_active", '')
         ])
     
     output.seek(0)
