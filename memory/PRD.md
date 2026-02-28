@@ -99,6 +99,11 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - PUT /api/strains/{strain_id} endpoint with admin auth protection
   - Uses exclude_unset=True to preserve image_url and coa_url when not in update payload
   - Edit form pre-fills with current strain data
+- [x] **User-Linked Submissions** (Feb 28, 2026)
+  - Sample requests and inquiries are now linked to the authenticated user (user_id, user_email stored in DB)
+  - Both POST /api/inquiries and POST /api/sample-requests/upload require user auth token
+  - Forms auto-fill company name, contact name, and email from logged-in user data
+  - Frontend sends Authorization header with all submissions
 
 ## Prioritized Backlog
 
