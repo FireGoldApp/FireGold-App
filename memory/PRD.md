@@ -133,6 +133,12 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - Displays total kg per grade with color-coded boxes + total kg badge
   - Shows "X of Y strains have grade data" footer
   - Backend: GET /api/admin/inventory-summary endpoint with MongoDB aggregation
+- [x] **User Access Management** (Feb 28, 2026)
+  - Admin Users tab: "Pause Access" button (yellow) for active users, "Restore" button (green) for paused users, "Remove" button (red) for all
+  - Status badges: Active (green), Paused (yellow), Removed (red)
+  - Paused/removed users see at login: "Please contact warren@firegold.ca to request new access" with clickable mailto link
+  - Active tokens invalidated immediately on pause/remove
+  - Backend: PUT /api/admin/users/{id}/status, DELETE /api/admin/users/{id}
 
 ## Prioritized Backlog
 
