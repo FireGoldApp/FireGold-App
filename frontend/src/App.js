@@ -5086,7 +5086,7 @@ const CatalogPage = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-obsidian via-transparent to-obsidian" />
         <div className="relative z-10 flex items-center gap-8 px-6 max-w-5xl mx-auto">
-          <img src={FIREGOLD_MARKETPLACE_LOGO} alt="Firegold Marketplace" className="h-40 md:h-52 w-auto flex-shrink-0 hidden sm:block" style={{ mixBlendMode: 'screen' }} />
+          <img src={FIREGOLD_MARKETPLACE_LOGO} alt="Firegold Marketplace" className="h-60 md:h-80 w-auto flex-shrink-0 hidden sm:block" style={{ mixBlendMode: 'lighten' }} />
           <div className="text-center sm:text-left">
             <h1 className="font-cinzel font-bold text-4xl md:text-6xl lg:text-7xl text-gold-grad tracking-tight mb-4">
               Cultivar Selection
