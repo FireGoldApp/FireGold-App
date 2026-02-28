@@ -313,6 +313,14 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
               <div className="text-white font-mono">{strain.lot_size}</div>
             </div>
 
+            {/* Harvest Date */}
+            {strain.harvest_date && (
+              <div className="mb-6">
+                <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-2">Harvest Date</div>
+                <div className="text-white font-mono">{new Date(strain.harvest_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+              </div>
+            )}
+
             {/* Grade Breakdown */}
             {(strain.grade_a_kg || strain.grade_b_kg || strain.grade_c_kg) && (
               <div className="mb-6">
