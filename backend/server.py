@@ -1301,23 +1301,286 @@ async def get_analytics_dashboard(
 
 @api_router.get("/analytics/user/{user_id}")
 async def get_user_analytics(user_id: str, token: str = Depends(verify_admin_token)):
-    """Get analytics for a specific user (admin only)"""
+    """Get detailed analytics for a specific user (admin only)"""
     events = await db.analytics.find(
         {"user_id": user_id}, 
         {"_id": 0}
     ).sort("timestamp", -1).to_list(500)
     
-    # User journey summary
+    sessions = await db.user_sessions.find(
+        {"user_id": user_id},
+        {"_id": 0}
+    ).sort("session_start", -1).to_list(100)
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    
     strains_viewed = list(set([e.get('strain_name') for e in events if e.get('strain_name')]))
     searches = list(set([e.get('search_query') for e in events if e.get('search_query')]))
     
+    # Event timeline grouped by type
+    event_counts = {}
+    for e in events:
+        et = e.get('event_type', 'unknown')
+        event_counts[et] = event_counts.get(et, 0) + 1
+    
+    # Most viewed strains by this user
+    strain_view_counts = {}
+    for e in events:
+        if e.get('event_type') == 'strain_view' and e.get('strain_name'):
+            sn = e['strain_name']
+            strain_view_counts[sn] = strain_view_counts.get(sn, 0) + 1
+    top_strains = sorted(strain_view_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    # Session summary
+    total_sessions = len(sessions)
+    total_duration = sum(s.get('total_duration', 0) for s in sessions)
+    avg_duration = total_duration // total_sessions if total_sessions > 0 else 0
+    
+    # First and last activity
+    first_event = events[-1].get('timestamp') if events else None
+    last_event = events[0].get('timestamp') if events else None
+    
     return {
         "user_id": user_id,
+        "user_info": user,
         "total_events": len(events),
+        "total_sessions": total_sessions,
+        "total_duration_seconds": total_duration,
+        "avg_session_seconds": avg_duration,
+        "first_activity": first_event,
+        "last_activity": last_event,
         "strains_viewed": strains_viewed,
         "search_queries": searches,
-        "recent_activity": events[:50]
+        "event_breakdown": event_counts,
+        "top_strains": [{"strain_name": s[0], "views": s[1]} for s in top_strains],
+        "recent_activity": events[:100],
+        "sessions": sessions[:20]
     }
+
+@api_router.get("/analytics/users-report")
+async def get_users_activity_report(
+    sort_by: str = Query("login_count", description="Sort by: login_count, total_events, last_active, strains_viewed"),
+    token: str = Depends(verify_admin_token)
+):
+    """Get comprehensive user activity report sorted by various metrics"""
+    # Get all users
+    all_users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    
+    user_reports = []
+    for user in all_users:
+        uid = user['id']
+        
+        # Count total events
+        total_events = await db.analytics.count_documents({"user_id": uid})
+        
+        # Count sessions (login frequency)
+        sessions = await db.user_sessions.find({"user_id": uid}, {"_id": 0}).to_list(1000)
+        login_count = len(sessions)
+        total_duration = sum(s.get('total_duration', 0) for s in sessions)
+        
+        # Last activity
+        last_event = await db.analytics.find_one(
+            {"user_id": uid}, {"_id": 0, "timestamp": 1}, sort=[("timestamp", -1)]
+        )
+        
+        # Unique strains viewed
+        strain_pipeline = [
+            {"$match": {"user_id": uid, "event_type": "strain_view", "strain_name": {"$ne": None}}},
+            {"$group": {"_id": "$strain_name"}},
+            {"$count": "count"}
+        ]
+        strain_result = await db.analytics.aggregate(strain_pipeline).to_list(1)
+        unique_strains = strain_result[0]['count'] if strain_result else 0
+        
+        # Searches count
+        search_count = await db.analytics.count_documents({"user_id": uid, "event_type": "search"})
+        
+        # COA views
+        coa_views = await db.analytics.count_documents({"user_id": uid, "event_type": "coa_view"})
+        
+        # Sample requests
+        sample_requests = await db.sample_requests.count_documents({"user_id": uid})
+        
+        user_reports.append({
+            "user_id": uid,
+            "name": f"{user.get('first_name', '')} {user.get('last_name', '')}".strip(),
+            "company": user.get('company', ''),
+            "email": user.get('email', ''),
+            "country": user.get('country', ''),
+            "registered": user.get('registration_date') or user.get('created_at', ''),
+            "login_count": login_count,
+            "total_events": total_events,
+            "total_duration_seconds": total_duration,
+            "last_active": last_event.get('timestamp') if last_event else None,
+            "strains_viewed": unique_strains,
+            "searches": search_count,
+            "coa_views": coa_views,
+            "sample_requests": sample_requests
+        })
+    
+    # Sort
+    sort_key = sort_by
+    if sort_key == 'last_active':
+        user_reports.sort(key=lambda x: x.get('last_active') or '', reverse=True)
+    else:
+        user_reports.sort(key=lambda x: x.get(sort_key, 0), reverse=True)
+    
+    return user_reports
+
+@api_router.get("/analytics/engagement")
+async def get_engagement_metrics(
+    days: int = Query(30),
+    token: str = Depends(verify_admin_token)
+):
+    """Get engagement metrics: avg session duration, peak times, conversion rates"""
+    from_date = datetime.now(timezone.utc) - timedelta(days=days)
+    from_date_str = from_date.isoformat()
+    
+    # Session metrics
+    sessions = await db.user_sessions.find(
+        {"session_start": {"$gte": from_date_str}},
+        {"_id": 0}
+    ).to_list(10000)
+    
+    durations = [s.get('total_duration', 0) for s in sessions if s.get('total_duration', 0) > 0]
+    avg_session = sum(durations) // len(durations) if durations else 0
+    max_session = max(durations) if durations else 0
+    total_sessions = len(sessions)
+    
+    # Peak usage hours
+    hour_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}}},
+        {"$project": {"hour": {"$substr": ["$timestamp", 11, 2]}}},
+        {"$group": {"_id": "$hour", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    peak_hours = await db.analytics.aggregate(hour_pipeline).to_list(24)
+    
+    # Peak usage days of week
+    day_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}}},
+        {"$project": {"date": {"$substr": ["$timestamp", 0, 10]}}},
+        {"$group": {"_id": "$date", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    daily_activity = await db.analytics.aggregate(day_pipeline).to_list(60)
+    
+    # Conversion funnel: views -> sample requests
+    total_viewers = await db.analytics.aggregate([
+        {"$match": {"timestamp": {"$gte": from_date_str}, "event_type": "strain_view"}},
+        {"$group": {"_id": "$user_id"}},
+        {"$count": "count"}
+    ]).to_list(1)
+    viewer_count = total_viewers[0]['count'] if total_viewers else 0
+    
+    sample_requesters = await db.sample_requests.aggregate([
+        {"$match": {"request_date": {"$gte": from_date_str}}},
+        {"$group": {"_id": "$user_id"}},
+        {"$count": "count"}
+    ]).to_list(1)
+    requester_count = sample_requesters[0]['count'] if sample_requesters else 0
+    
+    # Navigation flow: what users do after login
+    flow_pipeline = [
+        {"$match": {"timestamp": {"$gte": from_date_str}}},
+        {"$sort": {"user_id": 1, "timestamp": 1}},
+        {"$group": {
+            "_id": "$user_id",
+            "events": {"$push": "$event_type"}
+        }},
+        {"$project": {
+            "first_action": {"$arrayElemAt": ["$events", 0]},
+            "second_action": {"$arrayElemAt": ["$events", 1]},
+            "third_action": {"$arrayElemAt": ["$events", 2]}
+        }}
+    ]
+    flows = await db.analytics.aggregate(flow_pipeline).to_list(1000)
+    
+    # Count common flows
+    flow_counts = {}
+    for f in flows:
+        path = ' → '.join(filter(None, [f.get('first_action'), f.get('second_action'), f.get('third_action')]))
+        if path:
+            flow_counts[path] = flow_counts.get(path, 0) + 1
+    top_flows = sorted(flow_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    # Returning vs new users
+    all_time_users_result = await db.analytics.aggregate([
+        {"$group": {"_id": "$user_id"}},
+        {"$count": "count"}
+    ]).to_list(1)
+    all_time_users = all_time_users_result[0]['count'] if all_time_users_result else 0
+    
+    period_users_result = await db.analytics.aggregate([
+        {"$match": {"timestamp": {"$gte": from_date_str}}},
+        {"$group": {"_id": "$user_id"}},
+        {"$count": "count"}
+    ]).to_list(1)
+    period_users = period_users_result[0]['count'] if period_users_result else 0
+    
+    return {
+        "period_days": days,
+        "sessions": {
+            "total": total_sessions,
+            "avg_duration_seconds": avg_session,
+            "max_duration_seconds": max_session
+        },
+        "peak_hours": [{"hour": h['_id'], "events": h['count']} for h in peak_hours[:6]],
+        "daily_activity": daily_activity,
+        "conversion": {
+            "total_viewers": viewer_count,
+            "sample_requesters": requester_count,
+            "conversion_rate": round(requester_count / viewer_count * 100, 1) if viewer_count > 0 else 0
+        },
+        "top_navigation_flows": [{"flow": f[0], "count": f[1]} for f in top_flows],
+        "user_base": {
+            "all_time": all_time_users,
+            "active_this_period": period_users
+        }
+    }
+
+@api_router.get("/analytics/users-export/csv")
+async def export_user_activity_csv(token: str = Depends(verify_admin_token)):
+    """Export user activity report to CSV"""
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Name", "Company", "Email", "Country", "Registered", "Logins", "Total Events", "Strains Viewed", "Searches", "Sample Requests", "Last Active"])
+    
+    for user in users:
+        uid = user['id']
+        total_events = await db.analytics.count_documents({"user_id": uid})
+        login_count = await db.user_sessions.count_documents({"user_id": uid})
+        last_event = await db.analytics.find_one({"user_id": uid}, {"_id": 0, "timestamp": 1}, sort=[("timestamp", -1)])
+        strain_result = await db.analytics.aggregate([
+            {"$match": {"user_id": uid, "event_type": "strain_view", "strain_name": {"$ne": None}}},
+            {"$group": {"_id": "$strain_name"}},
+            {"$count": "count"}
+        ]).to_list(1)
+        search_count = await db.analytics.count_documents({"user_id": uid, "event_type": "search"})
+        sample_count = await db.sample_requests.count_documents({"user_id": uid})
+        
+        writer.writerow([
+            f"{user.get('first_name','')} {user.get('last_name','')}",
+            user.get('company', ''),
+            user.get('email', ''),
+            user.get('country', ''),
+            user.get('registration_date', user.get('created_at', '')),
+            login_count,
+            total_events,
+            strain_result[0]['count'] if strain_result else 0,
+            search_count,
+            sample_count,
+            last_event.get('timestamp', '') if last_event else ''
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=firegold_user_activity.csv"}
+    )
 
 # CSV Export Endpoints
 @api_router.get("/analytics/export/csv")
