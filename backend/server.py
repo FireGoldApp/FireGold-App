@@ -1129,7 +1129,10 @@ async def login_user(login: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid password")
     
     if user.get('status') == 'suspended':
-        raise HTTPException(status_code=403, detail="Account suspended. Contact support.")
+        raise HTTPException(status_code=403, detail="Your access has been paused. Please contact warren@firegold.ca to request new access.")
+    
+    if user.get('status') == 'removed':
+        raise HTTPException(status_code=403, detail="Your account has been removed. Please contact warren@firegold.ca to request new access.")
     
     # Generate session token
     token = secrets.token_urlsafe(32)
