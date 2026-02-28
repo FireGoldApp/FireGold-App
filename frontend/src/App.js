@@ -1614,7 +1614,7 @@ const AuthPage = ({ onAuth }) => {
       <div className="bg-charcoal border border-white/10 p-8 max-w-lg w-full">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-16" />
+          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-24 w-auto" />
         </div>
 
         {/* Mode Toggle */}
