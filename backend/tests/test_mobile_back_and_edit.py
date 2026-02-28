@@ -49,9 +49,9 @@ class TestStrainEditEndpoint:
         self.admin_token = response.json()["token"]
         self.headers = {"Authorization": f"Bearer {self.admin_token}"}
         
-        # Get strains list
-        response = requests.get(f"{BASE_URL}/api/strains", headers=self.headers)
-        assert response.status_code == 200
+        # Get strains list using admin endpoint
+        response = requests.get(f"{BASE_URL}/api/strains/admin", headers=self.headers)
+        assert response.status_code == 200, f"Admin strains endpoint failed: {response.text}"
         self.strains = response.json()
         assert len(self.strains) > 0, "No strains found"
     
