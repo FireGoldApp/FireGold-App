@@ -39,7 +39,8 @@ import {
   XCircle,
   Clock,
   ClipboardList,
-  DollarSign
+  DollarSign,
+  Edit2
 } from "lucide-react";
 
 // Prevent right-click on images
