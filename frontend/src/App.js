@@ -54,7 +54,7 @@ const preventImageActions = (e) => {
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 const FIREGOLD_LOGO = "https://customer-assets.emergentagent.com/job_reload-engine/artifacts/sx02pppj_ChatGPT%20Image%20Nov%2011%2C%202025%20at%2009_53_40%20AM.png";
-const FIREGOLD_MARKETPLACE_LOGO = "https://customer-assets.emergentagent.com/job_ecd636ef-7568-464f-aeda-90fbfc69ca12/artifacts/wdp05at4_PHOTO-2026-02-28-10-53-25.jpg";
+const FIREGOLD_MARKETPLACE_LOGO = "https://static.prod-images.emergentagent.com/jobs/ecd636ef-7568-464f-aeda-90fbfc69ca12/images/fe0a5b1a0ba84ecce0f9e07cbfee5fb788df8c3f48d89bf178c8e5b6d86e5552.png";
 
 // Analytics tracking helper
 const trackEvent = async (eventType, data = {}) => {
