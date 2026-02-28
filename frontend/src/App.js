@@ -1073,7 +1073,7 @@ const GrowerSubmitPage = () => {
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm">Back to Catalog</span>
         </a>
-        <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-20 w-auto" />
+        <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-28 w-auto" />
         <div></div>
       </header>
 
@@ -1614,7 +1614,7 @@ const AuthPage = ({ onAuth }) => {
       <div className="bg-charcoal border border-white/10 p-8 max-w-lg w-full">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-24 w-auto" />
+          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-32 w-auto" />
         </div>
 
         {/* Mode Toggle */}
@@ -1898,7 +1898,7 @@ const SubmissionTracker = () => {
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm">Back to Catalog</span>
         </a>
-        <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-20 w-auto" />
+        <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-28 w-auto" />
         <div></div>
       </header>
 
@@ -4244,7 +4244,7 @@ const CatalogPage = () => {
       {/* Header */}
       <header className="fixed top-0 w-full z-40 bg-black/80 backdrop-blur-md border-b border-white/5 h-20 flex items-center justify-between px-6 md:px-12">
         <div className="flex items-center gap-3">
-          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-20 w-auto" />
+          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-28 w-auto" />
         </div>
         
         {/* Search */}
@@ -4432,7 +4432,7 @@ const CatalogPage = () => {
       {/* Footer */}
       <footer className="border-t border-white/5 py-12 px-6 md:px-12">
         <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-16 w-auto" />
+          <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-28 w-auto" />
           <div className="text-center md:text-right">
             <p className="text-zinc-500 text-sm">The Firegold Standard</p>
             <p className="text-zinc-600 text-xs mt-1">© 2026 Firegold Brands. Premium B2B Cannabis Wholesale.</p>
