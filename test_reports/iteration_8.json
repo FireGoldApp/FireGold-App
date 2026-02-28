@@ -1,0 +1,66 @@
+{
+  "summary": "Tested mobile back button fix and admin strain edit functionality. Both user-reported issues verified as FIXED: 1) Mobile back button '← BACK' is now visible and working on mobile viewport (390x844), 2) Admin strain edit correctly preserves image_url and coa_url fields when updating other fields (exclude_unset=True fix confirmed working).",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✅ Backend: Admin login with correct password (firegold2026) returns token",
+    "✅ Backend: Admin login with wrong password returns 401",
+    "✅ Backend: PUT /api/strains/{id} preserves image_url when not included in payload (exclude_unset=True fix)",
+    "✅ Backend: PUT /api/strains/{id} preserves coa_url when not included in payload",
+    "✅ Backend: PUT /api/strains/{id} requires admin authentication (401 without token)",
+    "✅ Backend: PUT /api/strains/{id} returns 404 for non-existent strain",
+    "✅ Backend: GET /api/strains requires user authentication (401)",
+    "✅ Backend: User can register and access strains with user token",
+    "✅ Frontend Mobile: Strain detail modal shows sticky header bar with '← BACK' and strain name",
+    "✅ Frontend Mobile: Mobile back button visible on 390x844 viewport",
+    "✅ Frontend Mobile: Clicking back button closes modal (no refresh needed!)",
+    "✅ Frontend Mobile: Back button remains visible after scrolling inside modal (sticky header)",
+    "✅ Frontend Mobile: Can re-open and close multiple strain modals without page refresh",
+    "✅ Frontend Mobile: Desktop close button (X) hidden on mobile viewport",
+    "✅ Frontend Admin: Edit button visible on Images tab for all strains",
+    "✅ Frontend Admin: Edit strain modal opens with pre-filled form fields",
+    "✅ Frontend Admin: Changing THC percentage and saving shows success toast 'Strain updated'",
+    "✅ Frontend Admin: Edit persists - refreshed admin panel shows updated value"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_mobile_back_and_edit.py",
+    "/app/test_reports/pytest/pytest_mobile_edit.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_mobile_back_and_edit.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (7/7 tests passed)",
+    "frontend": "100% (all mobile back button and admin edit features working)"
+  },
+
+  "test_credentials": {
+    "admin_password": "firegold2026",
+    "admin_route": "/admin",
+    "test_strain_used": "Jealousy (id: 5b2e6ecc-77a3-4488-915e-c8b9f8926c14)"
+  },
+
+  "seed_data_creation": "Used existing Jealousy strain. Created test users with email pattern mobiletest*@example.com and straintest*@example.com during testing.",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Both user-reported bugs are FIXED: 1) Mobile back button ('← BACK') now appears as a sticky header bar on mobile viewports (md:hidden class) at top of strain detail modal, containing ArrowLeft icon + 'Back' text on left and strain name on right. The desktop X close button uses 'hidden md:flex' to hide on mobile. 2) Admin strain edit PUT endpoint uses exclude_unset=True to preserve image_url and coa_url when these fields are not included in the update payload. Frontend saveEditStrain function in App.js line 2135 calls PUT /api/strains/{id} and only sends editable fields (strain_name, type, thc_percentage, etc.) without image_url, which is correctly preserved by the backend."
+}
