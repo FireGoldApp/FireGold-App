@@ -705,6 +705,7 @@ async def submit_strain(
     grade_a_kg: float = Form(0),
     grade_b_kg: float = Form(0),
     grade_c_kg: float = Form(0),
+    harvest_date: str = Form(""),
     strain_image: Optional[UploadFile] = File(None),
     coa_file: Optional[UploadFile] = File(None),
     health_canada_license: Optional[UploadFile] = File(None),
