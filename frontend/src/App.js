@@ -812,6 +812,8 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, use
       await axios.post(`${API}/inquiries`, {
         ...formData,
         strain_ids: selectedStrains
+      }, {
+        headers: { Authorization: `Bearer ${userToken}` }
       });
       toast.success('Inquiry submitted successfully! We will contact you soon.');
       onClose();
