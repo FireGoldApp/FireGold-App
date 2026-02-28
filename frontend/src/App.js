@@ -3071,6 +3071,31 @@ const AdminPage = () => {
                     </div>
                   </div>
 
+                  {/* Grade Breakdown */}
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-gold-500 mb-2 font-bold">Grade Breakdown (kg)</label>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Grade A</label>
+                        <input data-testid="edit-strain-grade-a" type="number" min="0" step="0.1" value={editForm.grade_a_kg}
+                          onChange={e => setEditForm(p => ({...p, grade_a_kg: e.target.value}))}
+                          className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="0" />
+                      </div>
+                      <div>
+                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Grade B</label>
+                        <input data-testid="edit-strain-grade-b" type="number" min="0" step="0.1" value={editForm.grade_b_kg}
+                          onChange={e => setEditForm(p => ({...p, grade_b_kg: e.target.value}))}
+                          className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="0" />
+                      </div>
+                      <div>
+                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Grade C</label>
+                        <input data-testid="edit-strain-grade-c" type="number" min="0" step="0.1" value={editForm.grade_c_kg}
+                          onChange={e => setEditForm(p => ({...p, grade_c_kg: e.target.value}))}
+                          className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="0" />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex gap-3 pt-4">
                     <button
                       data-testid="save-edit-strain-btn"
