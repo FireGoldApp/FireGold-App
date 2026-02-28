@@ -1582,6 +1582,160 @@ async def export_user_activity_csv(token: str = Depends(verify_admin_token)):
         headers={"Content-Disposition": "attachment; filename=firegold_user_activity.csv"}
     )
 
+@api_router.get("/analytics/global")
+async def get_global_analytics(token: str = Depends(verify_admin_token)):
+    """Comprehensive global analytics — geographic, demand signals, and market insights"""
+    
+    # --- Geographic Breakdown ---
+    # Users by country
+    country_pipeline = [
+        {"$group": {"_id": "$country", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    users_by_country = await db.users.aggregate(country_pipeline).to_list(50)
+    
+    # Submissions by export country
+    export_pipeline = [
+        {"$match": {"export_country": {"$ne": None}}},
+        {"$group": {"_id": "$export_country", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    exports_by_country = await db.grower_submissions.aggregate(export_pipeline).to_list(50)
+    
+    # Company interest by country (which companies from which countries are most active)
+    company_country_pipeline = [
+        {"$lookup": {"from": "users", "localField": "user_id", "foreignField": "id", "as": "user_info"}},
+        {"$unwind": {"path": "$user_info", "preserveNullAndEmptyArrays": True}},
+        {"$group": {
+            "_id": {"country": "$user_info.country", "company": "$user_info.company"},
+            "events": {"$sum": 1},
+            "strains_viewed": {"$addToSet": "$strain_name"}
+        }},
+        {"$project": {
+            "country": "$_id.country",
+            "company": "$_id.company",
+            "events": 1,
+            "unique_strains": {"$size": {"$filter": {"input": "$strains_viewed", "cond": {"$ne": ["$$this", None]}}}}
+        }},
+        {"$sort": {"events": -1}},
+        {"$limit": 20}
+    ]
+    company_by_country = await db.analytics.aggregate(company_country_pipeline).to_list(20)
+    
+    # --- Demand Signals ---
+    # Most requested sample strains
+    sample_demand_pipeline = [
+        {"$group": {"_id": "$strain_name", "requests": {"$sum": 1}, "companies": {"$addToSet": "$company_name"}}},
+        {"$project": {"strain_name": "$_id", "requests": 1, "unique_companies": {"$size": "$companies"}}},
+        {"$sort": {"requests": -1}},
+        {"$limit": 10}
+    ]
+    sample_demand = await db.sample_requests.aggregate(sample_demand_pipeline).to_list(10)
+    
+    # Strain types in demand (by views, not just existence)
+    type_demand_pipeline = [
+        {"$match": {"event_type": "strain_view", "strain_type": {"$ne": None}}},
+        {"$group": {"_id": "$strain_type", "views": {"$sum": 1}, "unique_users": {"$addToSet": "$user_id"}}},
+        {"$project": {"type": "$_id", "views": 1, "user_count": {"$size": "$unique_users"}}},
+        {"$sort": {"views": -1}},
+        {"$limit": 10}
+    ]
+    type_demand = await db.analytics.aggregate(type_demand_pipeline).to_list(10)
+    
+    # Price tier demand
+    tier_demand_pipeline = [
+        {"$match": {"event_type": "strain_view", "price_tier": {"$ne": None}}},
+        {"$group": {"_id": "$price_tier", "views": {"$sum": 1}, "unique_users": {"$addToSet": "$user_id"}}},
+        {"$project": {"tier": "$_id", "views": 1, "user_count": {"$size": "$unique_users"}}},
+        {"$sort": {"views": -1}}
+    ]
+    tier_demand = await db.analytics.aggregate(tier_demand_pipeline).to_list(10)
+    
+    # --- Supply-Side Insights ---
+    # Grower submissions by status
+    submission_status = await db.grower_submissions.aggregate([
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]).to_list(5)
+    
+    # Grower submissions by strain type
+    grower_type_pipeline = [
+        {"$group": {"_id": "$strain_type", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    grower_types = await db.grower_submissions.aggregate(grower_type_pipeline).to_list(10)
+    
+    # Average lot sizes
+    lot_pipeline = [
+        {"$match": {"lot_size_kg": {"$gt": 0}}},
+        {"$group": {"_id": None, "avg_lot": {"$avg": "$lot_size_kg"}, "min_lot": {"$min": "$lot_size_kg"}, "max_lot": {"$max": "$lot_size_kg"}, "total_kg": {"$sum": "$lot_size_kg"}}}
+    ]
+    lot_stats = await db.grower_submissions.aggregate(lot_pipeline).to_list(1)
+    
+    # Irradiation stats
+    irrad_pipeline = [
+        {"$group": {"_id": "$is_irradiated", "count": {"$sum": 1}}}
+    ]
+    irradiation_stats = await db.grower_submissions.aggregate(irrad_pipeline).to_list(5)
+    
+    # --- Terpene Interest ---
+    terpene_pipeline = [
+        {"$match": {"event_type": "strain_view", "terpene_profile": {"$ne": None}}},
+        {"$unwind": "$terpene_profile"},
+        {"$group": {"_id": "$terpene_profile", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 15}
+    ]
+    terpene_interest = await db.analytics.aggregate(terpene_pipeline).to_list(15)
+    
+    # --- Growth Metrics ---
+    # New registrations over time
+    reg_pipeline = [
+        {"$project": {"date": {"$substr": [{"$ifNull": ["$registration_date", "$created_at"]}, 0, 10]}}},
+        {"$group": {"_id": "$date", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    registration_timeline = await db.users.aggregate(reg_pipeline).to_list(100)
+    
+    # Total counts
+    total_users = await db.users.count_documents({})
+    total_strains = await db.strains.count_documents({})
+    total_submissions = await db.grower_submissions.count_documents({})
+    total_samples = await db.sample_requests.count_documents({})
+    total_events = await db.analytics.count_documents({})
+    strains_with_coa = await db.strains.count_documents({"coa_url": {"$ne": None}})
+    
+    return {
+        "totals": {
+            "users": total_users,
+            "strains": total_strains,
+            "strains_with_coa": strains_with_coa,
+            "submissions": total_submissions,
+            "sample_requests": total_samples,
+            "total_events": total_events
+        },
+        "geographic": {
+            "users_by_country": [{"country": c["_id"] or "Unknown", "count": c["count"]} for c in users_by_country],
+            "exports_by_country": [{"country": c["_id"] or "Unknown", "count": c["count"]} for c in exports_by_country],
+            "company_activity_by_country": [{"country": c.get("country", "Unknown"), "company": c.get("company", "Unknown"), "events": c["events"], "strains_viewed": c["unique_strains"]} for c in company_by_country]
+        },
+        "demand": {
+            "top_sample_requests": [{"strain_name": s["strain_name"], "requests": s["requests"], "unique_companies": s["unique_companies"]} for s in sample_demand],
+            "type_demand": [{"type": t["type"], "views": t["views"], "unique_users": t["user_count"]} for t in type_demand],
+            "tier_demand": [{"tier": t["tier"], "views": t["views"], "unique_users": t["user_count"]} for t in tier_demand],
+            "terpene_interest": [{"terpene": t["_id"], "views": t["count"]} for t in terpene_interest]
+        },
+        "supply": {
+            "submission_status": {s["_id"]: s["count"] for s in submission_status},
+            "grower_types": [{"type": g["_id"], "count": g["count"]} for g in grower_types],
+            "lot_stats": lot_stats[0] if lot_stats else {"avg_lot": 0, "min_lot": 0, "max_lot": 0, "total_kg": 0},
+            "irradiation": {(i["_id"] or "Not specified"): i["count"] for i in irradiation_stats}
+        },
+        "growth": {
+            "registration_timeline": registration_timeline
+        }
+    }
+
 # CSV Export Endpoints
 @api_router.get("/analytics/export/csv")
 async def export_analytics_csv(
