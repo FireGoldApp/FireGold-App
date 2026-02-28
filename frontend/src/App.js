@@ -1898,7 +1898,7 @@ const SubmissionTracker = () => {
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm">Back to Catalog</span>
         </a>
-        <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-12" />
+        <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-20 w-auto" />
         <div></div>
       </header>
 
