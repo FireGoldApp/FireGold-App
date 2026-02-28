@@ -4658,6 +4658,8 @@ const CatalogPage = () => {
           setSampleStrain(null);
         }}
         strain={sampleStrain}
+        userData={userData}
+        userToken={userToken}
       />
 
       <InquiryModal 
@@ -4665,6 +4667,8 @@ const CatalogPage = () => {
         onClose={() => setShowInquiryModal(false)}
         selectedStrains={selectedStrains}
         strains={strains}
+        userData={userData}
+        userToken={userToken}
       />
 
       <Toaster 
