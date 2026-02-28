@@ -2738,6 +2738,15 @@ const AdminPage = () => {
               </span>
             )}
           </button>
+          <button
+            onClick={() => { setActiveTab('directory'); fetchDirectory(adminToken); }}
+            data-testid="admin-tab-directory"
+            className={`px-6 py-2 font-bold uppercase tracking-widest text-sm transition-all ${
+              activeTab === 'directory' ? 'bg-gold-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <FileText className="w-4 h-4 inline mr-2" />Directory
+          </button>
         </div>
 
         {/* Images Tab */}
