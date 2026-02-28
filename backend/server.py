@@ -1902,6 +1902,55 @@ async def reseed_database():
     
     return {"message": f"Reseeded {len(SEED_STRAINS)} strains with updated images"}
 
+@api_router.get("/admin/strain-directory")
+async def get_strain_directory(token: str = Depends(verify_admin_token)):
+    """Get all strains enriched with grower submission data (licenses, contact info)"""
+    strains = await db.strains.find({}, {"_id": 0}).to_list(1000)
+    submissions = await db.grower_submissions.find({}, {"_id": 0}).to_list(1000)
+    
+    # Index submissions by strain_name for quick lookup
+    sub_by_strain = {}
+    for sub in submissions:
+        name = sub.get("strain_name", "").strip().lower()
+        if name not in sub_by_strain or sub.get("status") == "approved":
+            sub_by_strain[name] = sub
+    
+    directory = []
+    for strain in strains:
+        entry = {
+            "id": strain.get("id"),
+            "strain_name": strain.get("strain_name"),
+            "type": strain.get("type"),
+            "thc_percentage": strain.get("thc_percentage"),
+            "lot_size": strain.get("lot_size"),
+            "coa_url": strain.get("coa_url"),
+            "image_url": strain.get("image_url"),
+        }
+        # Match to grower submission
+        key = strain.get("strain_name", "").strip().lower()
+        sub = sub_by_strain.get(key)
+        if sub:
+            entry["grower_name"] = sub.get("grower_name")
+            entry["company_name"] = sub.get("company_name")
+            entry["grower_email"] = sub.get("email")
+            entry["grower_phone"] = sub.get("phone")
+            entry["coa_path"] = sub.get("coa_path")
+            entry["health_canada_license_path"] = sub.get("health_canada_license_path")
+            entry["cra_license_path"] = sub.get("cra_license_path")
+            entry["submission_id"] = sub.get("id")
+        else:
+            entry["grower_name"] = None
+            entry["company_name"] = None
+            entry["grower_email"] = None
+            entry["grower_phone"] = None
+            entry["coa_path"] = None
+            entry["health_canada_license_path"] = None
+            entry["cra_license_path"] = None
+            entry["submission_id"] = None
+        directory.append(entry)
+    
+    return directory
+
 @api_router.get("/strains/admin", response_model=List[Strain])
 async def get_strains_admin(token: str = Depends(verify_admin_token)):
     """Get all strains for admin (no user auth required)"""
