@@ -2299,7 +2299,8 @@ const AdminPage = () => {
       effects: strain.effects || '',
       grade_a_kg: strain.grade_a_kg || '',
       grade_b_kg: strain.grade_b_kg || '',
-      grade_c_kg: strain.grade_c_kg || ''
+      grade_c_kg: strain.grade_c_kg || '',
+      harvest_date: strain.harvest_date || ''
     });
   };
 
