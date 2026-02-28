@@ -1790,7 +1790,11 @@ async def get_global_analytics(token: str = Depends(verify_admin_token)):
             "submission_status": {s["_id"]: s["count"] for s in submission_status},
             "grower_types": [{"type": g["_id"], "count": g["count"]} for g in grower_types],
             "lot_stats": lot_stats[0] if lot_stats else {"avg_lot": 0, "min_lot": 0, "max_lot": 0, "total_kg": 0},
-            "irradiation": {(i["_id"] or "Not specified"): i["count"] for i in irradiation_stats}
+            "irradiation": {(i["_id"] or "Not specified"): i["count"] for i in irradiation_stats},
+            "grade_distribution": {
+                "submissions": grade_stats[0] if grade_stats else {"total_grade_a": 0, "total_grade_b": 0, "total_grade_c": 0, "submissions_with_grades": 0},
+                "catalog": catalog_grades[0] if catalog_grades else {"total_grade_a": 0, "total_grade_b": 0, "total_grade_c": 0, "strains_with_grades": 0}
+            }
         },
         "growth": {
             "registration_timeline": registration_timeline
