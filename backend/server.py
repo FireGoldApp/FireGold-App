@@ -885,6 +885,7 @@ async def update_submission_status(
                 grade_a_kg=submission.get("grade_a_kg"),
                 grade_b_kg=submission.get("grade_b_kg"),
                 grade_c_kg=submission.get("grade_c_kg"),
+                harvest_date=submission.get("harvest_date"),
                 image_url=submission.get("image_path")
             )
             doc = new_strain.model_dump()
