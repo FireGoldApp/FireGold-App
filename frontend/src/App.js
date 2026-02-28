@@ -40,7 +40,9 @@ import {
   Clock,
   ClipboardList,
   DollarSign,
-  Edit2
+  Edit2,
+  Download,
+  RefreshCw
 } from "lucide-react";
 
 // Prevent right-click on images
