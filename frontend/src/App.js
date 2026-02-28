@@ -3381,7 +3381,7 @@ const AdminPage = () => {
                         <div className="space-y-3">
                           {engagementData.top_navigation_flows.map((f, i) => (
                             <div key={i} className="flex justify-between items-center">
-                              <div className="flex items-center gap-1 text-sm">
+                              <div className="flex items-center gap-1 text-sm flex-wrap">
                                 {f.flow.split(' → ').map((step, j) => (
                                   <span key={j} className="flex items-center gap-1">
                                     {j > 0 && <span className="text-zinc-600 mx-1">→</span>}
@@ -3396,14 +3396,14 @@ const AdminPage = () => {
                                   </span>
                                 ))}
                               </div>
-                              <span className="text-zinc-500 font-mono text-sm">{f.count} users</span>
+                              <span className="text-zinc-500 font-mono text-sm shrink-0 ml-4">{f.count} users</span>
                             </div>
                           ))}
                           {engagementData.top_navigation_flows.length === 0 && <p className="text-zinc-600 text-sm">No flow data yet</p>}
                         </div>
                       </div>
 
-                      {/* Daily Activity Sparkline */}
+                      {/* Daily Activity */}
                       <div className="bg-charcoal border border-white/5 p-6 lg:col-span-2">
                         <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Daily Activity (Last 30 Days)</h3>
                         <div className="flex items-end gap-1 h-24">
@@ -3424,6 +3424,258 @@ const AdminPage = () => {
                           <div className="flex justify-between text-zinc-600 text-xs mt-2">
                             <span>{engagementData.daily_activity[0]?._id}</span>
                             <span>{engagementData.daily_activity[engagementData.daily_activity.length - 1]?._id}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* GLOBAL INSIGHTS */}
+            {analyticsView === 'global' && (
+              <>
+                <div className="mb-6">
+                  <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Global Insights</h2>
+                  <p className="text-zinc-500 text-sm">Geographic breakdown, demand signals, supply analysis, and market intelligence</p>
+                </div>
+
+                {!globalData ? (
+                  <div className="bg-charcoal border border-white/5 p-12 text-center"><p className="text-zinc-500">Loading...</p></div>
+                ) : (
+                  <>
+                    {/* Platform Totals */}
+                    <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
+                      {[
+                        { label: 'Users', value: globalData.totals.users, color: 'text-gold-500' },
+                        { label: 'Strains', value: globalData.totals.strains, color: 'text-cannabis-green' },
+                        { label: 'With COA', value: globalData.totals.strains_with_coa, color: 'text-blue-400' },
+                        { label: 'Submissions', value: globalData.totals.submissions, color: 'text-white' },
+                        { label: 'Sample Req', value: globalData.totals.sample_requests, color: 'text-gold-500' },
+                        { label: 'Events', value: globalData.totals.total_events, color: 'text-zinc-300' }
+                      ].map((t, i) => (
+                        <div key={i} className="bg-charcoal border border-white/5 p-4 text-center">
+                          <div className={`font-mono font-bold text-xl ${t.color}`}>{t.value}</div>
+                          <div className="text-zinc-600 text-xs uppercase tracking-widest mt-1">{t.label}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                      {/* Users by Country */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Users by Country</h3>
+                        <div className="space-y-3">
+                          {globalData.geographic.users_by_country.map((c, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <span className="text-white text-sm flex-1">{c.country}</span>
+                              <div className="w-24 h-2 bg-zinc-800 overflow-hidden">
+                                <div className="h-full bg-gold-500" style={{width: `${(c.count / (globalData.geographic.users_by_country[0]?.count || 1)) * 100}%`}} />
+                              </div>
+                              <span className="text-zinc-500 font-mono text-xs w-8 text-right">{c.count}</span>
+                            </div>
+                          ))}
+                          {globalData.geographic.users_by_country.length === 0 && <p className="text-zinc-600 text-sm">No data</p>}
+                        </div>
+                      </div>
+
+                      {/* Export Countries (from Grower Submissions) */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Export Destinations (Grower Submissions)</h3>
+                        <div className="space-y-3">
+                          {globalData.geographic.exports_by_country.map((c, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <span className="text-white text-sm flex-1">{c.country}</span>
+                              <div className="w-24 h-2 bg-zinc-800 overflow-hidden">
+                                <div className="h-full bg-cannabis-green" style={{width: `${(c.count / (globalData.geographic.exports_by_country[0]?.count || 1)) * 100}%`}} />
+                              </div>
+                              <span className="text-zinc-500 font-mono text-xs w-8 text-right">{c.count}</span>
+                            </div>
+                          ))}
+                          {globalData.geographic.exports_by_country.length === 0 && <p className="text-zinc-600 text-sm">No export data yet</p>}
+                        </div>
+                      </div>
+
+                      {/* Top Company Activity by Country */}
+                      <div className="bg-charcoal border border-white/5 p-6 lg:col-span-2">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Company Activity by Region</h3>
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b border-white/5">
+                                <th className="text-left text-zinc-500 text-xs uppercase tracking-widest py-2 pr-4">Country</th>
+                                <th className="text-left text-zinc-500 text-xs uppercase tracking-widest py-2 pr-4">Company</th>
+                                <th className="text-center text-zinc-500 text-xs uppercase tracking-widest py-2 pr-4">Events</th>
+                                <th className="text-center text-zinc-500 text-xs uppercase tracking-widest py-2">Strains Viewed</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {globalData.geographic.company_activity_by_country.slice(0, 15).map((r, i) => (
+                                <tr key={i} className="border-b border-white/5">
+                                  <td className="py-2 pr-4 text-zinc-400 text-sm">{r.country || 'N/A'}</td>
+                                  <td className="py-2 pr-4 text-white text-sm">{r.company || 'N/A'}</td>
+                                  <td className="py-2 pr-4 text-center text-gold-500 font-mono text-sm">{r.events}</td>
+                                  <td className="py-2 text-center text-cannabis-green font-mono text-sm">{r.strains_viewed}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Demand Signals */}
+                    <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 mt-8">Demand Signals</h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                      {/* Most Requested Samples */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Most Requested Samples</h3>
+                        <div className="space-y-3">
+                          {globalData.demand.top_sample_requests.map((s, i) => (
+                            <div key={i} className="flex justify-between items-center">
+                              <span className="text-white text-sm">{s.strain_name}</span>
+                              <span className="text-zinc-500 text-xs">{s.requests} req · {s.unique_companies} companies</span>
+                            </div>
+                          ))}
+                          {globalData.demand.top_sample_requests.length === 0 && <p className="text-zinc-600 text-sm">No sample requests yet</p>}
+                        </div>
+                      </div>
+
+                      {/* Terpene Interest */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Terpene Interest</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {globalData.demand.terpene_interest.map((t, i) => (
+                            <div key={i} className="bg-zinc-900 border border-white/5 px-3 py-1.5">
+                              <span className="text-white text-sm">{t.terpene}</span>
+                              <span className="text-gold-500 font-mono ml-2 text-xs">{t.views}</span>
+                            </div>
+                          ))}
+                          {globalData.demand.terpene_interest.length === 0 && <p className="text-zinc-600 text-sm">No data</p>}
+                        </div>
+                      </div>
+
+                      {/* Type Demand */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Strain Type Demand</h3>
+                        <div className="space-y-3">
+                          {globalData.demand.type_demand.map((t, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <span className="text-white text-sm flex-1 truncate">{t.type}</span>
+                              <div className="w-20 h-2 bg-zinc-800 overflow-hidden">
+                                <div className="h-full bg-cannabis-green" style={{width: `${(t.views / (globalData.demand.type_demand[0]?.views || 1)) * 100}%`}} />
+                              </div>
+                              <span className="text-zinc-500 text-xs">{t.views} views · {t.unique_users} users</span>
+                            </div>
+                          ))}
+                          {globalData.demand.type_demand.length === 0 && <p className="text-zinc-600 text-sm">No data</p>}
+                        </div>
+                      </div>
+
+                      {/* Price Tier Demand */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Price Tier Demand</h3>
+                        <div className="space-y-3">
+                          {globalData.demand.tier_demand.map((t, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <span className="text-gold-500 font-mono text-lg w-12">{t.tier}</span>
+                              <div className="flex-1 h-6 bg-zinc-800 overflow-hidden">
+                                <div className="h-full bg-gold-500/60" style={{width: `${(t.views / (globalData.demand.tier_demand[0]?.views || 1)) * 100}%`}} />
+                              </div>
+                              <span className="text-zinc-500 text-xs w-28 text-right">{t.views} views · {t.unique_users} users</span>
+                            </div>
+                          ))}
+                          {globalData.demand.tier_demand.length === 0 && <p className="text-zinc-600 text-sm">No data</p>}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Supply-Side */}
+                    <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 mt-8">Supply Side (Grower Submissions)</h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                      {/* Submission Status */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Submission Pipeline</h3>
+                        <div className="space-y-3">
+                          {Object.entries(globalData.supply.submission_status).map(([status, count], i) => (
+                            <div key={i} className="flex justify-between items-center">
+                              <span className={`px-3 py-1 text-xs font-bold uppercase tracking-widest ${
+                                status === 'pending' ? 'bg-gold-500/20 text-gold-500' :
+                                status === 'approved' ? 'bg-cannabis-green/20 text-cannabis-green' :
+                                'bg-red-500/20 text-red-500'
+                              }`}>{status}</span>
+                              <span className="text-white font-mono">{count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Lot Size Stats */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Lot Size Analysis</h3>
+                        <div className="space-y-3">
+                          <div className="flex justify-between"><span className="text-zinc-400 text-sm">Average Lot</span><span className="text-white font-mono">{Math.round(globalData.supply.lot_stats.avg_lot || 0)} kg</span></div>
+                          <div className="flex justify-between"><span className="text-zinc-400 text-sm">Smallest Lot</span><span className="text-white font-mono">{globalData.supply.lot_stats.min_lot || 0} kg</span></div>
+                          <div className="flex justify-between"><span className="text-zinc-400 text-sm">Largest Lot</span><span className="text-white font-mono">{globalData.supply.lot_stats.max_lot || 0} kg</span></div>
+                          <div className="flex justify-between border-t border-white/5 pt-2"><span className="text-zinc-400 text-sm">Total Available</span><span className="text-gold-500 font-mono font-bold">{Math.round(globalData.supply.lot_stats.total_kg || 0)} kg</span></div>
+                        </div>
+                      </div>
+
+                      {/* Irradiation Stats */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Irradiation Status</h3>
+                        <div className="space-y-3">
+                          {Object.entries(globalData.supply.irradiation).map(([status, count], i) => (
+                            <div key={i} className="flex justify-between items-center">
+                              <span className={`text-sm ${status === 'Yes' ? 'text-cannabis-green' : status === 'No' ? 'text-red-400' : 'text-zinc-500'}`}>{status}</span>
+                              <span className="text-white font-mono">{count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Grower Types & Growth */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Grower Submission Types */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Submitted Strain Types</h3>
+                        <div className="space-y-3">
+                          {globalData.supply.grower_types.map((g, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <span className="text-white text-sm flex-1 truncate">{g.type}</span>
+                              <div className="w-20 h-2 bg-zinc-800 overflow-hidden">
+                                <div className="h-full bg-cannabis-green/60" style={{width: `${(g.count / (globalData.supply.grower_types[0]?.count || 1)) * 100}%`}} />
+                              </div>
+                              <span className="text-zinc-500 font-mono text-xs">{g.count}</span>
+                            </div>
+                          ))}
+                          {globalData.supply.grower_types.length === 0 && <p className="text-zinc-600 text-sm">No submissions</p>}
+                        </div>
+                      </div>
+
+                      {/* Registration Growth */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Registration Growth</h3>
+                        <div className="flex items-end gap-1 h-24">
+                          {globalData.growth.registration_timeline.map((d, i) => {
+                            const maxCount = Math.max(...globalData.growth.registration_timeline.map(x => x.count), 1);
+                            const height = Math.max(4, (d.count / maxCount) * 96);
+                            return (
+                              <div key={i} className="flex-1 group relative" title={`${d._id}: ${d.count} registrations`}>
+                                <div className="w-full bg-cannabis-green/60 hover:bg-cannabis-green transition-colors" style={{height: `${height}px`}} />
+                              </div>
+                            );
+                          })}
+                          {globalData.growth.registration_timeline.length === 0 && (
+                            <p className="text-zinc-600 text-sm w-full text-center">No data</p>
+                          )}
+                        </div>
+                        {globalData.growth.registration_timeline.length > 0 && (
+                          <div className="flex justify-between text-zinc-600 text-xs mt-2">
+                            <span>{globalData.growth.registration_timeline[0]?._id}</span>
+                            <span>{globalData.growth.registration_timeline[globalData.growth.registration_timeline.length - 1]?._id}</span>
                           </div>
                         )}
                       </div>
