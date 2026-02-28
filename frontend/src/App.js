@@ -466,7 +466,7 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
 };
 
 // Sample Request Modal Component
-const SampleRequestModal = ({ isOpen, onClose, strain }) => {
+const SampleRequestModal = ({ isOpen, onClose, strain, userData, userToken }) => {
   const [formData, setFormData] = useState({
     company_name: '',
     contact_name: '',
@@ -478,6 +478,18 @@ const SampleRequestModal = ({ isOpen, onClose, strain }) => {
   const [healthCanadaFile, setHealthCanadaFile] = useState(null);
   const [craFile, setCraFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Auto-fill form with logged-in user data when modal opens
+  useEffect(() => {
+    if (isOpen && userData) {
+      setFormData(prev => ({
+        ...prev,
+        company_name: prev.company_name || userData.company || '',
+        contact_name: prev.contact_name || `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
+        email: prev.email || userData.email || ''
+      }));
+    }
+  }, [isOpen, userData]);
 
   const handleFileChange = (e, setFile) => {
     const file = e.target.files[0];
