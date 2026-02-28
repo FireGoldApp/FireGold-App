@@ -780,7 +780,7 @@ const SampleRequestModal = ({ isOpen, onClose, strain, userData, userToken }) =>
 };
 
 // Inquiry Form Modal
-const InquiryModal = ({ isOpen, onClose, selectedStrains, strains }) => {
+const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, userToken }) => {
   const [formData, setFormData] = useState({
     company_name: '',
     contact_name: '',
@@ -789,6 +789,18 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains }) => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Auto-fill form with logged-in user data when modal opens
+  useEffect(() => {
+    if (isOpen && userData) {
+      setFormData(prev => ({
+        ...prev,
+        company_name: prev.company_name || userData.company || '',
+        contact_name: prev.contact_name || `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
+        email: prev.email || userData.email || ''
+      }));
+    }
+  }, [isOpen, userData]);
 
   const selectedStrainDetails = strains.filter(s => selectedStrains.includes(s.id));
 
