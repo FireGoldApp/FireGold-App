@@ -2803,6 +2803,118 @@ const AdminPage = () => {
           </>
         )}
 
+        {/* Edit Strain Modal */}
+        {editingStrain && (
+          <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-charcoal border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-8">
+                <div className="flex justify-between items-start mb-6">
+                  <h2 className="font-cinzel font-bold text-2xl text-white">Edit Strain</h2>
+                  <button onClick={() => setEditingStrain(null)} className="text-zinc-500 hover:text-white">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-4" data-testid="edit-strain-form">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Strain Name *</label>
+                      <input data-testid="edit-strain-name" type="text" value={editForm.strain_name}
+                        onChange={e => setEditForm(p => ({...p, strain_name: e.target.value}))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Type *</label>
+                      <select data-testid="edit-strain-type" value={editForm.type}
+                        onChange={e => setEditForm(p => ({...p, type: e.target.value}))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none">
+                        <option value="Balanced Hybrid">Balanced Hybrid</option>
+                        <option value="Hybrid, Indica Leaning">Hybrid, Indica Leaning</option>
+                        <option value="Hybrid, Sativa Leaning">Hybrid, Sativa Leaning</option>
+                        <option value="Indica Dominant">Indica Dominant</option>
+                        <option value="Sativa Dominant">Sativa Dominant</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">THC % *</label>
+                      <input data-testid="edit-strain-thc" type="text" value={editForm.thc_percentage}
+                        onChange={e => setEditForm(p => ({...p, thc_percentage: e.target.value}))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">CBD %</label>
+                      <input data-testid="edit-strain-cbd" type="text" value={editForm.cbd_percentage}
+                        onChange={e => setEditForm(p => ({...p, cbd_percentage: e.target.value}))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Price Tier *</label>
+                      <select data-testid="edit-strain-tier" value={editForm.price_tier}
+                        onChange={e => setEditForm(p => ({...p, price_tier: e.target.value}))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none">
+                        <option value="$">$</option>
+                        <option value="$$">$$</option>
+                        <option value="$$$">$$$</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Terpene Profile (comma-separated) *</label>
+                    <input data-testid="edit-strain-terpenes" type="text" value={editForm.terpene_profile}
+                      onChange={e => setEditForm(p => ({...p, terpene_profile: e.target.value}))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                      placeholder="Limonene, Caryophyllene, Myrcene" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Lineage / Genetics *</label>
+                    <input data-testid="edit-strain-lineage" type="text" value={editForm.lineage}
+                      onChange={e => setEditForm(p => ({...p, lineage: e.target.value}))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Lot Size *</label>
+                      <input data-testid="edit-strain-lot" type="text" value={editForm.lot_size}
+                        onChange={e => setEditForm(p => ({...p, lot_size: e.target.value}))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                        placeholder="e.g., 50 kg" />
+                    </div>
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Effects *</label>
+                      <input data-testid="edit-strain-effects" type="text" value={editForm.effects}
+                        onChange={e => setEditForm(p => ({...p, effects: e.target.value}))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      data-testid="save-edit-strain-btn"
+                      onClick={saveEditStrain}
+                      disabled={savingEdit || !editForm.strain_name}
+                      className="flex-1 bg-gold-500 hover:bg-gold-400 disabled:bg-zinc-700 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all"
+                    >
+                      {savingEdit ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    <button
+                      onClick={() => setEditingStrain(null)}
+                      className="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-bold uppercase tracking-widest px-8 py-4 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add Strain Modal */}
         {showAddStrain && (
           <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
