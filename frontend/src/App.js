@@ -4559,7 +4559,7 @@ const CatalogPage = () => {
   
   const [strains, setStrains] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ type: '', priceTier: '', minThc: null, search: '' });
+  const [filters, setFilters] = useState({ type: '', priceTier: '', minThc: null, search: '', grade: '' });
   const [selectedStrains, setSelectedStrains] = useState([]);
   const [viewingStrain, setViewingStrain] = useState(null);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
