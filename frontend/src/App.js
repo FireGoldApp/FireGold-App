@@ -477,7 +477,7 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
       {filters.type || filters.priceTier || filters.minThc || filters.search || filters.grade ? (
         <button
           data-testid="clear-filters-btn"
-          onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '' })}
+          onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '' })}
           className="w-full px-4 py-2 border border-zinc-700 text-zinc-400 hover:border-red-500 hover:text-red-400 transition-all uppercase tracking-widest text-xs"
         >
           Clear All Filters
@@ -4908,7 +4908,7 @@ const CatalogPage = () => {
                 <Flame className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
                 <p className="text-zinc-500">No strains match your filters</p>
                 <button 
-                  onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '' })}
+                  onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '' })}
                   className="mt-4 text-gold-500 hover:text-gold-400 text-sm"
                 >
                   Clear filters
