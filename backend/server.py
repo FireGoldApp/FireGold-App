@@ -2164,6 +2164,7 @@ async def export_strain_directory_csv(token: str = Depends(verify_admin_token)):
             strain.get("lineage", ""),
             ", ".join(strain.get("terpene_profile", [])) if isinstance(strain.get("terpene_profile"), list) else strain.get("terpene_profile", ""),
             strain.get("price_tier", ""),
+            strain.get("harvest_date") or sub.get("harvest_date", ""),
             strain.get("grade_a_kg") or sub.get("grade_a_kg", ""),
             strain.get("grade_b_kg") or sub.get("grade_b_kg", ""),
             strain.get("grade_c_kg") or sub.get("grade_c_kg", ""),
