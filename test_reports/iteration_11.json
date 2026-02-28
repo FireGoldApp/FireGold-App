@@ -1,0 +1,69 @@
+{
+  "summary": "Tested new CSV Export and COA Redaction features. All 13 backend tests pass. Frontend features work correctly: CSV export from Directory tab downloads a valid CSV file with all 26 required columns, COA redaction UI shows correct states ('Upload redacted COA before approving' for original COA, 'Redacted COA uploaded' with green checkmark for redacted), document links show '(Original)' or '(Redacted)' labels.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✅ Backend: GET /api/admin/strain-directory/csv returns 401 without auth",
+    "✅ Backend: GET /api/admin/strain-directory/csv returns 401 with invalid token",
+    "✅ Backend: GET /api/admin/strain-directory/csv returns 200 with valid admin token",
+    "✅ Backend: CSV has all 26 required columns (Strain Name, Type, THC%, CBD%, Lot Size, Effects, Lineage, Terpene Profile, Price Tier, Grower/LP Name, Company, Email, Phone, License Number, Submission Date, Submission Status, Growing Method, Export Country, Irradiated, Willing to Irradiate, Admin Price/Gram, Admin Notes, Additional Notes, Has COA, Has HC License, Has CRA License)",
+    "✅ Backend: CSV has data rows with strain information",
+    "✅ Backend: CSV has proper Content-Disposition header with filename",
+    "✅ Backend: PUT /api/admin/submissions/{id}/redacted-coa returns 401 without auth",
+    "✅ Backend: PUT /api/admin/submissions/{id}/redacted-coa returns 401 with invalid token",
+    "✅ Backend: PUT /api/admin/submissions/{id}/redacted-coa returns 400 for non-PDF files",
+    "✅ Backend: PUT /api/admin/submissions/{id}/redacted-coa returns 404 for non-existent submission",
+    "✅ Backend: PUT /api/admin/submissions/{id}/redacted-coa returns 200 and uploads PDF successfully",
+    "✅ Backend: After upload, submission has coa_redacted=True",
+    "✅ Backend: CSV document status columns (Has COA, Has HC License, Has CRA License) use Yes/No values",
+    "✅ Frontend: Directory tab has 'Export CSV' button (data-testid='directory-csv-export')",
+    "✅ Frontend: CSV download works - toast shows 'CSV downloaded'",
+    "✅ Frontend: Submissions tab shows COA redaction UI for pending submissions with COA",
+    "✅ Frontend: COA redaction section shows 'Upload redacted COA before approving' for original COA (gold color)",
+    "✅ Frontend: COA redaction section shows 'Redacted COA uploaded' with green checkmark for redacted COA",
+    "✅ Frontend: Upload button shows 'Upload Redacted' for original, 'Replace' for already-redacted COA",
+    "✅ Frontend: COA document link shows '(Original)' label when not redacted",
+    "✅ Frontend: COA document link shows '(Redacted)' label when redacted"
+  ],
+
+  "failed_tests": [],
+
+  "test_report_links": [
+    "/app/backend/tests/test_csv_export_coa_redaction.py",
+    "/app/test_reports/pytest/pytest_csv_coa_redaction.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_csv_export_coa_redaction.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (13/13 pytest tests passed)",
+    "frontend": "100% (All UI features verified working)"
+  },
+
+  "test_credentials": {
+    "admin_password": "firegold2026"
+  },
+
+  "seed_data_creation": "Created test submission with COA during backend tests (TEST_CSV_Strain_*)",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "CSV Export and COA Redaction features fully working. CSV endpoint (GET /api/admin/strain-directory/csv) returns a downloadable CSV with 26 columns covering strain info, grower contact details, and document status. COA Redaction workflow (PUT /api/admin/submissions/{id}/redacted-coa) allows admin to upload redacted PDFs that replace original COA. Frontend shows correct UI states: gold 'Upload redacted COA before approving' prompt for original COA, green 'Redacted COA uploaded' status after redaction. Document links display '(Original)' or '(Redacted)' labels based on coa_redacted status."
+}
