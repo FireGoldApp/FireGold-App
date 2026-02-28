@@ -2075,6 +2075,7 @@ async def get_strain_directory(token: str = Depends(verify_admin_token)):
             "grade_a_kg": strain.get("grade_a_kg"),
             "grade_b_kg": strain.get("grade_b_kg"),
             "grade_c_kg": strain.get("grade_c_kg"),
+            "harvest_date": strain.get("harvest_date"),
         }
         # Match to grower submission
         key = strain.get("strain_name", "").strip().lower()
