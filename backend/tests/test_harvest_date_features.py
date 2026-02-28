@@ -147,12 +147,15 @@ class TestHarvestDateFeatures:
         
         print(f"✅ Strain {test_strain_id} updated with harvest_date '2025-10-25'")
         
-        # Verify by fetching strain again
-        response = requests.get(f"{BASE_URL}/api/strains")
+        # Verify by fetching strain again (using admin endpoint)
+        response = requests.get(
+            f"{BASE_URL}/api/strains/admin",
+            headers={"Authorization": f"Bearer {admin_token}"}
+        )
         assert response.status_code == 200
         strain = next((s for s in response.json() if s["id"] == test_strain_id), None)
         assert strain.get("harvest_date") == "2025-10-25"
-        print(f"✅ GET /api/strains returns harvest_date correctly")
+        print(f"✅ GET /api/strains/admin returns harvest_date correctly")
     
     # Test 4: Submission approval flows harvest_date to new strain
     def test_approval_flows_harvest_date_to_strain(self, admin_token):
