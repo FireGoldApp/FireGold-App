@@ -42,7 +42,8 @@ import {
   DollarSign,
   Edit2,
   Download,
-  RefreshCw
+  RefreshCw,
+  Package
 } from "lucide-react";
 
 // Prevent right-click on images
