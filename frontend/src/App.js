@@ -2277,7 +2277,10 @@ const AdminPage = () => {
     try {
       const payload = {
         ...editForm,
-        terpene_profile: editForm.terpene_profile.split(',').map(t => t.trim()).filter(Boolean)
+        terpene_profile: editForm.terpene_profile.split(',').map(t => t.trim()).filter(Boolean),
+        grade_a_kg: parseFloat(editForm.grade_a_kg) || null,
+        grade_b_kg: parseFloat(editForm.grade_b_kg) || null,
+        grade_c_kg: parseFloat(editForm.grade_c_kg) || null
       };
       await axios.put(`${API}/strains/${editingStrain}`, payload, {
         headers: { Authorization: `Bearer ${adminToken}` }
