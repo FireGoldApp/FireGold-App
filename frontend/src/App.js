@@ -2089,7 +2089,13 @@ const AdminPage = () => {
   const [uploadingId, setUploadingId] = useState(null);
   const [stats, setStats] = useState(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [analytics, setAnalytics] = useState(null);
+  const [analytics, setAnalytics(null);
+  const [analyticsView, setAnalyticsView] = useState('overview'); // overview, users, user-detail, engagement
+  const [userActivityReport, setUserActivityReport] = useState([]);
+  const [userActivitySort, setUserActivitySort] = useState('login_count');
+  const [selectedUserDetail, setSelectedUserDetail] = useState(null);
+  const [engagementData, setEngagementData] = useState(null);
+  const [loadingReport, setLoadingReport] = useState(false);
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('images'); // 'images', 'analytics', 'users', 'flags', 'submissions'
   const [flags, setFlags] = useState([]);
