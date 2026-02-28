@@ -2317,6 +2317,17 @@ const AdminPage = () => {
     }
   };
 
+  const fetchInventory = async (token) => {
+    try {
+      const response = await axios.get(`${API}/admin/inventory-summary`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setInventory(response.data);
+    } catch (error) {
+      console.error('Failed to load inventory');
+    }
+  };
+
   const handleCoaUpload = async (strainId, file) => {
     if (!file) return;
     const formData = new FormData();
