@@ -1034,6 +1034,7 @@ const GrowerSubmitPage = () => {
     grade_a_kg: '',
     grade_b_kg: '',
     grade_c_kg: '',
+    harvest_date: '',
     additional_notes: ''
   });
   const [submitting, setSubmitting] = useState(false);
