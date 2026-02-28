@@ -2233,6 +2233,70 @@ const AdminPage = () => {
     }
   };
 
+  const fetchUserActivityReport = async (sortBy) => {
+    setLoadingReport(true);
+    try {
+      const response = await axios.get(`${API}/analytics/users-report?sort_by=${sortBy}`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setUserActivityReport(response.data);
+    } catch (error) {
+      console.error('Failed to load user activity');
+    }
+    setLoadingReport(false);
+  };
+
+  const fetchUserDetail = async (userId) => {
+    setLoadingReport(true);
+    try {
+      const response = await axios.get(`${API}/analytics/user/${userId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setSelectedUserDetail(response.data);
+      setAnalyticsView('user-detail');
+    } catch (error) {
+      toast.error('Failed to load user details');
+    }
+    setLoadingReport(false);
+  };
+
+  const fetchEngagement = async () => {
+    setLoadingReport(true);
+    try {
+      const response = await axios.get(`${API}/analytics/engagement?days=30`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setEngagementData(response.data);
+    } catch (error) {
+      console.error('Failed to load engagement data');
+    }
+    setLoadingReport(false);
+  };
+
+  const exportUserActivityCSV = async () => {
+    try {
+      const response = await axios.get(`${API}/analytics/users-export/csv`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'firegold_user_activity.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('User activity report exported');
+    } catch { toast.error('Export failed'); }
+  };
+
+  const formatDuration = (seconds) => {
+    if (!seconds || seconds === 0) return '0s';
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+    return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+  };
+
   const fetchUsers = async (token) => {
     try {
       const response = await axios.get(`${API}/auth/users`, {
