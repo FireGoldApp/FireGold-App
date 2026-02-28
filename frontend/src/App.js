@@ -185,6 +185,8 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
     setCoaLoading(true);
     try {
       const token = localStorage.getItem('userToken');
+      // Track COA view
+      trackEvent('coa_view', { strain_name: strain.strain_name }, null, strain.id, strain.strain_name);
       const response = await axios.get(`${API}/strains/${strain.id}/coa`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
