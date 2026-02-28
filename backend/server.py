@@ -1992,14 +1992,17 @@ async def create_strain(strain_input: StrainCreate):
     await db.strains.insert_one(doc)
     return strain
 
-@api_router.post("/inquiries", response_model=Inquiry)
-async def create_inquiry(inquiry_input: InquiryCreate):
-    """Create a new buyer inquiry"""
+@api_router.post("/inquiries")
+async def create_inquiry(inquiry_input: InquiryCreate, user_data: dict = Depends(verify_user_token)):
+    """Create a new buyer inquiry (linked to authenticated user)"""
     inquiry = Inquiry(**inquiry_input.model_dump())
     doc = inquiry.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
+    doc['user_id'] = user_data.get('user_id')
+    doc['user_email'] = user_data.get('email')
     await db.inquiries.insert_one(doc)
-    return inquiry
+    del doc['_id']
+    return doc
 
 @api_router.get("/inquiries", response_model=List[Inquiry])
 async def get_inquiries():
@@ -2020,9 +2023,10 @@ async def create_sample_request_with_files(
     shipping_address: str = Form(...),
     message: str = Form(""),
     health_canada_license: UploadFile = File(...),
-    cra_license: UploadFile = File(...)
+    cra_license: UploadFile = File(...),
+    user_data: dict = Depends(verify_user_token)
 ):
-    """Create a new sample request with license PDF uploads"""
+    """Create a new sample request with license PDF uploads (linked to authenticated user)"""
     # Validate file types
     if not health_canada_license.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Health Canada license must be a PDF file")
@@ -2039,9 +2043,11 @@ async def create_sample_request_with_files(
     
     request_id = str(uuid.uuid4())
     
-    # Store the sample request with file data
+    # Store the sample request with file data, linked to authenticated user
     doc = {
         "id": request_id,
+        "user_id": user_data.get('user_id'),
+        "user_email": user_data.get('email'),
         "company_name": company_name,
         "contact_name": contact_name,
         "email": email,
@@ -2063,6 +2069,7 @@ async def create_sample_request_with_files(
     # Return without the file data
     return {
         "id": request_id,
+        "user_id": user_data.get('user_id'),
         "company_name": company_name,
         "contact_name": contact_name,
         "email": email,
