@@ -113,8 +113,11 @@ class TestHarvestDateFeatures:
     # Test 3: PUT /api/strains/{strain_id} accepts harvest_date field
     def test_update_strain_with_harvest_date(self, admin_token, test_strain_id):
         """Test that admin can update strain with harvest_date"""
-        # First, get the current strain data
-        response = requests.get(f"{BASE_URL}/api/strains")
+        # First, get the current strain data (using admin endpoint)
+        response = requests.get(
+            f"{BASE_URL}/api/strains/admin",
+            headers={"Authorization": f"Bearer {admin_token}"}
+        )
         assert response.status_code == 200
         strain = next((s for s in response.json() if s["id"] == test_strain_id), None)
         assert strain is not None, f"Strain {test_strain_id} not found"
