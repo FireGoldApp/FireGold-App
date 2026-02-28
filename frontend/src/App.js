@@ -2934,132 +2934,486 @@ const AdminPage = () => {
         )}
 
         {/* Analytics Tab */}
-        {activeTab === 'analytics' && analytics && (
+        {activeTab === 'analytics' && (
           <>
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="font-cinzel font-bold text-2xl text-white mb-2">User Analytics & Trends</h2>
-                <p className="text-zinc-500 text-sm">Last 30 days · {analytics.summary.total_events} events from {analytics.summary.unique_users} users</p>
+            {/* Analytics Sub-Navigation */}
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex gap-2">
+                {[
+                  { key: 'overview', label: 'Overview' },
+                  { key: 'users', label: 'User Activity' },
+                  { key: 'engagement', label: 'Engagement' }
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    data-testid={`analytics-sub-${tab.key}`}
+                    onClick={() => {
+                      setAnalyticsView(tab.key);
+                      if (tab.key === 'users' && userActivityReport.length === 0) fetchUserActivityReport('login_count');
+                      if (tab.key === 'engagement' && !engagementData) fetchEngagement();
+                    }}
+                    className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${
+                      analyticsView === tab.key ? 'bg-gold-500 text-black' : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+                {analyticsView === 'user-detail' && (
+                  <button
+                    onClick={() => setAnalyticsView('users')}
+                    className="px-4 py-2 text-xs font-bold uppercase tracking-widest bg-gold-500 text-black"
+                  >
+                    <ArrowLeft className="w-3 h-3 inline mr-1" /> User Detail
+                  </button>
+                )}
               </div>
-              <button
-                onClick={() => exportCSV('analytics')}
-                className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 text-sm flex items-center gap-2 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                Export CSV
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Top Viewed Strains */}
-              <div className="bg-charcoal border border-white/5 p-6">
-                <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Top Viewed Strains</h3>
-                <div className="space-y-3">
-                  {analytics.top_strains.map((s, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <span className="text-white text-sm">{s.strain_name}</span>
-                      <span className="text-zinc-500 font-mono text-sm">{s.views} views</span>
-                    </div>
-                  ))}
-                  {analytics.top_strains.length === 0 && (
-                    <p className="text-zinc-600 text-sm">No strain views yet</p>
-                  )}
-                </div>
-              </div>
-
-              {/* THC Interest */}
-              <div className="bg-charcoal border border-white/5 p-6">
-                <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">THC Potency Interest</h3>
-                <div className="space-y-3">
-                  {analytics.thc_interest.map((t, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <span className="text-white text-sm">{t.thc}</span>
-                      <span className="text-zinc-500 font-mono text-sm">{t.count} views</span>
-                    </div>
-                  ))}
-                  {analytics.thc_interest.length === 0 && (
-                    <p className="text-zinc-600 text-sm">No THC data yet</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Strain Type Interest */}
-              <div className="bg-charcoal border border-white/5 p-6">
-                <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Strain Type Preference</h3>
-                <div className="space-y-3">
-                  {analytics.strain_type_interest.slice(0, 5).map((t, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <span className="text-white text-sm truncate max-w-[180px]">{t.type}</span>
-                      <span className="text-zinc-500 font-mono text-sm">{t.count}</span>
-                    </div>
-                  ))}
-                  {analytics.strain_type_interest.length === 0 && (
-                    <p className="text-zinc-600 text-sm">No type data yet</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Price Tier Interest */}
-              <div className="bg-charcoal border border-white/5 p-6">
-                <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Price Tier Interest</h3>
-                <div className="space-y-3">
-                  {analytics.price_tier_interest.map((p, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <span className="text-white text-sm font-mono">{p.tier}</span>
-                      <span className="text-zinc-500 font-mono text-sm">{p.count} views</span>
-                    </div>
-                  ))}
-                  {analytics.price_tier_interest.length === 0 && (
-                    <p className="text-zinc-600 text-sm">No price data yet</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Top Searches */}
-              <div className="bg-charcoal border border-white/5 p-6">
-                <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Top Search Queries</h3>
-                <div className="space-y-3">
-                  {analytics.top_searches.map((s, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <span className="text-white text-sm">"{s.query}"</span>
-                      <span className="text-zinc-500 font-mono text-sm">{s.count}x</span>
-                    </div>
-                  ))}
-                  {analytics.top_searches.length === 0 && (
-                    <p className="text-zinc-600 text-sm">No searches yet</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Company Engagement */}
-              <div className="bg-charcoal border border-white/5 p-6">
-                <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Most Active Companies</h3>
-                <div className="space-y-3">
-                  {analytics.company_engagement.map((c, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <span className="text-white text-sm truncate max-w-[140px]">{c.company}</span>
-                      <span className="text-zinc-500 font-mono text-xs">{c.events} events · {c.unique_strains} strains</span>
-                    </div>
-                  ))}
-                  {analytics.company_engagement.length === 0 && (
-                    <p className="text-zinc-600 text-sm">No company data yet</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Event Breakdown */}
-              <div className="bg-charcoal border border-white/5 p-6 md:col-span-2 lg:col-span-3">
-                <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Event Breakdown</h3>
-                <div className="flex flex-wrap gap-4">
-                  {analytics.event_breakdown.map((e, i) => (
-                    <div key={i} className="bg-zinc-900 px-4 py-2 border border-white/5">
-                      <span className="text-white text-sm">{e._id}</span>
-                      <span className="text-gold-500 font-mono ml-2">{e.count}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="flex gap-2">
+                <button onClick={() => exportCSV('analytics')} className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 text-sm flex items-center gap-2 transition-colors">
+                  <FileText className="w-4 h-4" /> Export Events CSV
+                </button>
+                <button onClick={exportUserActivityCSV} className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 text-sm flex items-center gap-2 transition-colors">
+                  <FileText className="w-4 h-4" /> Export Users CSV
+                </button>
               </div>
             </div>
+
+            {/* OVERVIEW */}
+            {analyticsView === 'overview' && analytics && (
+              <>
+                <div className="mb-6">
+                  <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Analytics Overview</h2>
+                  <p className="text-zinc-500 text-sm">Last 30 days · {analytics.summary.total_events} events from {analytics.summary.unique_users} users</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Top Viewed Strains */}
+                  <div className="bg-charcoal border border-white/5 p-6">
+                    <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Top Viewed Strains</h3>
+                    <div className="space-y-3">
+                      {analytics.top_strains.map((s, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gold-500 font-mono text-xs w-5">{i+1}.</span>
+                            <span className="text-white text-sm">{s.strain_name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 h-1.5 bg-zinc-800 overflow-hidden">
+                              <div className="h-full bg-gold-500" style={{width: `${Math.min(100, (s.views / (analytics.top_strains[0]?.views || 1)) * 100)}%`}} />
+                            </div>
+                            <span className="text-zinc-500 font-mono text-xs w-12 text-right">{s.views}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {analytics.top_strains.length === 0 && <p className="text-zinc-600 text-sm">No strain views yet</p>}
+                    </div>
+                  </div>
+
+                  {/* THC Interest */}
+                  <div className="bg-charcoal border border-white/5 p-6">
+                    <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">THC Potency Interest</h3>
+                    <div className="space-y-3">
+                      {analytics.thc_interest.map((t, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <span className="text-white text-sm">{t.thc}</span>
+                          <span className="text-zinc-500 font-mono text-sm">{t.count}</span>
+                        </div>
+                      ))}
+                      {analytics.thc_interest.length === 0 && <p className="text-zinc-600 text-sm">No THC data yet</p>}
+                    </div>
+                  </div>
+
+                  {/* Strain Type Interest */}
+                  <div className="bg-charcoal border border-white/5 p-6">
+                    <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Strain Type Preference</h3>
+                    <div className="space-y-3">
+                      {analytics.strain_type_interest.slice(0, 5).map((t, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <span className="text-white text-sm truncate max-w-[180px]">{t.type}</span>
+                          <span className="text-zinc-500 font-mono text-sm">{t.count}</span>
+                        </div>
+                      ))}
+                      {analytics.strain_type_interest.length === 0 && <p className="text-zinc-600 text-sm">No type data yet</p>}
+                    </div>
+                  </div>
+
+                  {/* Price Tier Interest */}
+                  <div className="bg-charcoal border border-white/5 p-6">
+                    <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Price Tier Interest</h3>
+                    <div className="space-y-3">
+                      {analytics.price_tier_interest.map((p, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <span className="text-white text-sm font-mono">{p.tier}</span>
+                          <span className="text-zinc-500 font-mono text-sm">{p.count}</span>
+                        </div>
+                      ))}
+                      {analytics.price_tier_interest.length === 0 && <p className="text-zinc-600 text-sm">No price data yet</p>}
+                    </div>
+                  </div>
+
+                  {/* Top Searches */}
+                  <div className="bg-charcoal border border-white/5 p-6">
+                    <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Top Search Queries</h3>
+                    <div className="space-y-3">
+                      {analytics.top_searches.map((s, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <span className="text-white text-sm">"{s.query}"</span>
+                          <span className="text-zinc-500 font-mono text-sm">{s.count}x</span>
+                        </div>
+                      ))}
+                      {analytics.top_searches.length === 0 && <p className="text-zinc-600 text-sm">No searches yet</p>}
+                    </div>
+                  </div>
+
+                  {/* Company Engagement */}
+                  <div className="bg-charcoal border border-white/5 p-6">
+                    <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Most Active Companies</h3>
+                    <div className="space-y-3">
+                      {analytics.company_engagement.map((c, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <span className="text-white text-sm truncate max-w-[140px]">{c.company}</span>
+                          <span className="text-zinc-500 font-mono text-xs">{c.events} events · {c.unique_strains} strains</span>
+                        </div>
+                      ))}
+                      {analytics.company_engagement.length === 0 && <p className="text-zinc-600 text-sm">No company data yet</p>}
+                    </div>
+                  </div>
+
+                  {/* Event Breakdown */}
+                  <div className="bg-charcoal border border-white/5 p-6 md:col-span-2 lg:col-span-3">
+                    <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Event Breakdown</h3>
+                    <div className="flex flex-wrap gap-4">
+                      {analytics.event_breakdown.map((e, i) => (
+                        <div key={i} className="bg-zinc-900 px-4 py-2 border border-white/5">
+                          <span className="text-white text-sm">{e._id}</span>
+                          <span className="text-gold-500 font-mono ml-2">{e.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* USER ACTIVITY REPORT */}
+            {analyticsView === 'users' && (
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="font-cinzel font-bold text-2xl text-white mb-2">User Activity Report</h2>
+                    <p className="text-zinc-500 text-sm">{userActivityReport.length} users · Click any user for detailed drill-down</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-500 text-xs uppercase tracking-widest">Sort by:</span>
+                    {['login_count', 'total_events', 'last_active', 'strains_viewed'].map(s => (
+                      <button
+                        key={s}
+                        data-testid={`sort-${s}`}
+                        onClick={() => { setUserActivitySort(s); fetchUserActivityReport(s); }}
+                        className={`px-3 py-1 text-xs font-bold uppercase tracking-widest transition-all ${
+                          userActivitySort === s ? 'bg-gold-500 text-black' : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {s.replace(/_/g, ' ')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {loadingReport ? (
+                  <div className="bg-charcoal border border-white/5 p-12 text-center"><p className="text-zinc-500">Loading report...</p></div>
+                ) : (
+                  <div className="bg-charcoal border border-white/5 overflow-x-auto">
+                    <table className="w-full" data-testid="user-activity-table">
+                      <thead className="bg-zinc-900">
+                        <tr>
+                          <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">User</th>
+                          <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Company</th>
+                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Logins</th>
+                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Events</th>
+                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Strains</th>
+                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Searches</th>
+                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">COA Views</th>
+                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Samples</th>
+                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Time Spent</th>
+                          <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Last Active</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userActivityReport.map((u, i) => (
+                          <tr
+                            key={u.user_id}
+                            data-testid={`user-row-${u.user_id}`}
+                            onClick={() => fetchUserDetail(u.user_id)}
+                            className={`cursor-pointer hover:bg-zinc-800/50 transition-colors ${i % 2 === 0 ? '' : 'bg-zinc-900/30'}`}
+                          >
+                            <td className="p-4">
+                              <div className="text-white text-sm font-medium">{u.name || 'Unknown'}</div>
+                              <div className="text-zinc-600 text-xs">{u.email}</div>
+                            </td>
+                            <td className="p-4 text-zinc-400 text-sm">{u.company}</td>
+                            <td className="p-4 text-center">
+                              <span className={`font-mono text-sm ${u.login_count > 5 ? 'text-cannabis-green font-bold' : u.login_count > 1 ? 'text-gold-500' : 'text-zinc-500'}`}>
+                                {u.login_count}
+                              </span>
+                            </td>
+                            <td className="p-4 text-center text-zinc-300 font-mono text-sm">{u.total_events}</td>
+                            <td className="p-4 text-center text-zinc-300 font-mono text-sm">{u.strains_viewed}</td>
+                            <td className="p-4 text-center text-zinc-300 font-mono text-sm">{u.searches}</td>
+                            <td className="p-4 text-center text-zinc-300 font-mono text-sm">{u.coa_views}</td>
+                            <td className="p-4 text-center">
+                              <span className={`font-mono text-sm ${u.sample_requests > 0 ? 'text-cannabis-green font-bold' : 'text-zinc-600'}`}>
+                                {u.sample_requests}
+                              </span>
+                            </td>
+                            <td className="p-4 text-center text-zinc-400 font-mono text-xs">{formatDuration(u.total_duration_seconds)}</td>
+                            <td className="p-4 text-zinc-500 text-xs">{u.last_active ? new Date(u.last_active).toLocaleString() : 'Never'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* USER DETAIL DRILL-DOWN */}
+            {analyticsView === 'user-detail' && selectedUserDetail && (
+              <>
+                <div className="mb-6">
+                  <button onClick={() => setAnalyticsView('users')} className="text-zinc-400 hover:text-white text-sm flex items-center gap-1 mb-4">
+                    <ArrowLeft className="w-4 h-4" /> Back to User Activity
+                  </button>
+                  <h2 className="font-cinzel font-bold text-2xl text-white mb-2">
+                    {selectedUserDetail.user_info?.first_name} {selectedUserDetail.user_info?.last_name}
+                  </h2>
+                  <p className="text-zinc-500 text-sm">
+                    {selectedUserDetail.user_info?.company} · {selectedUserDetail.user_info?.email}
+                  </p>
+                </div>
+
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+                  {[
+                    { label: 'Total Sessions', value: selectedUserDetail.total_sessions, color: 'text-gold-500' },
+                    { label: 'Total Events', value: selectedUserDetail.total_events, color: 'text-white' },
+                    { label: 'Strains Viewed', value: selectedUserDetail.strains_viewed?.length || 0, color: 'text-cannabis-green' },
+                    { label: 'Searches', value: selectedUserDetail.search_queries?.length || 0, color: 'text-blue-400' },
+                    { label: 'Avg Session', value: formatDuration(selectedUserDetail.avg_session_seconds), color: 'text-gold-500' },
+                    { label: 'Total Time', value: formatDuration(selectedUserDetail.total_duration_seconds), color: 'text-white' }
+                  ].map((card, i) => (
+                    <div key={i} className="bg-charcoal border border-white/5 p-4 text-center">
+                      <div className={`font-mono font-bold text-xl ${card.color}`}>{card.value}</div>
+                      <div className="text-zinc-600 text-xs uppercase tracking-widest mt-1">{card.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                  {/* Top Strains for this User */}
+                  <div className="bg-charcoal border border-white/5 p-6">
+                    <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Most Viewed Strains</h3>
+                    <div className="space-y-3">
+                      {selectedUserDetail.top_strains?.map((s, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <span className="text-white text-sm">{s.strain_name}</span>
+                          <span className="text-zinc-500 font-mono text-sm">{s.views}x</span>
+                        </div>
+                      ))}
+                      {(!selectedUserDetail.top_strains || selectedUserDetail.top_strains.length === 0) && (
+                        <p className="text-zinc-600 text-sm">No strain views</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Event Breakdown */}
+                  <div className="bg-charcoal border border-white/5 p-6">
+                    <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Activity Breakdown</h3>
+                    <div className="space-y-3">
+                      {Object.entries(selectedUserDetail.event_breakdown || {}).sort((a,b) => b[1]-a[1]).map(([type, count], i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <span className="text-white text-sm">{type.replace(/_/g, ' ')}</span>
+                          <span className="text-zinc-500 font-mono text-sm">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Activity Timeline */}
+                <div className="bg-charcoal border border-white/5 p-6">
+                  <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">
+                    Recent Activity Timeline
+                    <span className="text-zinc-600 font-normal ml-2">({selectedUserDetail.recent_activity?.length || 0} events)</span>
+                  </h3>
+                  <div className="max-h-[400px] overflow-y-auto space-y-2">
+                    {selectedUserDetail.recent_activity?.map((event, i) => (
+                      <div key={i} className="flex items-start gap-4 py-2 border-b border-white/5">
+                        <span className="text-zinc-600 font-mono text-xs w-36 shrink-0">
+                          {new Date(event.timestamp).toLocaleString()}
+                        </span>
+                        <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-widest shrink-0 ${
+                          event.event_type === 'strain_view' ? 'bg-cannabis-green/20 text-cannabis-green' :
+                          event.event_type === 'search' ? 'bg-blue-500/20 text-blue-400' :
+                          event.event_type === 'filter_apply' ? 'bg-purple-500/20 text-purple-400' :
+                          event.event_type === 'coa_view' ? 'bg-gold-500/20 text-gold-500' :
+                          'bg-zinc-800 text-zinc-400'
+                        }`}>
+                          {event.event_type.replace(/_/g, ' ')}
+                        </span>
+                        <span className="text-zinc-400 text-sm">
+                          {event.strain_name && <span className="text-white">{event.strain_name}</span>}
+                          {event.search_query && <span>Searched: "<span className="text-white">{event.search_query}</span>"</span>}
+                          {event.page && !event.strain_name && !event.search_query && <span>{event.page}</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ENGAGEMENT METRICS */}
+            {analyticsView === 'engagement' && (
+              <>
+                <div className="mb-6">
+                  <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Engagement Metrics</h2>
+                  <p className="text-zinc-500 text-sm">Session data, peak usage, conversion funnel, and navigation flows</p>
+                </div>
+
+                {!engagementData ? (
+                  <div className="bg-charcoal border border-white/5 p-12 text-center"><p className="text-zinc-500">Loading...</p></div>
+                ) : (
+                  <>
+                    {/* Summary Row */}
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                      <div className="bg-charcoal border border-white/5 p-5 text-center">
+                        <div className="text-gold-500 font-mono font-bold text-2xl">{engagementData.sessions.total}</div>
+                        <div className="text-zinc-600 text-xs uppercase tracking-widest mt-1">Total Sessions</div>
+                      </div>
+                      <div className="bg-charcoal border border-white/5 p-5 text-center">
+                        <div className="text-white font-mono font-bold text-2xl">{formatDuration(engagementData.sessions.avg_duration_seconds)}</div>
+                        <div className="text-zinc-600 text-xs uppercase tracking-widest mt-1">Avg Session</div>
+                      </div>
+                      <div className="bg-charcoal border border-white/5 p-5 text-center">
+                        <div className="text-white font-mono font-bold text-2xl">{formatDuration(engagementData.sessions.max_duration_seconds)}</div>
+                        <div className="text-zinc-600 text-xs uppercase tracking-widest mt-1">Longest Session</div>
+                      </div>
+                      <div className="bg-charcoal border border-white/5 p-5 text-center">
+                        <div className="text-cannabis-green font-mono font-bold text-2xl">{engagementData.conversion.conversion_rate}%</div>
+                        <div className="text-zinc-600 text-xs uppercase tracking-widest mt-1">Sample Request Rate</div>
+                      </div>
+                      <div className="bg-charcoal border border-white/5 p-5 text-center">
+                        <div className="text-gold-500 font-mono font-bold text-2xl">{engagementData.user_base.active_this_period}</div>
+                        <div className="text-zinc-600 text-xs uppercase tracking-widest mt-1">Active Users (30d)</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Peak Hours */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Peak Usage Hours (UTC)</h3>
+                        <div className="space-y-3">
+                          {engagementData.peak_hours.map((h, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <span className="text-zinc-400 font-mono text-sm w-12">{h.hour}:00</span>
+                              <div className="flex-1 h-4 bg-zinc-800 overflow-hidden">
+                                <div
+                                  className={`h-full ${i === 0 ? 'bg-gold-500' : 'bg-gold-500/50'}`}
+                                  style={{width: `${Math.min(100, (h.events / (engagementData.peak_hours[0]?.events || 1)) * 100)}%`}}
+                                />
+                              </div>
+                              <span className="text-zinc-500 font-mono text-xs w-12 text-right">{h.events}</span>
+                            </div>
+                          ))}
+                          {engagementData.peak_hours.length === 0 && <p className="text-zinc-600 text-sm">No data yet</p>}
+                        </div>
+                      </div>
+
+                      {/* Conversion Funnel */}
+                      <div className="bg-charcoal border border-white/5 p-6">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Conversion Funnel</h3>
+                        <div className="space-y-4">
+                          <div>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="text-zinc-400">Strain Viewers</span>
+                              <span className="text-white font-mono">{engagementData.conversion.total_viewers}</span>
+                            </div>
+                            <div className="w-full h-3 bg-zinc-800"><div className="h-full bg-gold-500" style={{width: '100%'}} /></div>
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="text-zinc-400">Sample Requesters</span>
+                              <span className="text-cannabis-green font-mono">{engagementData.conversion.sample_requesters}</span>
+                            </div>
+                            <div className="w-full h-3 bg-zinc-800">
+                              <div className="h-full bg-cannabis-green" style={{width: `${engagementData.conversion.conversion_rate}%`}} />
+                            </div>
+                          </div>
+                          <p className="text-zinc-500 text-xs text-center">
+                            {engagementData.conversion.conversion_rate}% of viewers requested a sample
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Navigation Flows */}
+                      <div className="bg-charcoal border border-white/5 p-6 lg:col-span-2">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Top Navigation Flows</h3>
+                        <p className="text-zinc-600 text-xs mb-4">Most common user journeys (first 3 actions per session)</p>
+                        <div className="space-y-3">
+                          {engagementData.top_navigation_flows.map((f, i) => (
+                            <div key={i} className="flex justify-between items-center">
+                              <div className="flex items-center gap-1 text-sm">
+                                {f.flow.split(' → ').map((step, j) => (
+                                  <span key={j} className="flex items-center gap-1">
+                                    {j > 0 && <span className="text-zinc-600 mx-1">→</span>}
+                                    <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-widest ${
+                                      step === 'strain_view' ? 'bg-cannabis-green/20 text-cannabis-green' :
+                                      step === 'search' ? 'bg-blue-500/20 text-blue-400' :
+                                      step === 'page_view' ? 'bg-zinc-800 text-zinc-400' :
+                                      'bg-gold-500/20 text-gold-500'
+                                    }`}>
+                                      {step.replace(/_/g, ' ')}
+                                    </span>
+                                  </span>
+                                ))}
+                              </div>
+                              <span className="text-zinc-500 font-mono text-sm">{f.count} users</span>
+                            </div>
+                          ))}
+                          {engagementData.top_navigation_flows.length === 0 && <p className="text-zinc-600 text-sm">No flow data yet</p>}
+                        </div>
+                      </div>
+
+                      {/* Daily Activity Sparkline */}
+                      <div className="bg-charcoal border border-white/5 p-6 lg:col-span-2">
+                        <h3 className="text-gold-500 font-bold uppercase tracking-widest text-sm mb-4">Daily Activity (Last 30 Days)</h3>
+                        <div className="flex items-end gap-1 h-24">
+                          {engagementData.daily_activity.map((d, i) => {
+                            const maxCount = Math.max(...engagementData.daily_activity.map(x => x.count), 1);
+                            const height = Math.max(4, (d.count / maxCount) * 96);
+                            return (
+                              <div key={i} className="flex-1 group relative" title={`${d._id}: ${d.count} events`}>
+                                <div className="w-full bg-gold-500/60 hover:bg-gold-500 transition-colors" style={{height: `${height}px`}} />
+                              </div>
+                            );
+                          })}
+                          {engagementData.daily_activity.length === 0 && (
+                            <p className="text-zinc-600 text-sm w-full text-center">No daily data yet</p>
+                          )}
+                        </div>
+                        {engagementData.daily_activity.length > 0 && (
+                          <div className="flex justify-between text-zinc-600 text-xs mt-2">
+                            <span>{engagementData.daily_activity[0]?._id}</span>
+                            <span>{engagementData.daily_activity[engagementData.daily_activity.length - 1]?._id}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </>
         )}
 
