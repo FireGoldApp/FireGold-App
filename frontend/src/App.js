@@ -1309,8 +1309,8 @@ const GrowerSubmitPage = () => {
               <Package className="w-5 h-5" /> Availability & Export
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Lot Size (kg) * <span className="text-gold-500">Min 30 kg</span></label>
+              <div className="md:col-span-2">
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Total Lot Size (kg) * <span className="text-gold-500">Min 30 kg</span></label>
                 <input
                   data-testid="grower-lot-size-input"
                   type="number"
@@ -1323,6 +1323,52 @@ const GrowerSubmitPage = () => {
                   placeholder="e.g., 50"
                 />
                 {lotError && <p className="text-red-500 text-xs mt-1">{lotError}</p>}
+              </div>
+
+              {/* Flower Grade Breakdown */}
+              <div className="md:col-span-2">
+                <label className="block font-manrope text-xs uppercase tracking-widest text-gold-500 mb-3 font-bold">Flower Grade Breakdown (kg per grade)</label>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Grade A (kg)</label>
+                    <input
+                      data-testid="grower-grade-a-input"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={formData.grade_a_kg}
+                      onChange={(e) => setFormData(prev => ({ ...prev, grade_a_kg: e.target.value }))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Grade B (kg)</label>
+                    <input
+                      data-testid="grower-grade-b-input"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={formData.grade_b_kg}
+                      onChange={(e) => setFormData(prev => ({ ...prev, grade_b_kg: e.target.value }))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Grade C (kg)</label>
+                    <input
+                      data-testid="grower-grade-c-input"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={formData.grade_c_kg}
+                      onChange={(e) => setFormData(prev => ({ ...prev, grade_c_kg: e.target.value }))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Country of Export *</label>
