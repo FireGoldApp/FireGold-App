@@ -977,6 +977,9 @@ const GrowerSubmitPage = () => {
     export_country: '',
     is_irradiated: '',
     willing_to_irradiate: '',
+    grade_a_kg: '',
+    grade_b_kg: '',
+    grade_c_kg: '',
     additional_notes: ''
   });
   const [submitting, setSubmitting] = useState(false);
