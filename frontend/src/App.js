@@ -2265,7 +2265,10 @@ const AdminPage = () => {
       terpene_profile: Array.isArray(strain.terpene_profile) ? strain.terpene_profile.join(', ') : (strain.terpene_profile || ''),
       lineage: strain.lineage || '',
       lot_size: strain.lot_size || '',
-      effects: strain.effects || ''
+      effects: strain.effects || '',
+      grade_a_kg: strain.grade_a_kg || '',
+      grade_b_kg: strain.grade_b_kg || '',
+      grade_c_kg: strain.grade_c_kg || ''
     });
   };
 
