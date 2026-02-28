@@ -4137,32 +4137,76 @@ const AdminPage = () => {
                       </div>
                     )}
 
-                    {/* Uploaded Documents */}
+                    {/* Uploaded Documents & COA Redaction */}
                     {(sub.coa_path || sub.health_canada_license_path || sub.cra_license_path) && (
-                      <div className="flex flex-wrap gap-3 mb-4">
-                        {sub.coa_path && (
-                          <a href={`${API}/files/${sub.coa_path.replace('/uploads/', '')}`} target="_blank" rel="noopener noreferrer" data-testid={`doc-coa-${sub.id}`}
-                            className="flex items-center gap-2 bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-zinc-300 hover:border-gold-500/50 transition-colors"
-                            onClick={(e) => { e.preventDefault(); window.open(`${API}/files/${sub.coa_path.replace('/uploads/', '')}?token=${adminToken}`, '_blank'); }}>
-                            <FileText className="w-4 h-4 text-gold-500" />
-                            COA
-                          </a>
-                        )}
-                        {sub.health_canada_license_path && (
-                          <a href="#" data-testid={`doc-hc-${sub.id}`}
-                            className="flex items-center gap-2 bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-zinc-300 hover:border-gold-500/50 transition-colors"
-                            onClick={(e) => { e.preventDefault(); window.open(`${API}/files/${sub.health_canada_license_path.replace('/uploads/', '')}?token=${adminToken}`, '_blank'); }}>
-                            <FileText className="w-4 h-4 text-cannabis-green" />
-                            HC License
-                          </a>
-                        )}
-                        {sub.cra_license_path && (
-                          <a href="#" data-testid={`doc-cra-${sub.id}`}
-                            className="flex items-center gap-2 bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-zinc-300 hover:border-gold-500/50 transition-colors"
-                            onClick={(e) => { e.preventDefault(); window.open(`${API}/files/${sub.cra_license_path.replace('/uploads/', '')}?token=${adminToken}`, '_blank'); }}>
-                            <FileText className="w-4 h-4 text-blue-400" />
-                            CRA License
-                          </a>
+                      <div className="mb-4">
+                        <div className="flex flex-wrap gap-3 mb-3">
+                          {sub.coa_path && (
+                            <a href={`${API}/files/${sub.coa_path.replace('/uploads/', '')}`} target="_blank" rel="noopener noreferrer" data-testid={`doc-coa-${sub.id}`}
+                              className="flex items-center gap-2 bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-zinc-300 hover:border-gold-500/50 transition-colors"
+                              onClick={(e) => { e.preventDefault(); window.open(`${API}/files/${sub.coa_path.replace('/uploads/', '')}?token=${adminToken}`, '_blank'); }}>
+                              <FileText className="w-4 h-4 text-gold-500" />
+                              {sub.coa_redacted ? 'COA (Redacted)' : 'COA (Original)'}
+                            </a>
+                          )}
+                          {sub.health_canada_license_path && (
+                            <a href="#" data-testid={`doc-hc-${sub.id}`}
+                              className="flex items-center gap-2 bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-zinc-300 hover:border-gold-500/50 transition-colors"
+                              onClick={(e) => { e.preventDefault(); window.open(`${API}/files/${sub.health_canada_license_path.replace('/uploads/', '')}?token=${adminToken}`, '_blank'); }}>
+                              <FileText className="w-4 h-4 text-cannabis-green" />
+                              HC License
+                            </a>
+                          )}
+                          {sub.cra_license_path && (
+                            <a href="#" data-testid={`doc-cra-${sub.id}`}
+                              className="flex items-center gap-2 bg-zinc-900 border border-white/10 px-3 py-2 text-xs text-zinc-300 hover:border-gold-500/50 transition-colors"
+                              onClick={(e) => { e.preventDefault(); window.open(`${API}/files/${sub.cra_license_path.replace('/uploads/', '')}?token=${adminToken}`, '_blank'); }}>
+                              <FileText className="w-4 h-4 text-blue-400" />
+                              CRA License
+                            </a>
+                          )}
+                        </div>
+
+                        {/* COA Redaction Upload */}
+                        {sub.coa_path && sub.status === 'pending' && (
+                          <div data-testid={`coa-redaction-${sub.id}`} className={`p-3 border ${sub.coa_redacted ? 'border-cannabis-green/30 bg-cannabis-green/5' : 'border-gold-500/30 bg-gold-500/5'}`}>
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                {sub.coa_redacted ? (
+                                  <>
+                                    <CheckCircle className="w-4 h-4 text-cannabis-green" />
+                                    <span className="text-cannabis-green text-xs font-bold uppercase tracking-widest">Redacted COA uploaded</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <RefreshCw className="w-4 h-4 text-gold-500" />
+                                    <span className="text-gold-500 text-xs font-bold uppercase tracking-widest">Upload redacted COA before approving</span>
+                                  </>
+                                )}
+                              </div>
+                              <label
+                                data-testid={`upload-redacted-coa-${sub.id}`}
+                                className="cursor-pointer flex items-center gap-2 bg-zinc-900 border border-white/10 hover:border-gold-500/50 px-3 py-2 text-xs text-zinc-300 transition-colors"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                {sub.coa_redacted ? 'Replace' : 'Upload Redacted'}
+                                <input type="file" accept=".pdf" className="hidden" onChange={async (e) => {
+                                  const file = e.target.files[0];
+                                  if (!file) return;
+                                  const formData = new FormData();
+                                  formData.append('coa', file);
+                                  try {
+                                    await axios.put(`${API}/admin/submissions/${sub.id}/redacted-coa`, formData, {
+                                      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'multipart/form-data' }
+                                    });
+                                    toast.success('Redacted COA uploaded');
+                                    fetchSubmissions(adminToken);
+                                  } catch { toast.error('Failed to upload redacted COA'); }
+                                  e.target.value = '';
+                                }} />
+                              </label>
+                            </div>
+                          </div>
                         )}
                       </div>
                     )}
