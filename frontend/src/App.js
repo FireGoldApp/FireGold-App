@@ -2968,6 +2968,7 @@ const AdminPage = () => {
                       setAnalyticsView(tab.key);
                       if (tab.key === 'users' && userActivityReport.length === 0) fetchUserActivityReport('login_count');
                       if (tab.key === 'engagement' && !engagementData) fetchEngagement();
+                      if (tab.key === 'global' && !globalData) fetchGlobalInsights();
                     }}
                     className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${
                       analyticsView === tab.key ? 'bg-gold-500 text-black' : 'bg-zinc-800 text-zinc-400 hover:text-white'
