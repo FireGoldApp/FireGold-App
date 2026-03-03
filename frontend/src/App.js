@@ -279,7 +279,7 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
                 src={FIREGOLD_MARKETPLACE_LOGO} 
                 alt="Firegold Marketplace" 
                 data-testid="strain-detail-marketplace-logo"
-                className="w-[30%] h-auto" 
+                className="w-[50%] h-auto" 
                 style={{ mixBlendMode: 'lighten' }} 
               />
             </div>
