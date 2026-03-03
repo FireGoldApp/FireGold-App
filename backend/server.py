@@ -198,6 +198,7 @@ class Strain(BaseModel):
     grade_b_kg: Optional[float] = None
     grade_c_kg: Optional[float] = None
     harvest_date: Optional[str] = None  # Harvest date of the flower
+    growing_method: Optional[str] = None  # Indoor, Outdoor, Greenhouse
     image_url: Optional[str] = None
     coa_url: Optional[str] = None  # Path to redacted COA PDF
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -216,6 +217,7 @@ class StrainCreate(BaseModel):
     grade_b_kg: Optional[float] = None
     grade_c_kg: Optional[float] = None
     harvest_date: Optional[str] = None
+    growing_method: Optional[str] = None
     image_url: Optional[str] = None
 
 # Grower Submission Model
@@ -888,6 +890,7 @@ async def update_submission_status(
                 grade_b_kg=submission.get("grade_b_kg"),
                 grade_c_kg=submission.get("grade_c_kg"),
                 harvest_date=submission.get("harvest_date"),
+                growing_method=submission.get("growing_method"),
                 image_url=submission.get("image_path")
             )
             doc = new_strain.model_dump()

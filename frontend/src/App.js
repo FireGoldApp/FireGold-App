@@ -147,6 +147,13 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
           </div>
         )}
         
+        {/* Growing Method Badge */}
+        {strain.growing_method && (
+          <div className={`absolute ${strain.coa_url ? 'top-[88px]' : 'top-14'} right-4 bg-black/80 backdrop-blur-sm px-2 py-0.5 border border-white/20`}>
+            <span className="text-zinc-300 font-mono text-[10px] font-bold uppercase">{strain.growing_method}</span>
+          </div>
+        )}
+        
         {/* Selection checkbox */}
         <div 
           className="absolute top-4 left-4"
@@ -287,8 +294,11 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
           
           {/* Details */}
           <div className="p-8 flex flex-col">
-            <div className="text-gold-500 font-manrope text-xs uppercase tracking-widest mb-2">
-              {strain.type}
+            <div className="text-gold-500 font-manrope text-xs uppercase tracking-widest mb-2 flex items-center gap-3">
+              <span>{strain.type}</span>
+              {strain.growing_method && (
+                <span className="bg-white/10 border border-white/20 text-zinc-300 px-2 py-0.5 text-[10px] font-bold tracking-widest">{strain.growing_method}</span>
+              )}
             </div>
             <h2 className="font-cinzel font-bold text-3xl text-white mb-4">{strain.strain_name}</h2>
             
@@ -576,10 +586,30 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
         </div>
       </div>
 
-      {filters.type || filters.priceTier || filters.minThc || filters.search || filters.grade ? (
+      <div>
+        <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Growing Method</h3>
+        <div className="space-y-2">
+          {['Indoor', 'Greenhouse', 'Outdoor'].map((method) => (
+            <button
+              key={method}
+              data-testid={`filter-method-${method.toLowerCase()}`}
+              onClick={() => setFilters(prev => ({ ...prev, growingMethod: prev.growingMethod === method ? '' : method }))}
+              className={`block w-full text-left px-4 py-2 border ${
+                filters.growingMethod === method
+                  ? 'border-gold-500 text-gold-500 bg-gold-500/10'
+                  : 'border-zinc-800 text-zinc-400 hover:border-gold-500/50'
+              } transition-all`}
+            >
+              {method}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filters.type || filters.priceTier || filters.minThc || filters.search || filters.grade || filters.growingMethod ? (
         <button
           data-testid="clear-filters-btn"
-          onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '' })}
+          onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '' })}
           className="w-full px-4 py-2 border border-zinc-700 text-zinc-400 hover:border-red-500 hover:text-red-400 transition-all uppercase tracking-widest text-xs"
         >
           Clear All Filters
@@ -2376,7 +2406,8 @@ const AdminPage = () => {
       grade_a_kg: strain.grade_a_kg || '',
       grade_b_kg: strain.grade_b_kg || '',
       grade_c_kg: strain.grade_c_kg || '',
-      harvest_date: strain.harvest_date || ''
+      harvest_date: strain.harvest_date || '',
+      growing_method: strain.growing_method || 'Indoor'
     });
   };
 
@@ -2389,7 +2420,8 @@ const AdminPage = () => {
         grade_a_kg: parseFloat(editForm.grade_a_kg) || null,
         grade_b_kg: parseFloat(editForm.grade_b_kg) || null,
         grade_c_kg: parseFloat(editForm.grade_c_kg) || null,
-        harvest_date: editForm.harvest_date || null
+        harvest_date: editForm.harvest_date || null,
+        growing_method: editForm.growing_method || null
       };
       await axios.put(`${API}/strains/${editingStrain}`, payload, {
         headers: { Authorization: `Bearer ${adminToken}` }
@@ -3303,6 +3335,18 @@ const AdminPage = () => {
                     <input data-testid="edit-strain-harvest-date" type="date" value={editForm.harvest_date}
                       onChange={e => setEditForm(p => ({...p, harvest_date: e.target.value}))}
                       className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" />
+                  </div>
+
+                  {/* Growing Method */}
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Growing Method</label>
+                    <select data-testid="edit-strain-growing-method" value={editForm.growing_method}
+                      onChange={e => setEditForm(p => ({...p, growing_method: e.target.value}))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none">
+                      <option value="Indoor">Indoor</option>
+                      <option value="Greenhouse">Greenhouse</option>
+                      <option value="Outdoor">Outdoor</option>
+                    </select>
                   </div>
 
                   <div className="flex gap-3 pt-4">
@@ -5181,7 +5225,7 @@ const CatalogPage = () => {
   
   const [strains, setStrains] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ type: '', priceTier: '', minThc: null, search: '', grade: '' });
+  const [filters, setFilters] = useState({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '' });
   const [selectedStrains, setSelectedStrains] = useState([]);
   const [viewingStrain, setViewingStrain] = useState(null);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
@@ -5314,6 +5358,7 @@ const CatalogPage = () => {
         const gradeKey = `grade_${filters.grade.toLowerCase()}_kg`;
         if (!strain[gradeKey] || strain[gradeKey] <= 0) return false;
       }
+      if (filters.growingMethod && strain.growing_method !== filters.growingMethod) return false;
       return true;
     });
   }, [strains, filters]);
@@ -5544,7 +5589,7 @@ const CatalogPage = () => {
                 <Flame className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
                 <p className="text-zinc-500">No strains match your filters</p>
                 <button 
-                  onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '' })}
+                  onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '' })}
                   className="mt-4 text-gold-500 hover:text-gold-400 text-sm"
                 >
                   Clear filters
