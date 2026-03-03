@@ -49,6 +49,7 @@ class UserRegister(BaseModel):
     email: EmailStr
     phone: str
     password: str
+    license_number: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -65,6 +66,7 @@ class User(BaseModel):
     email: str
     phone: str
     password_hash: str
+    license_number: Optional[str] = None
     status: str = "active"  # active, suspended
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -199,7 +201,11 @@ class Strain(BaseModel):
     grade_c_kg: Optional[float] = None
     harvest_date: Optional[str] = None  # Harvest date of the flower
     growing_method: Optional[str] = None  # Indoor, Outdoor, Greenhouse
-    category: Optional[str] = None  # Dried Flower, Fresh Frozen, Trim
+    category: Optional[str] = None  # Dried Flower, Fresh Frozen, Trim, Concentrates
+    grower_company: Optional[str] = None  # LP/company that grew this strain (admin only)
+    grower_name: Optional[str] = None  # Contact name of grower (admin only)
+    grower_email: Optional[str] = None  # Grower email (admin only)
+    submission_id: Optional[str] = None  # Link back to grower submission
     image_url: Optional[str] = None
     coa_url: Optional[str] = None  # Path to redacted COA PDF
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -220,9 +226,12 @@ class StrainCreate(BaseModel):
     harvest_date: Optional[str] = None
     growing_method: Optional[str] = None
     category: Optional[str] = None
-    image_url: Optional[str] = None
+    grower_company: Optional[str] = None
+    grower_name: Optional[str] = None
+    grower_email: Optional[str] = None
 
 # Grower Submission Model
+    image_url: Optional[str] = None
 class GrowerSubmission(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     # Grower info
@@ -241,10 +250,11 @@ class GrowerSubmission(BaseModel):
     lot_size_kg: float  # Minimum 30 kg
     effects: str
     growing_method: Optional[str] = None  # Indoor, Outdoor, Greenhouse
-    category: Optional[str] = None  # Dried Flower, Fresh Frozen, Trim
+    category: Optional[str] = None  # Dried Flower, Fresh Frozen, Trim, Concentrates
     export_country: Optional[str] = None  # Country of export
     is_irradiated: Optional[str] = None  # Yes/No - has flower been irradiated for micros
     willing_to_irradiate: Optional[str] = None  # Yes/No - willing to irradiate if required
+    gacp_compliant: Optional[str] = None  # Yes/No - is product GACP compliant
     grade_a_kg: Optional[float] = None  # kg of Grade A flower
     grade_b_kg: Optional[float] = None  # kg of Grade B flower
     grade_c_kg: Optional[float] = None  # kg of Grade C flower
@@ -688,6 +698,25 @@ async def serve_file(file_path: str, token: str = Query(...)):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(full_path)
 
+
+@api_router.get("/grower/verify-license/{license_number}")
+async def verify_license(license_number: str):
+    """Check if a Health Canada license number exists in our records"""
+    # Check grower submissions for this license
+    existing = await db.grower_submissions.find_one(
+        {"license_number": license_number, "status": "approved"},
+        {"_id": 0, "company_name": 1, "license_number": 1}
+    )
+    # Also check users
+    user_match = await db.users.find_one(
+        {"license_number": license_number},
+        {"_id": 0, "company": 1, "license_number": 1}
+    )
+    if existing or user_match:
+        return {"verified": True, "message": "License number found in our records", "company": existing.get("company_name") if existing else user_match.get("company")}
+    return {"verified": False, "message": "License number not found in our records. This does not mean it is invalid."}
+
+
 # Grower Submission Endpoints (Public - no auth required)
 @api_router.post("/grower/submit")
 async def submit_strain(
@@ -709,6 +738,7 @@ async def submit_strain(
     export_country: str = Form(""),
     is_irradiated: str = Form(""),
     willing_to_irradiate: str = Form(""),
+    gacp_compliant: str = Form(""),
     additional_notes: str = Form(""),
     grade_a_kg: float = Form(0),
     grade_b_kg: float = Form(0),
@@ -795,6 +825,8 @@ async def submit_strain(
         "export_country": export_country or None,
         "is_irradiated": is_irradiated or None,
         "willing_to_irradiate": willing_to_irradiate or None,
+        "gacp_compliant": gacp_compliant or None,
+        "license_number": license_number or None,
         "grade_a_kg": grade_a_kg if grade_a_kg > 0 else None,
         "grade_b_kg": grade_b_kg if grade_b_kg > 0 else None,
         "grade_c_kg": grade_c_kg if grade_c_kg > 0 else None,
@@ -897,6 +929,10 @@ async def update_submission_status(
                 harvest_date=submission.get("harvest_date"),
                 growing_method=submission.get("growing_method"),
                 category=submission.get("category"),
+                grower_company=submission.get("company_name"),
+                grower_name=submission.get("grower_name"),
+                grower_email=submission.get("email"),
+                submission_id=submission.get("id"),
                 image_url=submission.get("image_path")
             )
             doc = new_strain.model_dump()
@@ -1081,7 +1117,8 @@ async def register_user(user_data: UserRegister):
         country=user_data.country,
         email=user_data.email.lower(),
         phone=user_data.phone,
-        password_hash=password_hash
+        password_hash=password_hash,
+        license_number=user_data.license_number
     )
     
     doc = user.model_dump()
@@ -2096,19 +2133,23 @@ async def get_strain_directory(token: str = Depends(verify_admin_token)):
             entry["company_name"] = sub.get("company_name")
             entry["grower_email"] = sub.get("email")
             entry["grower_phone"] = sub.get("phone")
+            entry["license_number"] = sub.get("license_number")
+            entry["gacp_compliant"] = sub.get("gacp_compliant")
             entry["coa_path"] = sub.get("coa_path")
             entry["health_canada_license_path"] = sub.get("health_canada_license_path")
             entry["cra_license_path"] = sub.get("cra_license_path")
             entry["submission_id"] = sub.get("id")
         else:
-            entry["grower_name"] = None
-            entry["company_name"] = None
-            entry["grower_email"] = None
+            entry["grower_name"] = strain.get("grower_name")
+            entry["company_name"] = strain.get("grower_company")
+            entry["grower_email"] = strain.get("grower_email")
             entry["grower_phone"] = None
+            entry["license_number"] = None
+            entry["gacp_compliant"] = None
             entry["coa_path"] = None
             entry["health_canada_license_path"] = None
             entry["cra_license_path"] = None
-            entry["submission_id"] = None
+            entry["submission_id"] = strain.get("submission_id")
         directory.append(entry)
     
     return directory

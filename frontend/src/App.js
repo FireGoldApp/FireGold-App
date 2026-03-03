@@ -369,19 +369,19 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
                   {strain.grade_a_kg > 0 && (
                     <div className="bg-cannabis-green/10 border border-cannabis-green/30 p-3 text-center">
                       <div className="text-cannabis-green font-bold text-lg font-mono">{strain.grade_a_kg}</div>
-                      <div className="text-cannabis-green/70 text-[10px] uppercase tracking-widest">Grade A (kg)</div>
+                      <div className="text-cannabis-green/70 text-[10px] uppercase tracking-widest">Grade A (Bigs) (kg)</div>
                     </div>
                   )}
                   {strain.grade_b_kg > 0 && (
                     <div className="bg-gold-500/10 border border-gold-500/30 p-3 text-center">
                       <div className="text-gold-500 font-bold text-lg font-mono">{strain.grade_b_kg}</div>
-                      <div className="text-gold-500/70 text-[10px] uppercase tracking-widest">Grade B (kg)</div>
+                      <div className="text-gold-500/70 text-[10px] uppercase tracking-widest">Grade B (Mids) (kg)</div>
                     </div>
                   )}
                   {strain.grade_c_kg > 0 && (
                     <div className="bg-zinc-700/30 border border-zinc-600/30 p-3 text-center">
                       <div className="text-zinc-400 font-bold text-lg font-mono">{strain.grade_c_kg}</div>
-                      <div className="text-zinc-500 text-[10px] uppercase tracking-widest">Grade C (kg)</div>
+                      <div className="text-zinc-500 text-[10px] uppercase tracking-widest">Grade C (Smalls) (kg)</div>
                     </div>
                   )}
                 </div>
@@ -512,7 +512,7 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
       <div>
         <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">Category</h3>
         <div className="space-y-2">
-          {['Dried Flower', 'Fresh Frozen', 'Trim'].map((cat) => (
+          {['Dried Flower', 'Fresh Frozen', 'Trim', 'Concentrates'].map((cat) => (
             <button
               key={cat}
               data-testid={`filter-category-${cat.toLowerCase().replace(' ', '-')}`}
@@ -1173,6 +1173,7 @@ const GrowerSubmitPage = () => {
     export_country: '',
     is_irradiated: '',
     willing_to_irradiate: '',
+    gacp_compliant: '',
     grade_a_kg: '',
     grade_b_kg: '',
     grade_c_kg: '',
@@ -1251,6 +1252,7 @@ const GrowerSubmitPage = () => {
       submitData.append('export_country', formData.export_country || '');
       submitData.append('is_irradiated', formData.is_irradiated || '');
       submitData.append('willing_to_irradiate', formData.willing_to_irradiate || '');
+      submitData.append('gacp_compliant', formData.gacp_compliant || '');
       submitData.append('additional_notes', formData.additional_notes || '');
       submitData.append('grade_a_kg', parseFloat(formData.grade_a_kg) || 0);
       submitData.append('grade_b_kg', parseFloat(formData.grade_b_kg) || 0);
@@ -1332,9 +1334,9 @@ const GrowerSubmitPage = () => {
           <div className="w-16 h-16 bg-cannabis-green/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <Leaf className="w-8 h-8 text-cannabis-green" />
           </div>
-          <h1 className="font-cinzel font-bold text-3xl text-white mb-4">Submit Your Flower</h1>
+          <h1 className="font-cinzel font-bold text-3xl text-white mb-4">Submit Your Product</h1>
           <p className="text-zinc-400 max-w-xl mx-auto">
-            Are you a licensed grower with premium cannabis flower? Submit your strain for consideration in our B2B catalog. Minimum lot size: <span className="text-gold-500 font-bold">30 kg</span>.
+            Are you a licensed grower with premium cannabis products? Submit your product for consideration in our B2B catalog. Minimum lot size: <span className="text-gold-500 font-bold">30 kg</span>.
           </p>
         </div>
 
@@ -1395,14 +1397,35 @@ const GrowerSubmitPage = () => {
               </div>
               <div className="md:col-span-2">
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Health Canada License # (optional)</label>
-                <input
-                  data-testid="grower-license-input"
-                  type="text"
-                  value={formData.license_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, license_number: e.target.value }))}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
-                  placeholder="LIC-XXXXX"
-                />
+                <div className="flex gap-2">
+                  <input
+                    data-testid="grower-license-input"
+                    type="text"
+                    value={formData.license_number}
+                    onChange={(e) => setFormData(prev => ({ ...prev, license_number: e.target.value }))}
+                    className="flex-1 bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                    placeholder="LIC-XXXXX"
+                  />
+                  {formData.license_number && (
+                    <button
+                      type="button"
+                      data-testid="verify-license-btn"
+                      onClick={async () => {
+                        try {
+                          const res = await axios.get(`${API}/grower/verify-license/${formData.license_number}`);
+                          if (res.data.verified) {
+                            toast.success(`License verified — ${res.data.company}`);
+                          } else {
+                            toast.info(res.data.message);
+                          }
+                        } catch { toast.error('Could not verify license'); }
+                      }}
+                      className="bg-gold-500/20 border border-gold-500/40 text-gold-500 px-4 h-12 font-bold uppercase tracking-widest text-xs hover:bg-gold-500/30 transition-colors whitespace-nowrap"
+                    >
+                      Verify
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -1451,6 +1474,7 @@ const GrowerSubmitPage = () => {
                   <option value="Dried Flower">Dried Flower</option>
                   <option value="Fresh Frozen">Fresh Frozen</option>
                   <option value="Trim">Trim</option>
+                  <option value="Concentrates">Concentrates</option>
                 </select>
               </div>
               <div>
@@ -1542,7 +1566,7 @@ const GrowerSubmitPage = () => {
                 <label className="block font-manrope text-xs uppercase tracking-widest text-gold-500 mb-3 font-bold">Flower Grade Breakdown (kg per grade)</label>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Grade A (kg)</label>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Grade A (Bigs) (kg)</label>
                     <input
                       data-testid="grower-grade-a-input"
                       type="number"
@@ -1555,7 +1579,7 @@ const GrowerSubmitPage = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Grade B (kg)</label>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Grade B (Mids) (kg)</label>
                     <input
                       data-testid="grower-grade-b-input"
                       type="number"
@@ -1568,7 +1592,7 @@ const GrowerSubmitPage = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Grade C (kg)</label>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Grade C (Smalls) (kg)</label>
                     <input
                       data-testid="grower-grade-c-input"
                       type="number"
@@ -1651,6 +1675,20 @@ const GrowerSubmitPage = () => {
                   required
                   value={formData.willing_to_irradiate}
                   onChange={(e) => setFormData(prev => ({ ...prev, willing_to_irradiate: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                >
+                  <option value="">Select...</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Is your product GACP compliant? *</label>
+                <select
+                  data-testid="grower-gacp-select"
+                  required
+                  value={formData.gacp_compliant}
+                  onChange={(e) => setFormData(prev => ({ ...prev, gacp_compliant: e.target.value }))}
                   className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
                 >
                   <option value="">Select...</option>
@@ -1878,7 +1916,8 @@ const AuthPage = ({ onAuth }) => {
     country: '',
     email: '',
     phone: '',
-    password: ''
+    password: '',
+    license_number: ''
   });
   const [loginData, setLoginData] = useState({
     email: '',
@@ -2060,6 +2099,20 @@ const AuthPage = ({ onAuth }) => {
                 onChange={(e) => setRegisterData(prev => ({ ...prev, phone: e.target.value }))}
                 className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
                 placeholder="+1 (555) 000-0000"
+              />
+            </div>
+
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                <FileText className="w-4 h-4 inline mr-1" /> Health Canada License # (optional)
+              </label>
+              <input
+                data-testid="register-license"
+                type="text"
+                value={registerData.license_number || ''}
+                onChange={(e) => setRegisterData(prev => ({ ...prev, license_number: e.target.value }))}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                placeholder="e.g. LIC-123456"
               />
             </div>
 
@@ -2331,7 +2384,7 @@ const SubmissionTracker = () => {
             </div>
 
             <a href="/submit-strain" className="block w-full bg-cannabis-green hover:bg-green-600 text-white text-center font-bold uppercase tracking-widest px-8 py-4 transition-all">
-              Submit Another Strain
+              Submit Another Product
             </a>
           </div>
         )}
@@ -2449,7 +2502,10 @@ const AdminPage = () => {
       grade_b_kg: strain.grade_b_kg || '',
       grade_c_kg: strain.grade_c_kg || '',
       harvest_date: strain.harvest_date || '',
-      growing_method: strain.growing_method || 'Indoor'
+      growing_method: strain.growing_method || 'Indoor',
+      grower_company: strain.grower_company || '',
+      grower_name: strain.grower_name || '',
+      grower_email: strain.grower_email || ''
     });
   };
 
@@ -2463,7 +2519,10 @@ const AdminPage = () => {
         grade_b_kg: parseFloat(editForm.grade_b_kg) || null,
         grade_c_kg: parseFloat(editForm.grade_c_kg) || null,
         harvest_date: editForm.harvest_date || null,
-        growing_method: editForm.growing_method || null
+        growing_method: editForm.growing_method || null,
+        grower_company: editForm.grower_company || null,
+        grower_name: editForm.grower_name || null,
+        grower_email: editForm.grower_email || null
       };
       await axios.put(`${API}/strains/${editingStrain}`, payload, {
         headers: { Authorization: `Bearer ${adminToken}` }
@@ -3045,15 +3104,15 @@ const AdminPage = () => {
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-cannabis-green/10 border border-cannabis-green/30 p-4 text-center">
                 <div className="text-cannabis-green font-bold text-3xl font-mono">{inventory.total_grade_a.toFixed(1)}</div>
-                <div className="text-cannabis-green/70 text-xs uppercase tracking-widest mt-1">Grade A (kg)</div>
+                <div className="text-cannabis-green/70 text-xs uppercase tracking-widest mt-1">Grade A (Bigs) (kg)</div>
               </div>
               <div className="bg-gold-500/10 border border-gold-500/30 p-4 text-center">
                 <div className="text-gold-500 font-bold text-3xl font-mono">{inventory.total_grade_b.toFixed(1)}</div>
-                <div className="text-gold-500/70 text-xs uppercase tracking-widest mt-1">Grade B (kg)</div>
+                <div className="text-gold-500/70 text-xs uppercase tracking-widest mt-1">Grade B (Mids) (kg)</div>
               </div>
               <div className="bg-zinc-700/20 border border-zinc-600/30 p-4 text-center">
                 <div className="text-zinc-400 font-bold text-3xl font-mono">{inventory.total_grade_c.toFixed(1)}</div>
-                <div className="text-zinc-500 text-xs uppercase tracking-widest mt-1">Grade C (kg)</div>
+                <div className="text-zinc-500 text-xs uppercase tracking-widest mt-1">Grade C (Smalls) (kg)</div>
               </div>
             </div>
             <p className="text-zinc-600 text-xs mt-3">{inventory.strains_with_grades} of {inventory.total_strains} strains have grade data</p>
@@ -3196,6 +3255,9 @@ const AdminPage = () => {
                     <div className="p-3">
                       <div className="font-semibold text-white text-sm truncate">{strain.strain_name}</div>
                       <div className="text-zinc-500 text-xs truncate">{strain.type}</div>
+                      {strain.grower_company && (
+                        <div className="text-gold-500/70 text-[10px] truncate mt-0.5">Grower: {strain.grower_company}</div>
+                      )}
                       <div className="flex justify-between items-center mt-2">
                         <span className="text-gold-500 font-mono text-xs">{strain.price_tier}</span>
                         <span className="text-zinc-600 text-xs">{strain.thc_percentage}</span>
@@ -3351,19 +3413,19 @@ const AdminPage = () => {
                     <label className="block text-xs uppercase tracking-widest text-gold-500 mb-2 font-bold">Grade Breakdown (kg)</label>
                     <div className="grid grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Grade A</label>
+                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Grade A (Bigs)</label>
                         <input data-testid="edit-strain-grade-a" type="number" min="0" step="0.1" value={editForm.grade_a_kg}
                           onChange={e => setEditForm(p => ({...p, grade_a_kg: e.target.value}))}
                           className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="0" />
                       </div>
                       <div>
-                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Grade B</label>
+                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Grade B (Mids)</label>
                         <input data-testid="edit-strain-grade-b" type="number" min="0" step="0.1" value={editForm.grade_b_kg}
                           onChange={e => setEditForm(p => ({...p, grade_b_kg: e.target.value}))}
                           className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="0" />
                       </div>
                       <div>
-                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Grade C</label>
+                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Grade C (Smalls)</label>
                         <input data-testid="edit-strain-grade-c" type="number" min="0" step="0.1" value={editForm.grade_c_kg}
                           onChange={e => setEditForm(p => ({...p, grade_c_kg: e.target.value}))}
                           className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="0" />
@@ -3389,6 +3451,31 @@ const AdminPage = () => {
                       <option value="Greenhouse">Greenhouse</option>
                       <option value="Outdoor">Outdoor</option>
                     </select>
+                  </div>
+
+                  {/* Grower Info (Admin Only) */}
+                  <div className="col-span-2 border-t border-white/10 pt-4 mt-2">
+                    <label className="block text-xs uppercase tracking-widest text-gold-500 mb-3 font-bold">Grower Information</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Company</label>
+                        <input data-testid="edit-strain-grower-company" type="text" value={editForm.grower_company}
+                          onChange={e => setEditForm(p => ({...p, grower_company: e.target.value}))}
+                          className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-10 px-3 text-sm outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Contact Name</label>
+                        <input data-testid="edit-strain-grower-name" type="text" value={editForm.grower_name}
+                          onChange={e => setEditForm(p => ({...p, grower_name: e.target.value}))}
+                          className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-10 px-3 text-sm outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Email</label>
+                        <input data-testid="edit-strain-grower-email" type="email" value={editForm.grower_email}
+                          onChange={e => setEditForm(p => ({...p, grower_email: e.target.value}))}
+                          className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-10 px-3 text-sm outline-none" />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex gap-3 pt-4">
@@ -4305,15 +4392,15 @@ const AdminPage = () => {
                               <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2">Submissions</p>
                               <div className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-cannabis-green text-sm">Grade A</span>
+                                  <span className="text-cannabis-green text-sm">Grade A (Bigs)</span>
                                   <span className="text-white font-mono">{globalData.supply.grade_distribution.submissions?.total_grade_a || 0} kg</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-gold-500 text-sm">Grade B</span>
+                                  <span className="text-gold-500 text-sm">Grade B (Mids)</span>
                                   <span className="text-white font-mono">{globalData.supply.grade_distribution.submissions?.total_grade_b || 0} kg</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-zinc-400 text-sm">Grade C</span>
+                                  <span className="text-zinc-400 text-sm">Grade C (Smalls)</span>
                                   <span className="text-white font-mono">{globalData.supply.grade_distribution.submissions?.total_grade_c || 0} kg</span>
                                 </div>
                               </div>
@@ -4322,15 +4409,15 @@ const AdminPage = () => {
                               <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2">Catalog (Approved)</p>
                               <div className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-cannabis-green text-sm">Grade A</span>
+                                  <span className="text-cannabis-green text-sm">Grade A (Bigs)</span>
                                   <span className="text-white font-mono">{globalData.supply.grade_distribution.catalog?.total_grade_a || 0} kg</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-gold-500 text-sm">Grade B</span>
+                                  <span className="text-gold-500 text-sm">Grade B (Mids)</span>
                                   <span className="text-white font-mono">{globalData.supply.grade_distribution.catalog?.total_grade_b || 0} kg</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-zinc-400 text-sm">Grade C</span>
+                                  <span className="text-zinc-400 text-sm">Grade C (Smalls)</span>
                                   <span className="text-white font-mono">{globalData.supply.grade_distribution.catalog?.total_grade_c || 0} kg</span>
                                 </div>
                               </div>
@@ -4628,6 +4715,14 @@ const AdminPage = () => {
                         <p className="text-zinc-600 text-xs uppercase tracking-widest">Willing to Irradiate</p>
                         <p className={`text-sm font-medium ${sub.willing_to_irradiate === 'Yes' ? 'text-cannabis-green' : sub.willing_to_irradiate === 'No' ? 'text-red-400' : 'text-zinc-500'}`}>{sub.willing_to_irradiate || 'N/A'}</p>
                       </div>
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">GACP Compliant</p>
+                        <p className={`text-sm font-medium ${sub.gacp_compliant === 'Yes' ? 'text-cannabis-green' : sub.gacp_compliant === 'No' ? 'text-red-400' : 'text-zinc-500'}`}>{sub.gacp_compliant || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">License #</p>
+                        <p className="text-zinc-300 text-sm font-mono">{sub.license_number || 'N/A'}</p>
+                      </div>
                     </div>
 
                     {/* Grade Breakdown */}
@@ -4635,15 +4730,15 @@ const AdminPage = () => {
                       <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="bg-cannabis-green/10 border border-cannabis-green/30 p-3 text-center">
                           <p className="text-cannabis-green font-bold font-mono text-lg">{sub.grade_a_kg || 0}</p>
-                          <p className="text-cannabis-green/70 text-[10px] uppercase tracking-widest">Grade A (kg)</p>
+                          <p className="text-cannabis-green/70 text-[10px] uppercase tracking-widest">Grade A (Bigs) (kg)</p>
                         </div>
                         <div className="bg-gold-500/10 border border-gold-500/30 p-3 text-center">
                           <p className="text-gold-500 font-bold font-mono text-lg">{sub.grade_b_kg || 0}</p>
-                          <p className="text-gold-500/70 text-[10px] uppercase tracking-widest">Grade B (kg)</p>
+                          <p className="text-gold-500/70 text-[10px] uppercase tracking-widest">Grade B (Mids) (kg)</p>
                         </div>
                         <div className="bg-zinc-700/30 border border-zinc-600/30 p-3 text-center">
                           <p className="text-zinc-400 font-bold font-mono text-lg">{sub.grade_c_kg || 0}</p>
-                          <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Grade C (kg)</p>
+                          <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Grade C (Smalls) (kg)</p>
                         </div>
                       </div>
                     )}
@@ -5486,7 +5581,7 @@ const CatalogPage = () => {
             className="hidden md:flex items-center gap-2 border-2 border-cannabis-green text-cannabis-green hover:bg-cannabis-green hover:text-white font-bold uppercase tracking-widest px-5 py-2 text-xs transition-all"
           >
             <Leaf className="w-4 h-4" />
-            Submit Your Strain
+            Submit Your Product
           </a>
           {selectedStrains.length > 0 && (
             <button
@@ -5569,7 +5664,7 @@ const CatalogPage = () => {
             className="flex items-center justify-center gap-2 border-2 border-cannabis-green text-cannabis-green font-bold uppercase tracking-widest px-5 py-3 text-xs transition-all w-full"
           >
             <Leaf className="w-4 h-4" />
-            Submit Your Strain
+            Submit Your Product
           </a>
         </div>
 
