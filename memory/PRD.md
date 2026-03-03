@@ -140,13 +140,25 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
   - Active tokens invalidated immediately on pause/remove
   - Backend: PUT /api/admin/users/{id}/status, DELETE /api/admin/users/{id}
 - [x] **Landing Page Logo & Dynamic Month** (Feb 28, 2026)
-  - Firegold logo placed beside "Cultivar Selection" heading in hero section
+  - Firegold Marketplace logo centered prominently in hero section
+  - Logo visible on all screen sizes (h-48 sm:h-64 md:h-80 lg:h-96) with transparent background
+  - Header and footer retain original Firegold Brands logo
   - "February 2026 Catalog" auto-updates to current month/year using JavaScript Date
 - [x] **Harvest Date** (Feb 28, 2026)
   - Added to grower submission form (required date picker)
   - Flows through to strain when submission is approved
   - Displayed on strain detail modal pages
   - Included in admin edit form and CSV export
+- [x] **Admin Inquiry Management Hub** (Feb 28, 2026)
+  - New "Inquiries" tab in admin panel with pending count badge
+  - Full list of all user inquiries with enriched data: contact info, strain names, user account details
+  - Expandable inquiry cards showing message, registered account, strains requested
+  - Status management: Mark Responded, Archive, Reopen with optional admin notes
+  - Search by name, company, strain name, or message text
+  - Filter dropdown by status: All, Pending, Responded, Archived
+  - Backend: GET /api/admin/inquiries (with user detail enrichment), PUT /api/admin/inquiries/{id}/status
+  - Inquiry creation (POST /api/inquiries) now caches strain_names for fast retrieval
+  - All 11 backend tests + all frontend flows verified (100% pass rate)
 
 ## Prioritized Backlog
 
@@ -171,3 +183,7 @@ AIS and Animal Mints have white backgrounds. Admin can update via image manageme
 - Admin: POST /api/admin/login, GET /api/admin/verify
 - Grower: POST /api/grower/submit, GET /api/grower/submissions, PUT /api/grower/submissions/{id}/status
 - Analytics: POST /api/analytics/track, GET /api/analytics/dashboard, GET /api/analytics/export/csv
+- Inquiries: POST /api/inquiries (user), GET /api/admin/inquiries (admin), PUT /api/admin/inquiries/{id}/status (admin)
+- Directory: GET /api/admin/strain-directory, GET /api/admin/strain-directory/csv
+- Inventory: GET /api/admin/inventory-summary
+- User Mgmt: PUT /api/admin/users/{id}/status, DELETE /api/admin/users/{id}
