@@ -5499,7 +5499,7 @@ const CatalogPage = () => {
           <p className="font-manrope text-zinc-400 text-lg md:text-xl max-w-2xl">
             Premium wholesale cannabis flower for discerning B2B partners
           </p>
-          <p className="font-mono text-gold-500/60 text-base md:text-lg mt-4">
+          <p className="font-manrope text-gold-500/60 text-base md:text-lg mt-4">
             {new Date().toLocaleString('en-US', { month: 'long' })} {new Date().getFullYear()} Catalog
           </p>
         </div>
