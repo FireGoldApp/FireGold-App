@@ -853,6 +853,7 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, use
     phone: '',
     message: ''
   });
+  const [strainVolumes, setStrainVolumes] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Auto-fill form with logged-in user data when modal opens
@@ -876,13 +877,15 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, use
     try {
       await axios.post(`${API}/inquiries`, {
         ...formData,
-        strain_ids: selectedStrains
+        strain_ids: selectedStrains,
+        strain_volumes: strainVolumes
       }, {
         headers: { Authorization: `Bearer ${userToken}` }
       });
       toast.success('Inquiry submitted successfully! We will contact you soon.');
       onClose();
       setFormData({ company_name: '', contact_name: '', email: '', phone: '', message: '' });
+      setStrainVolumes({});
     } catch (error) {
       toast.error('Failed to submit inquiry. Please try again.');
     } finally {
@@ -917,15 +920,28 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, use
             </button>
           </div>
 
-          {/* Selected Strains */}
+          {/* Selected Strains with Volume Input */}
           {selectedStrainDetails.length > 0 && (
             <div className="mb-8">
-              <h3 className="font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-4">Selected Strains ({selectedStrainDetails.length})</h3>
-              <div className="flex flex-wrap gap-2">
+              <h3 className="font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-4">Selected Strains & Volume Required ({selectedStrainDetails.length})</h3>
+              <div className="space-y-3">
                 {selectedStrainDetails.map(strain => (
-                  <span key={strain.id} className="px-3 py-1 bg-gold-500/10 border border-gold-500/30 text-gold-500 text-sm">
-                    {strain.strain_name}
-                  </span>
+                  <div key={strain.id} className="flex items-center gap-3 bg-zinc-900/50 border border-white/5 p-3">
+                    <span className="text-gold-500 font-bold text-sm flex-1 min-w-0 truncate">{strain.strain_name}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <input
+                        data-testid={`inquiry-volume-${strain.id}`}
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="kg"
+                        value={strainVolumes[strain.id] || ''}
+                        onChange={(e) => setStrainVolumes(prev => ({ ...prev, [strain.id]: e.target.value }))}
+                        className="w-24 bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white text-sm h-9 px-3 outline-none text-right"
+                      />
+                      <span className="text-zinc-500 text-xs font-mono">kg</span>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -4791,11 +4807,15 @@ const AdminPage = () => {
                           {inq.created_at ? new Date(inq.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
                         </span>
                         <div className="flex flex-wrap gap-1 justify-end">
-                          {(inq.strain_names || []).map((name, idx) => (
-                            <span key={idx} className="bg-gold-500/10 border border-gold-500/20 text-gold-500 text-[10px] font-bold px-2 py-0.5">
-                              {name}
-                            </span>
-                          ))}
+                          {(inq.strain_names || []).map((name, idx) => {
+                            const strainId = (inq.strain_ids || [])[idx];
+                            const volume = strainId && inq.strain_volumes ? inq.strain_volumes[strainId] : null;
+                            return (
+                              <span key={idx} className="bg-gold-500/10 border border-gold-500/20 text-gold-500 text-[10px] font-bold px-2 py-0.5">
+                                {name}{volume ? ` · ${volume}kg` : ''}
+                              </span>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -4837,10 +4857,21 @@ const AdminPage = () => {
                         {/* Strains Inquired About */}
                         <div className="mb-5">
                           <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2 font-bold">Strains Requested ({(inq.strain_names || []).length})</p>
-                          <div className="flex flex-wrap gap-2">
-                            {(inq.strain_names || []).map((name, idx) => (
-                              <span key={idx} className="bg-gold-500/10 border border-gold-500/30 text-gold-500 text-sm px-3 py-1.5">{name}</span>
-                            ))}
+                          <div className="space-y-2">
+                            {(inq.strain_names || []).map((name, idx) => {
+                              const strainId = (inq.strain_ids || [])[idx];
+                              const volume = strainId && inq.strain_volumes ? inq.strain_volumes[strainId] : null;
+                              return (
+                                <div key={idx} className="flex items-center justify-between bg-gold-500/5 border border-gold-500/20 px-4 py-2">
+                                  <span className="text-gold-500 font-bold text-sm">{name}</span>
+                                  {volume ? (
+                                    <span className="text-white font-mono text-sm bg-gold-500/20 px-3 py-0.5">{volume} kg</span>
+                                  ) : (
+                                    <span className="text-zinc-600 text-xs italic">No volume specified</span>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
 

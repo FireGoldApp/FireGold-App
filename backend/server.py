@@ -282,6 +282,7 @@ class InquiryCreate(BaseModel):
     email: EmailStr
     phone: Optional[str] = None
     strain_ids: List[str]
+    strain_volumes: Optional[dict] = {}  # {strain_id: "volume in kg"}
     message: str
 
 class Inquiry(BaseModel):
@@ -293,6 +294,7 @@ class Inquiry(BaseModel):
     email: str
     phone: Optional[str] = None
     strain_ids: List[str]
+    strain_volumes: Optional[dict] = {}
     message: str
     status: str = "pending"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -2386,6 +2388,7 @@ async def get_admin_inquiries(
             "message": inq.get("message"),
             "strain_ids": inq.get("strain_ids", []),
             "strain_names": strain_names,
+            "strain_volumes": inq.get("strain_volumes", {}),
             "status": inq.get("status", "pending"),
             "admin_notes": inq.get("admin_notes"),
             "created_at": inq.get("created_at"),
