@@ -5434,7 +5434,7 @@ const CatalogPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-20 pb-12 relative flex items-center justify-center overflow-hidden">
+      <section className="pt-20 pb-12 relative flex items-center justify-center">
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1647268465509-f0229a865b6f)' }}
@@ -5445,7 +5445,7 @@ const CatalogPage = () => {
             src={FIREGOLD_MARKETPLACE_LOGO} 
             alt="Firegold Marketplace" 
             data-testid="hero-marketplace-logo"
-            className="h-48 sm:h-64 md:h-80 lg:h-96 w-auto mb-3" 
+            className="h-48 sm:h-64 md:h-80 lg:h-96 w-auto mb-1" 
             style={{ mixBlendMode: 'lighten' }} 
           />
           <h1 className="font-cinzel font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gold-grad tracking-tight mb-2">
