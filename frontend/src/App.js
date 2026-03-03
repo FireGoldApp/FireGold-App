@@ -510,7 +510,7 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
   return (
     <div data-testid="filter-sidebar" className="space-y-8">
       <div>
-        <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Category</h3>
+        <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">Category</h3>
         <div className="space-y-2">
           {['Dried Flower', 'Fresh Frozen', 'Trim'].map((cat) => (
             <button
@@ -530,7 +530,7 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
       </div>
 
       <div>
-        <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Growing Method</h3>
+        <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">Growing Method</h3>
         <div className="space-y-2">
           {['Indoor', 'Greenhouse', 'Outdoor'].map((method) => (
             <button
@@ -550,7 +550,7 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
       </div>
 
       <div>
-        <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Strain Type</h3>
+        <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">Strain Type</h3>
         <div className="space-y-2">
           {['All', 'Indica', 'Sativa', 'Hybrid'].map((type) => (
             <button
@@ -570,7 +570,7 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
       </div>
 
       <div>
-        <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Price Tier</h3>
+        <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">Price Tier</h3>
         <div className="flex gap-2">
           {['$', '$$', '$$$'].map((tier) => (
             <button
@@ -590,7 +590,7 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
       </div>
 
       <div>
-        <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">THC Range</h3>
+        <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">THC Range</h3>
         <div className="space-y-2">
           {[
             { label: '25%+', value: 25 },
@@ -614,7 +614,7 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
       </div>
 
       <div>
-        <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Flower Grade</h3>
+        <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">Flower Grade</h3>
         <div className="space-y-2">
           {['A', 'B', 'C'].map((grade) => (
             <button
