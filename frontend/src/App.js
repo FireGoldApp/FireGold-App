@@ -510,6 +510,26 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
   return (
     <div data-testid="filter-sidebar" className="space-y-8">
       <div>
+        <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Category</h3>
+        <div className="space-y-2">
+          {['Dried Flower', 'Fresh Frozen', 'Trim'].map((cat) => (
+            <button
+              key={cat}
+              data-testid={`filter-category-${cat.toLowerCase().replace(' ', '-')}`}
+              onClick={() => setFilters(prev => ({ ...prev, category: prev.category === cat ? '' : cat }))}
+              className={`block w-full text-left px-4 py-2 border ${
+                filters.category === cat
+                  ? 'border-gold-500 text-gold-500 bg-gold-500/10'
+                  : 'border-zinc-800 text-zinc-400 hover:border-gold-500/50'
+              } transition-all`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
         <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Strain Type</h3>
         <div className="space-y-2">
           {['All', 'Indica', 'Sativa', 'Hybrid'].map((type) => (
@@ -613,10 +633,10 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
         </div>
       </div>
 
-      {filters.type || filters.priceTier || filters.minThc || filters.search || filters.grade || filters.growingMethod ? (
+      {filters.type || filters.priceTier || filters.minThc || filters.search || filters.grade || filters.growingMethod || filters.category ? (
         <button
           data-testid="clear-filters-btn"
-          onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '' })}
+          onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '', category: '' })}
           className="w-full px-4 py-2 border border-zinc-700 text-zinc-400 hover:border-red-500 hover:text-red-400 transition-all uppercase tracking-widest text-xs"
         >
           Clear All Filters
@@ -5247,7 +5267,7 @@ const CatalogPage = () => {
   
   const [strains, setStrains] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '' });
+  const [filters, setFilters] = useState({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '', category: '' });
   const [selectedStrains, setSelectedStrains] = useState([]);
   const [viewingStrain, setViewingStrain] = useState(null);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
@@ -5381,6 +5401,7 @@ const CatalogPage = () => {
         if (!strain[gradeKey] || strain[gradeKey] <= 0) return false;
       }
       if (filters.growingMethod && strain.growing_method !== filters.growingMethod) return false;
+      if (filters.category && strain.category !== filters.category) return false;
       return true;
     });
   }, [strains, filters]);
@@ -5611,7 +5632,7 @@ const CatalogPage = () => {
                 <Flame className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
                 <p className="text-zinc-500">No strains match your filters</p>
                 <button 
-                  onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '' })}
+                  onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '', category: '' })}
                   className="mt-4 text-gold-500 hover:text-gold-400 text-sm"
                 >
                   Clear filters
