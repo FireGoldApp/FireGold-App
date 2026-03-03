@@ -5575,7 +5575,7 @@ const CatalogPage = () => {
 
         <div className="flex gap-12">
           {/* Sidebar Filters - Desktop */}
-          <aside className="hidden md:block w-64 flex-shrink-0 self-start sticky top-24" style={{ maxHeight: 'calc(100vh - 6rem)' }}>
+          <aside className="hidden md:block w-64 flex-shrink-0 self-start sticky top-24" style={{ maxHeight: 'calc(100vh - 6rem)', zIndex: 1 }}>
             <div className="overflow-y-auto h-full pr-2 scrollbar-thin pb-8">
               <div className="flex items-center gap-2 mb-8">
                 <Filter className="w-4 h-4 text-gold-500" />
@@ -5656,7 +5656,7 @@ const CatalogPage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 py-12 px-6 md:px-12">
+      <footer className="border-t border-white/5 py-12 px-6 md:px-12 relative z-10 bg-obsidian">
         <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <img src={FIREGOLD_LOGO} alt="Firegold Brands" className="h-28 w-auto" />
           <div className="text-center md:text-right">
