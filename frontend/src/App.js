@@ -274,12 +274,12 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
               </button>
             </div>
             {/* Firegold Marketplace Logo */}
-            <div className="bg-zinc-950 py-4 flex items-center justify-center border-t border-white/5">
+            <div className="bg-zinc-950 py-6 flex items-center justify-center border-t border-white/5">
               <img 
                 src={FIREGOLD_MARKETPLACE_LOGO} 
                 alt="Firegold Marketplace" 
                 data-testid="strain-detail-marketplace-logo"
-                className="h-14 md:h-16 w-auto" 
+                className="w-[30%] h-auto" 
                 style={{ mixBlendMode: 'lighten' }} 
               />
             </div>
