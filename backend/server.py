@@ -199,6 +199,7 @@ class Strain(BaseModel):
     grade_c_kg: Optional[float] = None
     harvest_date: Optional[str] = None  # Harvest date of the flower
     growing_method: Optional[str] = None  # Indoor, Outdoor, Greenhouse
+    category: Optional[str] = None  # Dried Flower, Fresh Frozen, Trim
     image_url: Optional[str] = None
     coa_url: Optional[str] = None  # Path to redacted COA PDF
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -218,6 +219,7 @@ class StrainCreate(BaseModel):
     grade_c_kg: Optional[float] = None
     harvest_date: Optional[str] = None
     growing_method: Optional[str] = None
+    category: Optional[str] = None
     image_url: Optional[str] = None
 
 # Grower Submission Model
@@ -239,6 +241,7 @@ class GrowerSubmission(BaseModel):
     lot_size_kg: float  # Minimum 30 kg
     effects: str
     growing_method: Optional[str] = None  # Indoor, Outdoor, Greenhouse
+    category: Optional[str] = None  # Dried Flower, Fresh Frozen, Trim
     export_country: Optional[str] = None  # Country of export
     is_irradiated: Optional[str] = None  # Yes/No - has flower been irradiated for micros
     willing_to_irradiate: Optional[str] = None  # Yes/No - willing to irradiate if required
@@ -702,6 +705,7 @@ async def submit_strain(
     lot_size_kg: float = Form(...),
     effects: str = Form(...),
     growing_method: str = Form(""),
+    category: str = Form(""),
     export_country: str = Form(""),
     is_irradiated: str = Form(""),
     willing_to_irradiate: str = Form(""),
@@ -787,6 +791,7 @@ async def submit_strain(
         "lot_size_kg": lot_size_kg,
         "effects": effects,
         "growing_method": growing_method or None,
+        "category": category or None,
         "export_country": export_country or None,
         "is_irradiated": is_irradiated or None,
         "willing_to_irradiate": willing_to_irradiate or None,
@@ -891,6 +896,7 @@ async def update_submission_status(
                 grade_c_kg=submission.get("grade_c_kg"),
                 harvest_date=submission.get("harvest_date"),
                 growing_method=submission.get("growing_method"),
+                category=submission.get("category"),
                 image_url=submission.get("image_path")
             )
             doc = new_strain.model_dump()

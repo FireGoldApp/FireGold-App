@@ -1135,6 +1135,7 @@ const GrowerSubmitPage = () => {
     license_number: '',
     strain_name: '',
     strain_type: 'Balanced Hybrid',
+    category: 'Dried Flower',
     thc_percentage: '',
     cbd_percentage: '',
     terpene_profile: '',
@@ -1212,6 +1213,7 @@ const GrowerSubmitPage = () => {
       submitData.append('license_number', formData.license_number || '');
       submitData.append('strain_name', formData.strain_name);
       submitData.append('strain_type', formData.strain_type);
+      submitData.append('category', formData.category);
       submitData.append('thc_percentage', formData.thc_percentage);
       submitData.append('cbd_percentage', formData.cbd_percentage || '');
       submitData.append('terpene_profile', formData.terpene_profile);
@@ -1409,6 +1411,19 @@ const GrowerSubmitPage = () => {
                   <option value="Hybrid, Sativa Leaning">Hybrid, Sativa Leaning</option>
                   <option value="Indica Dominant">Indica Dominant</option>
                   <option value="Sativa Dominant">Sativa Dominant</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Category *</label>
+                <select
+                  data-testid="grower-category-select"
+                  value={formData.category}
+                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                >
+                  <option value="Dried Flower">Dried Flower</option>
+                  <option value="Fresh Frozen">Fresh Frozen</option>
+                  <option value="Trim">Trim</option>
                 </select>
               </div>
               <div>
