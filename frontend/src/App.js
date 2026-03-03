@@ -5533,7 +5533,7 @@ const CatalogPage = () => {
         <div className="flex gap-12">
           {/* Sidebar Filters - Desktop */}
           <aside className="hidden md:block w-64 flex-shrink-0">
-            <div className="sticky top-28">
+            <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto pr-2 scrollbar-thin">
               <div className="flex items-center gap-2 mb-8">
                 <Filter className="w-4 h-4 text-gold-500" />
                 <h2 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-400">Filters</h2>
