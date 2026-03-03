@@ -5448,7 +5448,7 @@ const CatalogPage = () => {
             className="h-48 sm:h-64 md:h-80 lg:h-96 w-auto mb-0" 
             style={{ mixBlendMode: 'lighten' }} 
           />
-          <h1 className="font-cinzel font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gold-grad tracking-tight mb-2 -mt-1">
+          <h1 className="font-cinzel font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gold-grad tracking-tight mb-2 -mt-4">
             Bulk Whole Flower Strains
           </h1>
           <p className="font-manrope text-zinc-400 text-lg md:text-xl max-w-2xl">
