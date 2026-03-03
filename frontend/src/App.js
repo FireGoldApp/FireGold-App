@@ -5445,10 +5445,10 @@ const CatalogPage = () => {
             src={FIREGOLD_MARKETPLACE_LOGO} 
             alt="Firegold Marketplace" 
             data-testid="hero-marketplace-logo"
-            className="h-48 sm:h-64 md:h-80 lg:h-96 w-auto mb-6" 
+            className="h-48 sm:h-64 md:h-80 lg:h-96 w-auto mb-3" 
             style={{ mixBlendMode: 'lighten' }} 
           />
-          <h1 className="font-cinzel font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gold-grad tracking-tight mb-4">
+          <h1 className="font-cinzel font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gold-grad tracking-tight mb-2">
             Bulk Whole Flower Strains
           </h1>
           <p className="font-manrope text-zinc-400 text-lg md:text-xl max-w-2xl">
