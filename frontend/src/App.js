@@ -5434,7 +5434,7 @@ const CatalogPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-20 relative h-[60vh] min-h-[500px] flex items-center justify-center overflow-hidden">
+      <section className="pt-20 pb-12 relative flex items-center justify-center overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1647268465509-f0229a865b6f)' }}
