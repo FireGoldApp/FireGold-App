@@ -530,6 +530,26 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
       </div>
 
       <div>
+        <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Growing Method</h3>
+        <div className="space-y-2">
+          {['Indoor', 'Greenhouse', 'Outdoor'].map((method) => (
+            <button
+              key={method}
+              data-testid={`filter-method-${method.toLowerCase()}`}
+              onClick={() => setFilters(prev => ({ ...prev, growingMethod: prev.growingMethod === method ? '' : method }))}
+              className={`block w-full text-left px-4 py-2 border ${
+                filters.growingMethod === method
+                  ? 'border-gold-500 text-gold-500 bg-gold-500/10'
+                  : 'border-zinc-800 text-zinc-400 hover:border-gold-500/50'
+              } transition-all`}
+            >
+              {method}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
         <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Strain Type</h3>
         <div className="space-y-2">
           {['All', 'Indica', 'Sativa', 'Hybrid'].map((type) => (
@@ -608,26 +628,6 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
               } transition-all`}
             >
               Grade {grade}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="font-manrope font-semibold text-sm uppercase tracking-widest text-zinc-500 mb-4">Growing Method</h3>
-        <div className="space-y-2">
-          {['Indoor', 'Greenhouse', 'Outdoor'].map((method) => (
-            <button
-              key={method}
-              data-testid={`filter-method-${method.toLowerCase()}`}
-              onClick={() => setFilters(prev => ({ ...prev, growingMethod: prev.growingMethod === method ? '' : method }))}
-              className={`block w-full text-left px-4 py-2 border ${
-                filters.growingMethod === method
-                  ? 'border-gold-500 text-gold-500 bg-gold-500/10'
-                  : 'border-zinc-800 text-zinc-400 hover:border-gold-500/50'
-              } transition-all`}
-            >
-              {method}
             </button>
           ))}
         </div>
