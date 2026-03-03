@@ -5434,7 +5434,7 @@ const CatalogPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-20 relative h-[55vh] min-h-[450px] flex items-center justify-center overflow-hidden">
+      <section className="pt-20 relative h-[60vh] min-h-[500px] flex items-center justify-center overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1647268465509-f0229a865b6f)' }}
@@ -5448,10 +5448,13 @@ const CatalogPage = () => {
             className="h-48 sm:h-64 md:h-80 lg:h-96 w-auto mb-6" 
             style={{ mixBlendMode: 'lighten' }} 
           />
+          <h1 className="font-cinzel font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gold-grad tracking-tight mb-4">
+            Bulk Whole Flower Strains
+          </h1>
           <p className="font-manrope text-zinc-400 text-lg md:text-xl max-w-2xl">
             Premium wholesale cannabis flower for discerning B2B partners
           </p>
-          <p className="font-mono text-gold-500/60 text-sm mt-4">
+          <p className="font-mono text-gold-500/60 text-base md:text-lg mt-4">
             {new Date().toLocaleString('en-US', { month: 'long' })} {new Date().getFullYear()} Catalog
           </p>
         </div>
