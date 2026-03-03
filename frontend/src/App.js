@@ -42,7 +42,8 @@ import {
   DollarSign,
   Edit2,
   Download,
-  RefreshCw
+  RefreshCw,
+  ZoomIn
 } from "lucide-react";
 
 // Prevent right-click on images
@@ -189,6 +190,8 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
   const [showCoa, setShowCoa] = useState(false);
   const [coaLoading, setCoaLoading] = useState(false);
   const [coaBlobUrl, setCoaBlobUrl] = useState(null);
+  const [imageZoomed, setImageZoomed] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
 
   if (!strain) return null;
 
@@ -244,23 +247,42 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* Image */}
-          <div className="aspect-square relative">
-            <img 
-              src={strain.image_url || 'https://images.unsplash.com/photo-1721058454918-5582b68de13c'}
-              alt={strain.strain_name}
-              className="w-full h-full object-cover select-none pointer-events-none"
-              onContextMenu={preventImageActions}
-              onDragStart={preventImageActions}
-              draggable="false"
-            />
-            <button 
-              data-testid="close-modal-btn"
-              onClick={onClose}
-              className="absolute top-4 right-4 w-10 h-10 bg-gold-500 text-black hidden md:flex items-center justify-center hover:bg-red-600 hover:text-black transition-all"
+          {/* Image with Zoom + Logo */}
+          <div className="flex flex-col">
+            <div 
+              className="aspect-square relative overflow-hidden cursor-zoom-in group"
+              data-testid="strain-image-zoom"
+              onClick={() => setImageZoomed(true)}
             >
-              <X className="w-5 h-5" />
-            </button>
+              <img 
+                src={strain.image_url || 'https://images.unsplash.com/photo-1721058454918-5582b68de13c'}
+                alt={strain.strain_name}
+                className="w-full h-full object-cover select-none pointer-events-none transition-transform duration-300 group-hover:scale-105"
+                onContextMenu={preventImageActions}
+                onDragStart={preventImageActions}
+                draggable="false"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
+                <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-80 transition-opacity drop-shadow-lg" />
+              </div>
+              <button 
+                data-testid="close-modal-btn"
+                onClick={(e) => { e.stopPropagation(); onClose(); }}
+                className="absolute top-4 right-4 w-10 h-10 bg-gold-500 text-black hidden md:flex items-center justify-center hover:bg-red-600 hover:text-black transition-all z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {/* Firegold Marketplace Logo */}
+            <div className="bg-zinc-950 py-4 flex items-center justify-center border-t border-white/5">
+              <img 
+                src={FIREGOLD_MARKETPLACE_LOGO} 
+                alt="Firegold Marketplace" 
+                data-testid="strain-detail-marketplace-logo"
+                className="h-14 md:h-16 w-auto" 
+                style={{ mixBlendMode: 'lighten' }} 
+              />
+            </div>
           </div>
           
           {/* Details */}
@@ -386,6 +408,43 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
             </div>
           </div>
         </div>
+
+        {/* Full-screen Image Zoom Overlay */}
+        {imageZoomed && (
+          <div 
+            data-testid="image-zoom-overlay"
+            className="fixed inset-0 z-[60] bg-black/95 flex flex-col cursor-zoom-out"
+            onClick={() => setImageZoomed(false)}
+          >
+            <div className="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-charcoal/80">
+              <span className="font-cinzel font-bold text-white text-sm">{strain.strain_name}</span>
+              <button
+                data-testid="close-zoom-btn"
+                onClick={() => setImageZoomed(false)}
+                className="w-10 h-10 bg-zinc-800 hover:bg-gold-500 hover:text-black text-white flex items-center justify-center transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div 
+              className="flex-1 flex items-center justify-center p-4 overflow-hidden"
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setZoomPos({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
+              }}
+            >
+              <img 
+                src={strain.image_url || 'https://images.unsplash.com/photo-1721058454918-5582b68de13c'}
+                alt={strain.strain_name}
+                className="max-w-full max-h-full object-contain select-none pointer-events-none"
+                style={{ transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`, transform: 'scale(1.8)' }}
+                onContextMenu={preventImageActions}
+                onDragStart={preventImageActions}
+                draggable="false"
+              />
+            </div>
+          </div>
+        )}
 
         {/* COA PDF Viewer Overlay */}
         {showCoa && coaBlobUrl && (

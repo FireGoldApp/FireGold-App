@@ -187,3 +187,9 @@ AIS and Animal Mints have white backgrounds. Admin can update via image manageme
 - Directory: GET /api/admin/strain-directory, GET /api/admin/strain-directory/csv
 - Inventory: GET /api/admin/inventory-summary
 - User Mgmt: PUT /api/admin/users/{id}/status, DELETE /api/admin/users/{id}
+
+- [x] **Strain Detail Page Enhancements** (Feb 28, 2026)
+  - Firegold Marketplace logo displayed below strain image on every strain detail page
+  - Image zoom: hover shows magnifying glass icon, click opens full-screen 1.8x zoom overlay with mouse-following pan
+  - Inquiry volume field: users specify kg per strain when submitting inquiries, shown in admin hub
+
