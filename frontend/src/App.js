@@ -2339,6 +2339,12 @@ const AdminPage = () => {
   const [directory, setDirectory] = useState([]);
   const [directorySearch, setDirectorySearch] = useState('');
   const [inventory, setInventory] = useState(null);
+  const [adminInquiries, setAdminInquiries] = useState([]);
+  const [inquiryFilter, setInquiryFilter] = useState('all');
+  const [inquirySearch, setInquirySearch] = useState('');
+  const [processingInquiry, setProcessingInquiry] = useState(null);
+  const [inquiryNotes, setInquiryNotes] = useState('');
+  const [expandedInquiry, setExpandedInquiry] = useState(null);
 
   const fetchDirectory = async (token) => {
     try {
@@ -2360,6 +2366,36 @@ const AdminPage = () => {
     } catch (error) {
       console.error('Failed to load inventory');
     }
+  };
+
+  const fetchAdminInquiries = async (token) => {
+    try {
+      const response = await axios.get(`${API}/admin/inquiries`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAdminInquiries(response.data);
+    } catch (error) {
+      console.error('Failed to load inquiries');
+    }
+  };
+
+  const updateInquiryStatus = async (inquiryId, status, notes) => {
+    setProcessingInquiry(inquiryId);
+    try {
+      await axios.put(`${API}/admin/inquiries/${inquiryId}/status`, {
+        status,
+        admin_notes: notes || null
+      }, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      toast.success(`Inquiry marked as ${status}`);
+      fetchAdminInquiries(adminToken);
+      setInquiryNotes('');
+      setExpandedInquiry(null);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update inquiry');
+    }
+    setProcessingInquiry(null);
   };
 
   const handleCoaUpload = async (strainId, file) => {
@@ -2438,6 +2474,7 @@ const AdminPage = () => {
     fetchFlags(token);
     fetchSubmissions(token);
     fetchInventory(token);
+    fetchAdminInquiries(token);
   };
 
   const handleLogout = async () => {
@@ -2935,6 +2972,20 @@ const AdminPage = () => {
             }`}
           >
             <FileText className="w-4 h-4 inline mr-2" />Directory
+          </button>
+          <button
+            onClick={() => { setActiveTab('inquiries'); fetchAdminInquiries(adminToken); }}
+            data-testid="admin-tab-inquiries"
+            className={`px-6 py-2 font-bold uppercase tracking-widest text-sm transition-all relative ${
+              activeTab === 'inquiries' ? 'bg-gold-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Mail className="w-4 h-4 inline mr-2" />Inquiries
+            {adminInquiries.filter(i => i.status === 'pending').length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-gold-500 text-black text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                {adminInquiries.filter(i => i.status === 'pending').length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -4643,6 +4694,220 @@ const AdminPage = () => {
         )}
 
         {/* Directory Tab */}
+        {/* Inquiries Tab */}
+        {activeTab === 'inquiries' && (
+          <>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+              <div>
+                <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Inquiry Hub</h2>
+                <p className="text-zinc-500 text-sm">
+                  {adminInquiries.length} total · {adminInquiries.filter(i => i.status === 'pending').length} pending response
+                </p>
+              </div>
+              <div className="flex gap-3 items-center w-full md:w-auto">
+                <input
+                  data-testid="inquiry-hub-search"
+                  type="text"
+                  placeholder="Search by name, company, strain..."
+                  value={inquirySearch}
+                  onChange={(e) => setInquirySearch(e.target.value)}
+                  className="bg-zinc-900 border border-white/10 focus:border-gold-500 text-white px-4 py-2 text-sm outline-none flex-1 md:w-64"
+                />
+                <select
+                  data-testid="inquiry-hub-filter"
+                  value={inquiryFilter}
+                  onChange={(e) => setInquiryFilter(e.target.value)}
+                  className="bg-zinc-900 border border-white/10 text-white px-3 py-2 text-sm outline-none"
+                >
+                  <option value="all">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="responded">Responded</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+            </div>
+
+            {adminInquiries.length === 0 ? (
+              <div className="bg-charcoal border border-white/5 p-12 text-center">
+                <Mail className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+                <p className="text-zinc-400">No inquiries yet</p>
+                <p className="text-zinc-600 text-sm mt-1">Inquiries from users will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {adminInquiries
+                  .filter(inq => {
+                    if (inquiryFilter !== 'all' && inq.status !== inquiryFilter) return false;
+                    if (inquirySearch) {
+                      const q = inquirySearch.toLowerCase();
+                      return (
+                        (inq.contact_name || '').toLowerCase().includes(q) ||
+                        (inq.company_name || '').toLowerCase().includes(q) ||
+                        (inq.email || '').toLowerCase().includes(q) ||
+                        (inq.strain_names || []).some(s => s.toLowerCase().includes(q)) ||
+                        (inq.message || '').toLowerCase().includes(q)
+                      );
+                    }
+                    return true;
+                  })
+                  .map((inq) => (
+                  <div 
+                    key={inq.id} 
+                    data-testid={`inquiry-card-${inq.id}`}
+                    className={`bg-charcoal border ${inq.status === 'pending' ? 'border-gold-500/30' : 'border-white/5'} hover:border-white/15 transition-colors`}
+                  >
+                    {/* Inquiry Header */}
+                    <div 
+                      className="flex flex-col md:flex-row items-start md:items-center gap-4 p-5 cursor-pointer"
+                      onClick={() => setExpandedInquiry(expandedInquiry === inq.id ? null : inq.id)}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="font-bold text-white text-base truncate">{inq.contact_name}</h3>
+                          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${
+                            inq.status === 'pending' ? 'bg-gold-500/20 text-gold-500' :
+                            inq.status === 'responded' ? 'bg-cannabis-green/20 text-cannabis-green' :
+                            'bg-zinc-700/30 text-zinc-500'
+                          }`}>
+                            {inq.status}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-zinc-400 text-sm">
+                          <span className="flex items-center gap-1">
+                            <Building2 className="w-3.5 h-3.5" />{inq.company_name}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Mail className="w-3.5 h-3.5" />{inq.email}
+                          </span>
+                          {inq.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="w-3.5 h-3.5" />{inq.phone}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <span className="text-zinc-600 text-xs">
+                          {inq.created_at ? new Date(inq.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {(inq.strain_names || []).map((name, idx) => (
+                            <span key={idx} className="bg-gold-500/10 border border-gold-500/20 text-gold-500 text-[10px] font-bold px-2 py-0.5">
+                              {name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expanded Detail */}
+                    {expandedInquiry === inq.id && (
+                      <div className="border-t border-white/5 p-5 bg-zinc-900/30">
+                        {/* Message */}
+                        <div className="mb-5">
+                          <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2 font-bold">Message</p>
+                          <p className="text-zinc-300 text-sm leading-relaxed bg-zinc-900/50 border border-white/5 p-4">{inq.message}</p>
+                        </div>
+
+                        {/* User Account Details */}
+                        {inq.user_id && (
+                          <div className="mb-5">
+                            <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2 font-bold">Registered Account</p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                              <div>
+                                <p className="text-zinc-600 text-[10px] uppercase">Name</p>
+                                <p className="text-zinc-200">{inq.user_first_name || ''} {inq.user_last_name || ''}</p>
+                              </div>
+                              <div>
+                                <p className="text-zinc-600 text-[10px] uppercase">Company</p>
+                                <p className="text-zinc-200">{inq.user_company || inq.company_name}</p>
+                              </div>
+                              <div>
+                                <p className="text-zinc-600 text-[10px] uppercase">Email</p>
+                                <a href={`mailto:${inq.user_email || inq.email}`} className="text-gold-500 hover:underline">{inq.user_email || inq.email}</a>
+                              </div>
+                              <div>
+                                <p className="text-zinc-600 text-[10px] uppercase">Phone</p>
+                                <a href={`tel:${inq.user_phone || inq.phone}`} className="text-gold-500 hover:underline">{inq.user_phone || inq.phone || 'N/A'}</a>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Strains Inquired About */}
+                        <div className="mb-5">
+                          <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2 font-bold">Strains Requested ({(inq.strain_names || []).length})</p>
+                          <div className="flex flex-wrap gap-2">
+                            {(inq.strain_names || []).map((name, idx) => (
+                              <span key={idx} className="bg-gold-500/10 border border-gold-500/30 text-gold-500 text-sm px-3 py-1.5">{name}</span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Admin Notes */}
+                        {inq.admin_notes && (
+                          <div className="mb-5">
+                            <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2 font-bold">Admin Notes</p>
+                            <p className="text-zinc-400 text-sm bg-zinc-900/50 border border-white/5 p-3">{inq.admin_notes}</p>
+                          </div>
+                        )}
+
+                        {/* Action Area */}
+                        <div className="border-t border-white/5 pt-4 mt-4">
+                          <div className="flex flex-col md:flex-row gap-3">
+                            <textarea
+                              data-testid={`inquiry-notes-${inq.id}`}
+                              value={expandedInquiry === inq.id ? inquiryNotes : ''}
+                              onChange={(e) => setInquiryNotes(e.target.value)}
+                              rows={2}
+                              placeholder="Add a note (optional)..."
+                              className="flex-1 bg-zinc-900 border border-white/10 focus:border-gold-500 text-white text-sm px-4 py-2 outline-none resize-none"
+                            />
+                            <div className="flex gap-2">
+                              {inq.status !== 'responded' && (
+                                <button
+                                  data-testid={`inquiry-respond-${inq.id}`}
+                                  onClick={() => updateInquiryStatus(inq.id, 'responded', inquiryNotes)}
+                                  disabled={processingInquiry === inq.id}
+                                  className="bg-cannabis-green hover:bg-green-600 text-white px-5 py-2 font-bold uppercase tracking-widest text-xs flex items-center gap-2 transition-colors whitespace-nowrap disabled:opacity-50"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                  Mark Responded
+                                </button>
+                              )}
+                              {inq.status !== 'archived' && (
+                                <button
+                                  data-testid={`inquiry-archive-${inq.id}`}
+                                  onClick={() => updateInquiryStatus(inq.id, 'archived', inquiryNotes)}
+                                  disabled={processingInquiry === inq.id}
+                                  className="bg-zinc-700 hover:bg-zinc-600 text-white px-5 py-2 font-bold uppercase tracking-widest text-xs flex items-center gap-2 transition-colors whitespace-nowrap disabled:opacity-50"
+                                >
+                                  Archive
+                                </button>
+                              )}
+                              {inq.status !== 'pending' && (
+                                <button
+                                  data-testid={`inquiry-reopen-${inq.id}`}
+                                  onClick={() => updateInquiryStatus(inq.id, 'pending', inquiryNotes)}
+                                  disabled={processingInquiry === inq.id}
+                                  className="border border-gold-500/50 text-gold-500 hover:bg-gold-500/10 px-5 py-2 font-bold uppercase tracking-widest text-xs flex items-center gap-2 transition-colors whitespace-nowrap disabled:opacity-50"
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                  Reopen
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
         {activeTab === 'directory' && (
           <>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -5079,25 +5344,26 @@ const CatalogPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-20 relative h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden">
+      <section className="pt-20 relative h-[55vh] min-h-[450px] flex items-center justify-center overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1647268465509-f0229a865b6f)' }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-obsidian via-transparent to-obsidian" />
-        <div className="relative z-10 flex items-center gap-8 px-6 max-w-5xl mx-auto">
-          <img src={FIREGOLD_MARKETPLACE_LOGO} alt="Firegold Marketplace" className="h-60 md:h-80 w-auto flex-shrink-0 hidden sm:block" style={{ mixBlendMode: 'lighten' }} />
-          <div className="text-center sm:text-left">
-            <h1 className="font-cinzel font-bold text-4xl md:text-6xl lg:text-7xl text-gold-grad tracking-tight mb-4">
-              Cultivar Selection
-            </h1>
-            <p className="font-manrope text-zinc-400 text-lg md:text-xl max-w-2xl">
-              Premium wholesale cannabis flower for discerning B2B partners
-            </p>
-            <p className="font-mono text-gold-500/60 text-sm mt-4">
-              {new Date().toLocaleString('en-US', { month: 'long' })} {new Date().getFullYear()} Catalog
-            </p>
-          </div>
+        <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-5xl mx-auto">
+          <img 
+            src={FIREGOLD_MARKETPLACE_LOGO} 
+            alt="Firegold Marketplace" 
+            data-testid="hero-marketplace-logo"
+            className="h-48 sm:h-64 md:h-80 lg:h-96 w-auto mb-6" 
+            style={{ mixBlendMode: 'lighten' }} 
+          />
+          <p className="font-manrope text-zinc-400 text-lg md:text-xl max-w-2xl">
+            Premium wholesale cannabis flower for discerning B2B partners
+          </p>
+          <p className="font-mono text-gold-500/60 text-sm mt-4">
+            {new Date().toLocaleString('en-US', { month: 'long' })} {new Date().getFullYear()} Catalog
+          </p>
         </div>
       </section>
 

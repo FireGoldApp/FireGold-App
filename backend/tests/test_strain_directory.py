@@ -8,7 +8,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://strain-marketplace.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://strain-exchange.preview.emergentagent.com').rstrip('/')
 ADMIN_PASSWORD = "firegold2026"
 
 

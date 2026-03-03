@@ -2315,11 +2315,21 @@ async def create_strain(strain_input: StrainCreate):
 @api_router.post("/inquiries")
 async def create_inquiry(inquiry_input: InquiryCreate, user_data: dict = Depends(verify_user_token)):
     """Create a new buyer inquiry (linked to authenticated user)"""
+    # Resolve strain names from IDs
+    strain_names = []
+    if inquiry_input.strain_ids:
+        strains_cursor = db.strains.find({"id": {"$in": inquiry_input.strain_ids}}, {"_id": 0, "id": 1, "strain_name": 1})
+        strains_list = await strains_cursor.to_list(100)
+        strain_names = [s["strain_name"] for s in strains_list]
+
     inquiry = Inquiry(**inquiry_input.model_dump())
     doc = inquiry.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     doc['user_id'] = user_data.get('user_id')
     doc['user_email'] = user_data.get('email')
+    doc['user_company'] = user_data.get('company')
+    doc['user_first_name'] = user_data.get('first_name')
+    doc['strain_names'] = strain_names
     await db.inquiries.insert_one(doc)
     del doc['_id']
     return doc
@@ -2332,6 +2342,86 @@ async def get_inquiries():
         if isinstance(inq.get('created_at'), str):
             inq['created_at'] = datetime.fromisoformat(inq['created_at'].replace('Z', '+00:00'))
     return inquiries
+
+@api_router.get("/admin/inquiries")
+async def get_admin_inquiries(
+    status: Optional[str] = Query(None),
+    token: str = Depends(verify_admin_token)
+):
+    """Get all inquiries with user details for admin management"""
+    query = {}
+    if status and status != "all":
+        query["status"] = status
+
+    inquiries = await db.inquiries.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+
+    # Resolve strain names for inquiries that don't have them cached
+    all_strain_ids = set()
+    for inq in inquiries:
+        all_strain_ids.update(inq.get("strain_ids", []))
+    strain_map = {}
+    if all_strain_ids:
+        strains_list = await db.strains.find({"id": {"$in": list(all_strain_ids)}}, {"_id": 0, "id": 1, "strain_name": 1}).to_list(500)
+        strain_map = {s["id"]: s["strain_name"] for s in strains_list}
+
+    # Resolve user details
+    all_user_ids = set(inq.get("user_id") for inq in inquiries if inq.get("user_id"))
+    user_map = {}
+    if all_user_ids:
+        users_list = await db.users.find({"id": {"$in": list(all_user_ids)}}, {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "email": 1, "company": 1, "phone": 1}).to_list(500)
+        user_map = {u["id"]: u for u in users_list}
+
+    enriched = []
+    for inq in inquiries:
+        # Resolve strain names
+        strain_names = inq.get("strain_names") or [strain_map.get(sid, "Unknown") for sid in inq.get("strain_ids", [])]
+        # Get user info
+        user = user_map.get(inq.get("user_id"), {})
+        enriched.append({
+            "id": inq.get("id"),
+            "company_name": inq.get("company_name"),
+            "contact_name": inq.get("contact_name"),
+            "email": inq.get("email"),
+            "phone": inq.get("phone"),
+            "message": inq.get("message"),
+            "strain_ids": inq.get("strain_ids", []),
+            "strain_names": strain_names,
+            "status": inq.get("status", "pending"),
+            "admin_notes": inq.get("admin_notes"),
+            "created_at": inq.get("created_at"),
+            "user_id": inq.get("user_id"),
+            "user_email": inq.get("user_email") or user.get("email"),
+            "user_company": inq.get("user_company") or user.get("company"),
+            "user_first_name": inq.get("user_first_name") or user.get("first_name"),
+            "user_last_name": user.get("last_name"),
+            "user_phone": user.get("phone"),
+        })
+
+    return enriched
+
+class UpdateInquiryStatus(BaseModel):
+    status: str  # pending, responded, archived
+    admin_notes: Optional[str] = None
+
+@api_router.put("/admin/inquiries/{inquiry_id}/status")
+async def update_inquiry_status(
+    inquiry_id: str,
+    body: UpdateInquiryStatus,
+    token: str = Depends(verify_admin_token)
+):
+    """Update inquiry status and admin notes"""
+    if body.status not in ("pending", "responded", "archived"):
+        raise HTTPException(status_code=400, detail="Status must be 'pending', 'responded', or 'archived'")
+
+    update_fields = {"status": body.status}
+    if body.admin_notes is not None:
+        update_fields["admin_notes"] = body.admin_notes
+
+    result = await db.inquiries.update_one({"id": inquiry_id}, {"$set": update_fields})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Inquiry not found")
+
+    return {"message": f"Inquiry marked as {body.status}", "inquiry_id": inquiry_id}
 
 @api_router.post("/sample-requests/upload")
 async def create_sample_request_with_files(
