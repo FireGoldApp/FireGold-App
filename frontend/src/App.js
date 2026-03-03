@@ -137,19 +137,26 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
         
         {/* Growing Method Badge */}
         {strain.growing_method && (
-          <div className="absolute top-4 right-4 w-16 bg-black/80 backdrop-blur-sm px-2 py-1 border border-white/20 text-center">
+          <div className="absolute top-4 right-4 w-20 bg-black/80 backdrop-blur-sm px-2 py-1 border border-white/20 text-center">
             <span className="text-zinc-300 font-mono text-[10px] font-bold uppercase">{strain.growing_method}</span>
           </div>
         )}
 
         {/* Price Tier Badge */}
-        <div className={`absolute ${strain.growing_method ? 'top-12' : 'top-4'} right-4 w-16 bg-black/80 backdrop-blur-sm px-2 py-1 border border-gold-500/30 text-center`}>
+        <div className={`absolute ${strain.growing_method ? 'top-12' : 'top-4'} right-4 w-20 bg-black/80 backdrop-blur-sm px-2 py-1 border border-gold-500/30 text-center`}>
           <span className="text-gold-500 font-mono text-sm">{strain.price_tier}</span>
         </div>
+
+        {/* Category Badge */}
+        {strain.category && (
+          <div className={`absolute ${strain.growing_method ? 'top-[84px]' : 'top-14'} right-4 w-20 bg-gold-500/20 backdrop-blur-sm px-2 py-0.5 border border-gold-500/40 text-center`}>
+            <span className="text-gold-500 font-mono text-[9px] font-bold uppercase leading-tight">{strain.category}</span>
+          </div>
+        )}
         
         {/* COA Badge */}
         {strain.coa_url && (
-          <div className={`absolute ${strain.growing_method ? 'top-[84px]' : 'top-14'} right-4 w-16 bg-cannabis-green/90 backdrop-blur-sm px-2 py-0.5 border border-cannabis-green text-center`}>
+          <div className={`absolute ${strain.category && strain.growing_method ? 'top-[116px]' : strain.growing_method || strain.category ? 'top-[84px]' : 'top-14'} right-4 w-20 bg-cannabis-green/90 backdrop-blur-sm px-2 py-0.5 border border-cannabis-green text-center`}>
             <span className="text-white font-mono text-xs font-bold">COA</span>
           </div>
         )}
