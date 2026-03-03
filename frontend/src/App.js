@@ -967,6 +967,7 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, use
     contact_name: '',
     email: '',
     phone: '',
+    market_of_interest: '',
     message: ''
   });
   const [strainVolumes, setStrainVolumes] = useState({});
@@ -1000,7 +1001,7 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, use
       });
       toast.success('Inquiry submitted successfully! We will contact you soon.');
       onClose();
-      setFormData({ company_name: '', contact_name: '', email: '', phone: '', message: '' });
+      setFormData({ company_name: '', contact_name: '', email: '', phone: '', market_of_interest: '', message: '' });
       setStrainVolumes({});
     } catch (error) {
       toast.error('Failed to submit inquiry. Please try again.');
@@ -1124,6 +1125,20 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, use
             </div>
 
             <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                <Globe className="w-4 h-4 inline mr-2" />Market of Interest
+              </label>
+              <input
+                data-testid="inquiry-market-input"
+                type="text"
+                value={formData.market_of_interest}
+                onChange={(e) => setFormData(prev => ({ ...prev, market_of_interest: e.target.value }))}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                placeholder="e.g., Canada, Germany, Australia, Israel"
+              />
+            </div>
+
+            <div>
               <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Message</label>
               <textarea
                 data-testid="inquiry-message-input"
@@ -1171,6 +1186,7 @@ const GrowerSubmitPage = () => {
     effects: '',
     growing_method: 'Indoor',
     export_country: '',
+    open_permit: '',
     is_irradiated: '',
     willing_to_irradiate: '',
     gacp_compliant: '',
@@ -1250,6 +1266,7 @@ const GrowerSubmitPage = () => {
       submitData.append('effects', formData.effects);
       submitData.append('growing_method', formData.growing_method || '');
       submitData.append('export_country', formData.export_country || '');
+      submitData.append('open_permit', formData.open_permit || '');
       submitData.append('is_irradiated', formData.is_irradiated || '');
       submitData.append('willing_to_irradiate', formData.willing_to_irradiate || '');
       submitData.append('gacp_compliant', formData.gacp_compliant || '');
@@ -1287,7 +1304,7 @@ const GrowerSubmitPage = () => {
   if (submitted) {
     return (
       <div className="min-h-screen bg-obsidian flex items-center justify-center p-6">
-        <div className="bg-charcoal border border-white/10 p-8 max-w-md w-full text-center">
+        <div className="bg-charcoal border border-white/10 p-8 max-w-lg w-full text-center">
           <div className="w-16 h-16 bg-cannabis-green/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-8 h-8 text-cannabis-green" />
           </div>
@@ -1306,6 +1323,44 @@ const GrowerSubmitPage = () => {
             <p className="text-gold-500 text-xs uppercase tracking-widest mb-1">Status</p>
             <p className="text-gold-500 font-bold">Pending Admin Authorization</p>
           </div>
+
+          {/* License Download Section */}
+          <div className="bg-zinc-900 border border-gold-500/30 p-5 mb-6 text-left">
+            <div className="flex items-center gap-2 mb-3">
+              <Download className="w-5 h-5 text-gold-500" />
+              <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500">Complete Your Onboarding</h3>
+            </div>
+            <p className="text-zinc-400 text-sm mb-4">
+              Download our Health Canada and CRA licenses to complete the mutual LP verification process.
+            </p>
+            <div className="space-y-2">
+              <a 
+                href="/firegold_hc_license.pdf" 
+                download="Firegold_Health_Canada_License.pdf"
+                data-testid="download-hc-license"
+                className="flex items-center justify-between w-full bg-gold-500/10 hover:bg-gold-500/20 border border-gold-500/30 text-gold-500 px-4 py-3 transition-colors"
+              >
+                <span className="flex items-center gap-2 text-sm font-bold">
+                  <FileText className="w-4 h-4" />
+                  Firegold — Health Canada License
+                </span>
+                <Download className="w-4 h-4" />
+              </a>
+              <a 
+                href="/firegold_cra_license.pdf" 
+                download="Firegold_CRA_License.pdf"
+                data-testid="download-cra-license"
+                className="flex items-center justify-between w-full bg-gold-500/10 hover:bg-gold-500/20 border border-gold-500/30 text-gold-500 px-4 py-3 transition-colors"
+              >
+                <span className="flex items-center gap-2 text-sm font-bold">
+                  <FileText className="w-4 h-4" />
+                  Firegold — CRA License
+                </span>
+                <Download className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+
           <a href="/" className="block w-full bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all text-center mb-3">
             Back to Catalog
           </a>
@@ -1621,11 +1676,24 @@ const GrowerSubmitPage = () => {
               </div>
 
               <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Country of Export *</label>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Do you have an Open Permit? *</label>
+                <select
+                  data-testid="grower-open-permit-select"
+                  required
+                  value={formData.open_permit}
+                  onChange={(e) => setFormData(prev => ({ ...prev, open_permit: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                >
+                  <option value="">Select...</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Country/Countries of Export</label>
                 <input
                   data-testid="grower-export-country-input"
                   type="text"
-                  required
                   value={formData.export_country}
                   onChange={(e) => setFormData(prev => ({ ...prev, export_country: e.target.value }))}
                   className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
@@ -4708,6 +4776,10 @@ const AdminPage = () => {
                         <p className="text-zinc-300 text-sm">{sub.export_country || 'N/A'}</p>
                       </div>
                       <div>
+                        <p className="text-zinc-600 text-xs uppercase tracking-widest">Open Permit</p>
+                        <p className={`text-sm font-medium ${sub.open_permit === 'Yes' ? 'text-cannabis-green' : sub.open_permit === 'No' ? 'text-red-400' : 'text-zinc-500'}`}>{sub.open_permit || 'N/A'}</p>
+                      </div>
+                      <div>
                         <p className="text-zinc-600 text-xs uppercase tracking-widest">Irradiated</p>
                         <p className={`text-sm font-medium ${sub.is_irradiated === 'Yes' ? 'text-cannabis-green' : sub.is_irradiated === 'No' ? 'text-red-400' : 'text-zinc-500'}`}>{sub.is_irradiated || 'N/A'}</p>
                       </div>
@@ -5068,6 +5140,14 @@ const AdminPage = () => {
                           <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2 font-bold">Message</p>
                           <p className="text-zinc-300 text-sm leading-relaxed bg-zinc-900/50 border border-white/5 p-4">{inq.message}</p>
                         </div>
+
+                        {/* Market of Interest */}
+                        {inq.market_of_interest && (
+                          <div className="mb-5">
+                            <p className="text-zinc-600 text-xs uppercase tracking-widest mb-2 font-bold">Market of Interest</p>
+                            <p className="text-gold-500 text-sm font-bold bg-gold-500/5 border border-gold-500/20 px-4 py-2">{inq.market_of_interest}</p>
+                          </div>
+                        )}
 
                         {/* User Account Details */}
                         {inq.user_id && (

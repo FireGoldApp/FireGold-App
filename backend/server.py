@@ -252,6 +252,7 @@ class GrowerSubmission(BaseModel):
     growing_method: Optional[str] = None  # Indoor, Outdoor, Greenhouse
     category: Optional[str] = None  # Dried Flower, Fresh Frozen, Trim, Concentrates
     export_country: Optional[str] = None  # Country of export
+    open_permit: Optional[str] = None  # Yes/No - has open permit
     is_irradiated: Optional[str] = None  # Yes/No - has flower been irradiated for micros
     willing_to_irradiate: Optional[str] = None  # Yes/No - willing to irradiate if required
     gacp_compliant: Optional[str] = None  # Yes/No - is product GACP compliant
@@ -298,6 +299,7 @@ class InquiryCreate(BaseModel):
     phone: Optional[str] = None
     strain_ids: List[str]
     strain_volumes: Optional[dict] = {}  # {strain_id: "volume in kg"}
+    market_of_interest: Optional[str] = None
     message: str
 
 class Inquiry(BaseModel):
@@ -310,6 +312,7 @@ class Inquiry(BaseModel):
     phone: Optional[str] = None
     strain_ids: List[str]
     strain_volumes: Optional[dict] = {}
+    market_of_interest: Optional[str] = None
     message: str
     status: str = "pending"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -736,6 +739,7 @@ async def submit_strain(
     growing_method: str = Form(""),
     category: str = Form(""),
     export_country: str = Form(""),
+    open_permit: str = Form(""),
     is_irradiated: str = Form(""),
     willing_to_irradiate: str = Form(""),
     gacp_compliant: str = Form(""),
@@ -823,6 +827,7 @@ async def submit_strain(
         "growing_method": growing_method or None,
         "category": category or None,
         "export_country": export_country or None,
+        "open_permit": open_permit or None,
         "is_irradiated": is_irradiated or None,
         "willing_to_irradiate": willing_to_irradiate or None,
         "gacp_compliant": gacp_compliant or None,
@@ -2436,6 +2441,7 @@ async def get_admin_inquiries(
             "email": inq.get("email"),
             "phone": inq.get("phone"),
             "message": inq.get("message"),
+            "market_of_interest": inq.get("market_of_interest"),
             "strain_ids": inq.get("strain_ids", []),
             "strain_names": strain_names,
             "strain_volumes": inq.get("strain_volumes", {}),
