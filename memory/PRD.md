@@ -191,5 +191,24 @@ AIS and Animal Mints have white backgrounds. Admin can update via image manageme
 - [x] **Strain Detail Page Enhancements** (Feb 28, 2026)
   - Firegold Marketplace logo displayed below strain image on every strain detail page
   - Image zoom: hover shows magnifying glass icon, click opens full-screen 1.8x zoom overlay with mouse-following pan
+- [x] **Product Category System** (Feb 28, 2026)
+  - Added categories: Dried Flower, Fresh Frozen, Trim, Concentrates
+  - Category filter at top of sidebar, category badge on strain cards, category dropdown in intake form
+  - "Submit Your Strain" changed to "Submit Your Product" throughout
+- [x] **GACP Compliance** (Feb 28, 2026)
+  - Added "Is your product GACP compliant? Yes/No" to grower intake form
+  - GACP status displayed in admin submission review
+- [x] **License Verification** (Feb 28, 2026)
+  - Health Canada License # field added to both user registration and grower intake forms
+  - "Verify" button on intake form checks license against database records
+  - GET /api/grower/verify-license/{license_number} endpoint
+- [x] **Grade Labels Updated** (Feb 28, 2026)
+  - Grade A (Bigs), Grade B (Mids), Grade C (Smalls) throughout app
+- [x] **Grower Identification in Admin** (Feb 28, 2026)
+  - Admin strain management cards show grower company
+  - Admin edit modal includes Grower Information section (Company, Contact Name, Email)
+  - Grower info flows from submission to strain on approval
+- [x] **Data Cleanup** (Feb 28, 2026)
+  - Removed all test inquiries and test users, keeping 13 real users
   - Inquiry volume field: users specify kg per strain when submitting inquiries, shown in admin hub
 
