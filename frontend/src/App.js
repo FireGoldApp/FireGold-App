@@ -570,26 +570,6 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
       </div>
 
       <div>
-        <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">Price Tier</h3>
-        <div className="flex gap-2">
-          {['$', '$$', '$$$'].map((tier) => (
-            <button
-              key={tier}
-              data-testid={`filter-price-${tier.length}`}
-              onClick={() => setFilters(prev => ({ ...prev, priceTier: prev.priceTier === tier ? '' : tier }))}
-              className={`flex-1 px-4 py-2 border ${
-                filters.priceTier === tier
-                  ? 'border-gold-500 text-gold-500 bg-gold-500/10'
-                  : 'border-zinc-800 text-zinc-400 hover:border-gold-500/50'
-              } transition-all font-mono`}
-            >
-              {tier}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
         <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">THC Range</h3>
         <div className="space-y-2">
           {[
@@ -608,6 +588,26 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
               } transition-all`}
             >
               {range.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">Price Tier</h3>
+        <div className="flex gap-2">
+          {['$', '$$', '$$$'].map((tier) => (
+            <button
+              key={tier}
+              data-testid={`filter-price-${tier.length}`}
+              onClick={() => setFilters(prev => ({ ...prev, priceTier: prev.priceTier === tier ? '' : tier }))}
+              className={`flex-1 px-4 py-2 border ${
+                filters.priceTier === tier
+                  ? 'border-gold-500 text-gold-500 bg-gold-500/10'
+                  : 'border-zinc-800 text-zinc-400 hover:border-gold-500/50'
+              } transition-all font-mono`}
+            >
+              {tier}
             </button>
           ))}
         </div>
