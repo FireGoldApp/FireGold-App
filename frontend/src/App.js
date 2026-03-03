@@ -135,22 +135,22 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
         
+        {/* Growing Method Badge */}
+        {strain.growing_method && (
+          <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm px-3 py-1 border border-white/20">
+            <span className="text-zinc-300 font-mono text-[10px] font-bold uppercase">{strain.growing_method}</span>
+          </div>
+        )}
+
         {/* Price Tier Badge */}
-        <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm px-3 py-1 border border-gold-500/30">
+        <div className={`absolute ${strain.growing_method ? 'top-12' : 'top-4'} right-4 bg-black/80 backdrop-blur-sm px-3 py-1 border border-gold-500/30`}>
           <span className="text-gold-500 font-mono text-sm">{strain.price_tier}</span>
         </div>
         
         {/* COA Badge */}
         {strain.coa_url && (
-          <div className="absolute top-14 right-4 bg-cannabis-green/90 backdrop-blur-sm px-2 py-0.5 border border-cannabis-green">
+          <div className={`absolute ${strain.growing_method ? 'top-[84px]' : 'top-14'} right-4 bg-cannabis-green/90 backdrop-blur-sm px-2 py-0.5 border border-cannabis-green`}>
             <span className="text-white font-mono text-xs font-bold">COA</span>
-          </div>
-        )}
-        
-        {/* Growing Method Badge */}
-        {strain.growing_method && (
-          <div className={`absolute ${strain.coa_url ? 'top-[88px]' : 'top-14'} right-4 bg-black/80 backdrop-blur-sm px-2 py-0.5 border border-white/20`}>
-            <span className="text-zinc-300 font-mono text-[10px] font-bold uppercase">{strain.growing_method}</span>
           </div>
         )}
         
