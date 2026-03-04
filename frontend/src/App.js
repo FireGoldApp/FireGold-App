@@ -2773,6 +2773,71 @@ const AdminPage = () => {
   const [selectedAffiliateDetail, setSelectedAffiliateDetail] = useState(null);
   const [conversionForm, setConversionForm] = useState({ inquiry_id: '', sale_amount: '' });
 
+  // Sort state for all admin tabs
+  const [usersSort, setUsersSort] = useState({ key: 'created_at', dir: 'desc' });
+  const [submissionsSort, setSubmissionsSort] = useState({ key: 'created_at', dir: 'desc' });
+  const [inquiriesSort, setInquiriesSort] = useState({ key: 'created_at', dir: 'desc' });
+  const [directorySort, setDirectorySort] = useState({ key: 'strain_name', dir: 'asc' });
+  const [affiliatesSort, setAffiliatesSort] = useState({ key: 'total_referrals', dir: 'desc' });
+
+  const makeSortHandler = (setter) => (key) => {
+    setter(prev => ({ key, dir: prev.key === key && prev.dir === 'desc' ? 'asc' : 'desc' }));
+  };
+
+  const sortData = (data, sortState) => {
+    if (!data.length) return [];
+    const { key, dir } = sortState;
+    return [...data].sort((a, b) => {
+      let aVal = a[key]; let bVal = b[key];
+      if (typeof aVal === 'string') { aVal = aVal.toLowerCase(); bVal = (bVal || '').toLowerCase(); }
+      if (key.includes('created_at') || key.includes('date') || key === 'last_active') { aVal = aVal ? new Date(aVal).getTime() : 0; bVal = bVal ? new Date(bVal).getTime() : 0; }
+      if (aVal == null) aVal = ''; if (bVal == null) bVal = '';
+      if (aVal < bVal) return dir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const SortableHeader = ({ columns, sortState, onSort, testPrefix }) => (
+    <thead className="bg-zinc-900">
+      <tr>
+        {columns.map(col => (
+          <th
+            key={col.key}
+            data-testid={`${testPrefix}-sort-${col.key}`}
+            onClick={() => onSort(col.key)}
+            className={`text-${col.align || 'left'} text-xs uppercase tracking-widest p-4 cursor-pointer select-none transition-colors hover:text-gold-500 ${
+              sortState.key === col.key ? 'text-gold-500' : 'text-zinc-500'
+            } ${col.className || ''}`}
+          >
+            {col.label}
+            {sortState.key === col.key && (
+              <span className="ml-1">{sortState.dir === 'desc' ? '\u25BC' : '\u25B2'}</span>
+            )}
+          </th>
+        ))}
+      </tr>
+    </thead>
+  );
+
+  const SortButtons = ({ options, sortState, onSort, testPrefix }) => (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-zinc-500 text-xs uppercase tracking-widest">Sort:</span>
+      {options.map(opt => (
+        <button
+          key={opt.key}
+          data-testid={`${testPrefix}-sort-${opt.key}`}
+          onClick={() => onSort(opt.key)}
+          className={`px-3 py-1 text-xs font-bold uppercase tracking-widest transition-all ${
+            sortState.key === opt.key ? 'bg-gold-500 text-black' : 'bg-zinc-800 text-zinc-400 hover:text-white'
+          }`}
+        >
+          {opt.label}{sortState.key === opt.key ? (sortState.dir === 'desc' ? ' \u25BC' : ' \u25B2') : ''}
+        </button>
+      ))}
+    </div>
+  );
+
   const fetchDirectory = async (token) => {
     try {
       const response = await axios.get(`${API}/admin/strain-directory`, {
@@ -3624,8 +3689,21 @@ const AdminPage = () => {
                 <p className="text-zinc-600 text-sm mt-1">Click "Add Affiliate" to start the referral program</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {affiliates.map(aff => (
+              <>
+              <SortButtons
+                testPrefix="affiliates"
+                sortState={affiliatesSort}
+                onSort={makeSortHandler(setAffiliatesSort)}
+                options={[
+                  { key: 'name', label: 'Name' },
+                  { key: 'total_referrals', label: 'Referrals' },
+                  { key: 'total_conversions', label: 'Sales' },
+                  { key: 'total_commission', label: 'Commission' },
+                  { key: 'created_at', label: 'Date Added' },
+                ]}
+              />
+              <div className="space-y-4 mt-4">
+                {sortData(affiliates, affiliatesSort).map(aff => (
                   <div key={aff.id} className="bg-charcoal border border-white/5 hover:border-gold-500/30 transition-colors p-5">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex-1">
@@ -3652,6 +3730,7 @@ const AdminPage = () => {
                   </div>
                 ))}
               </div>
+              </>
             )}
           </>
         )}
@@ -5126,20 +5205,23 @@ const AdminPage = () => {
 
             <div className="bg-charcoal border border-white/5 overflow-x-auto">
               <table className="w-full min-w-[900px]">
-                <thead className="bg-zinc-900">
-                  <tr>
-                    <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Name</th>
-                    <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Company</th>
-                    <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Country</th>
-                    <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Email</th>
-                    <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">License #</th>
-                    <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Status</th>
-                    <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Registered</th>
-                    <th className="text-right text-zinc-500 text-xs uppercase tracking-widest p-4">Actions</th>
-                  </tr>
-                </thead>
+                <SortableHeader
+                  testPrefix="users"
+                  sortState={usersSort}
+                  onSort={makeSortHandler(setUsersSort)}
+                  columns={[
+                    { key: 'first_name', label: 'Name' },
+                    { key: 'company', label: 'Company' },
+                    { key: 'country', label: 'Country' },
+                    { key: 'email', label: 'Email' },
+                    { key: 'license_number', label: 'License #' },
+                    { key: 'status', label: 'Status' },
+                    { key: 'created_at', label: 'Registered' },
+                    { key: '_actions', label: 'Actions', align: 'right' },
+                  ]}
+                />
                 <tbody>
-                  {users.map((user, i) => (
+                  {sortData(users, usersSort).map((user, i) => (
                     <tr key={user.id || i} className={`border-t border-white/5 hover:bg-zinc-900/50 ${user.status === 'suspended' ? 'opacity-60' : ''} ${user.status === 'removed' ? 'opacity-30' : ''}`}>
                       <td className="p-4">
                         <button
@@ -5298,6 +5380,18 @@ const AdminPage = () => {
                 ))}
               </div>
             </div>
+            <SortButtons
+              testPrefix="submissions"
+              sortState={submissionsSort}
+              onSort={makeSortHandler(setSubmissionsSort)}
+              options={[
+                { key: 'created_at', label: 'Date' },
+                { key: 'strain_name', label: 'Strain' },
+                { key: 'company_name', label: 'Company' },
+                { key: 'status', label: 'Status' },
+                { key: 'lot_size_kg', label: 'Lot Size' },
+              ]}
+            />
 
             {filteredSubmissions.length === 0 ? (
               <div className="bg-charcoal border border-white/5 p-12 text-center">
@@ -5306,7 +5400,7 @@ const AdminPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredSubmissions.map((sub) => (
+                {sortData(filteredSubmissions, submissionsSort).map((sub) => (
                   <div key={sub.id} data-testid={`submission-card-${sub.id}`} className={`bg-charcoal border p-6 ${
                     sub.status === 'pending' ? 'border-gold-500/30' : sub.status === 'approved' ? 'border-cannabis-green/30' : 'border-red-500/30'
                   }`}>
@@ -5628,6 +5722,17 @@ const AdminPage = () => {
                 </select>
               </div>
             </div>
+            <SortButtons
+              testPrefix="inquiries"
+              sortState={inquiriesSort}
+              onSort={makeSortHandler(setInquiriesSort)}
+              options={[
+                { key: 'created_at', label: 'Date' },
+                { key: 'contact_name', label: 'Name' },
+                { key: 'company_name', label: 'Company' },
+                { key: 'status', label: 'Status' },
+              ]}
+            />
 
             {adminInquiries.length === 0 ? (
               <div className="bg-charcoal border border-white/5 p-12 text-center">
@@ -5637,7 +5742,7 @@ const AdminPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {adminInquiries
+                {sortData(adminInquiries
                   .filter(inq => {
                     if (inquiryFilter !== 'all' && inq.status !== inquiryFilter) return false;
                     if (inquirySearch) {
@@ -5651,7 +5756,7 @@ const AdminPage = () => {
                       );
                     }
                     return true;
-                  })
+                  }), inquiriesSort)
                   .map((inq) => (
                   <div 
                     key={inq.id} 
@@ -5873,6 +5978,17 @@ const AdminPage = () => {
                 </button>
               </div>
             </div>
+            <SortButtons
+              testPrefix="directory"
+              sortState={directorySort}
+              onSort={makeSortHandler(setDirectorySort)}
+              options={[
+                { key: 'strain_name', label: 'Name' },
+                { key: 'type', label: 'Type' },
+                { key: 'thc_percentage', label: 'THC' },
+                { key: 'lot_size', label: 'Lot Size' },
+              ]}
+            />
 
             {directory.length === 0 ? (
               <div className="bg-charcoal border border-white/5 p-12 text-center">
@@ -5881,8 +5997,8 @@ const AdminPage = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {directory
-                  .filter(s => !directorySearch || s.strain_name.toLowerCase().includes(directorySearch.toLowerCase()))
+                {sortData(directory
+                  .filter(s => !directorySearch || s.strain_name.toLowerCase().includes(directorySearch.toLowerCase())), directorySort)
                   .map((entry) => (
                   <div key={entry.id} data-testid={`directory-entry-${entry.id}`} className="bg-charcoal border border-white/5 hover:border-white/10 transition-colors">
                     {/* Strain Header */}
