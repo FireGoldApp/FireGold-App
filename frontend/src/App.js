@@ -5224,7 +5224,7 @@ const AdminPage = () => {
             </div>
 
             <div className="bg-charcoal border border-white/5 overflow-x-auto">
-              <table className="w-full min-w-[1100px]">
+              <table className="w-full min-w-[1200px]">
                 <SortableHeader
                   testPrefix="users"
                   sortState={usersSort}
@@ -5236,6 +5236,7 @@ const AdminPage = () => {
                     { key: 'email', label: 'Email' },
                     { key: 'phone', label: 'Phone' },
                     { key: 'license_number', label: 'License #' },
+                    { key: 'referred_by', label: 'Referred By' },
                     { key: 'status', label: 'Status' },
                     { key: 'created_at', label: 'Registered' },
                     { key: '_actions', label: 'Actions', align: 'right' },
@@ -5258,6 +5259,15 @@ const AdminPage = () => {
                       <td className="p-4 text-zinc-400">{user.email}</td>
                       <td className="p-4 text-zinc-400 text-sm">{user.phone || '—'}</td>
                       <td className="p-4 text-zinc-400 font-mono text-xs">{user.license_number || '—'}</td>
+                      <td className="p-4 text-sm">
+                        {(user.referred_by || user.referred_by_code) ? (
+                          <span className="text-gold-500 font-mono text-xs">{(() => {
+                            const code = user.referred_by || user.referred_by_code;
+                            const aff = affiliates.find(a => a.referral_code === code);
+                            return aff ? aff.name : code;
+                          })()}</span>
+                        ) : <span className="text-zinc-600">—</span>}
+                      </td>
                       <td className="p-4">
                         {user.status === 'suspended' ? (
                           <span data-testid={`user-status-${user.id}`} className="bg-yellow-500/20 text-yellow-500 text-xs font-bold uppercase tracking-widest px-2 py-1">Paused</span>
@@ -5323,7 +5333,7 @@ const AdminPage = () => {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan="9" className="p-8 text-center text-zinc-600">No users registered yet</td>
+                      <td colSpan="10" className="p-8 text-center text-zinc-600">No users registered yet</td>
                     </tr>
                   )}
                 </tbody>
