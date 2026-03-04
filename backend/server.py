@@ -16,6 +16,9 @@ import hashlib
 import secrets
 import csv
 import io
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -29,6 +32,55 @@ db = client[os.environ['DB_NAME']]
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'firegold2026')
 ADMIN_TOKENS = {}  # Store valid session tokens
 USER_TOKENS = {}  # Store valid user session tokens
+
+# Email configuration
+SMTP_SERVER = os.environ.get('SMTP_SERVER')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
+SMTP_EMAIL = os.environ.get('SMTP_EMAIL')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD')
+SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'Firegold Marketplace')
+
+async def send_email(to_email: str, subject: str, html_body: str):
+    """Send email via Microsoft 365 SMTP"""
+    if not all([SMTP_SERVER, SMTP_EMAIL, SMTP_PASSWORD]):
+        logger.warning("Email not configured, skipping send")
+        return False
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_EMAIL}>"
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(html_body, 'html'))
+        
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.send_message(msg)
+        logger.info(f"Email sent to {to_email}: {subject}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send email to {to_email}: {e}")
+        return False
+
+def email_template(title: str, content: str) -> str:
+    """Wrap content in branded Firegold email template"""
+    return f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0A0A0A; border: 1px solid #222;">
+      <div style="padding: 30px; text-align: center; border-bottom: 1px solid #222;">
+        <h1 style="color: #D4AF37; font-size: 24px; margin: 0; letter-spacing: 3px;">FIREGOLD</h1>
+        <p style="color: #666; font-size: 11px; letter-spacing: 2px; margin-top: 4px;">MARKETPLACE</p>
+      </div>
+      <div style="padding: 30px;">
+        <h2 style="color: #D4AF37; font-size: 18px; margin: 0 0 20px 0;">{title}</h2>
+        <div style="color: #ccc; font-size: 14px; line-height: 1.6;">
+          {content}
+        </div>
+      </div>
+      <div style="padding: 20px 30px; border-top: 1px solid #222; text-align: center;">
+        <p style="color: #555; font-size: 11px; margin: 0;">Firegold Marketplace &bull; Cannabis Wholesale</p>
+      </div>
+    </div>
+    """
 
 # Create the main app without a prefix
 app = FastAPI(title="Firegold Cannabis Catalog API")
@@ -1259,6 +1311,39 @@ async def register_user(user_data: UserRegister):
             # Store the referral code on the user
             await db.users.update_one({"id": user.id}, {"$set": {"referred_by": affiliate["referral_code"]}})
     
+    # Send welcome email to new user
+    try:
+        await send_email(
+            user.email,
+            "Welcome to Firegold Marketplace",
+            email_template("Welcome!", f"""
+                <p>Hi {user.first_name},</p>
+                <p>Thank you for registering with Firegold Marketplace. Your account is now active and you can browse our full cannabis whole flower catalog.</p>
+                <p>If you have any questions, don't hesitate to reach out.</p>
+                <p style="margin-top: 20px; color: #D4AF37;">— The Firegold Team</p>
+            """)
+        )
+    except Exception as e:
+        logger.error(f"Welcome email failed: {e}")
+    
+    # Notify admin of new registration
+    try:
+        await send_email(
+            SMTP_EMAIL,
+            f"New User Registration: {user.first_name} {user.last_name} — {user.company}",
+            email_template("New User Registration", f"""
+                <p><strong>Name:</strong> {user.first_name} {user.last_name}</p>
+                <p><strong>Company:</strong> {user.company}</p>
+                <p><strong>Email:</strong> {user.email}</p>
+                <p><strong>Country:</strong> {user.country}</p>
+                <p><strong>Phone:</strong> {user.phone or 'N/A'}</p>
+                <p><strong>License #:</strong> {user_data.license_number or 'N/A'}</p>
+                {"<p><strong>Referred by:</strong> " + user_data.referral_code + "</p>" if user_data.referral_code else ""}
+            """)
+        )
+    except Exception as e:
+        logger.error(f"Admin notification email failed: {e}")
+
     return {
         "message": "Registration successful",
         "token": token,
@@ -2709,6 +2794,26 @@ async def create_inquiry(inquiry_input: InquiryCreate, user_data: dict = Depends
     doc['strain_names'] = strain_names
     await db.inquiries.insert_one(doc)
     del doc['_id']
+    
+    # Notify admin of new inquiry
+    strain_list_html = "".join(f"<li>{name}</li>" for name in strain_names)
+    volumes_html = "".join(f"<li>{sid}: {vol}</li>" for sid, vol in (inquiry_input.strain_volumes or {}).items())
+    try:
+        await send_email(
+            SMTP_EMAIL,
+            f"New Inquiry: {inquiry_input.contact_name} — {inquiry_input.company_name}",
+            email_template("New Inquiry Received", f"""
+                <p><strong>From:</strong> {inquiry_input.contact_name}</p>
+                <p><strong>Company:</strong> {inquiry_input.company_name}</p>
+                <p><strong>Email:</strong> {inquiry_input.email}</p>
+                <p><strong>Market of Interest:</strong> {inquiry_input.market_of_interest or 'N/A'}</p>
+                <p><strong>Strains Requested:</strong></p><ul>{strain_list_html}</ul>
+                <p><strong>Message:</strong> {inquiry_input.message or 'N/A'}</p>
+            """)
+        )
+    except Exception as e:
+        logger.error(f"Inquiry notification email failed: {e}")
+    
     return doc
 
 @api_router.get("/inquiries", response_model=List[Inquiry])
@@ -3300,6 +3405,23 @@ async def submit_contact_message(msg: ContactMessageCreate):
     doc["created_at"] = doc["created_at"].isoformat()
     await db.contact_messages.insert_one(doc)
     doc.pop("_id", None)
+    
+    # Notify admin of new contact message
+    try:
+        await send_email(
+            SMTP_EMAIL,
+            f"New Contact Message: {msg.name}",
+            email_template("New Contact Message", f"""
+                <p><strong>Name:</strong> {msg.name}</p>
+                <p><strong>Email:</strong> {msg.email}</p>
+                <p><strong>Company:</strong> {msg.company or 'N/A'}</p>
+                <p><strong>Message:</strong></p>
+                <p style="background: #111; padding: 15px; border-left: 3px solid #D4AF37;">{msg.message}</p>
+            """)
+        )
+    except Exception as e:
+        logger.error(f"Contact notification email failed: {e}")
+    
     return {"message": "Your message has been sent. We'll be in touch soon!"}
 
 @api_router.get("/admin/contact-messages")
