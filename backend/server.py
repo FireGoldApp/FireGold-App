@@ -1332,6 +1332,50 @@ async def verify_user(user_data: dict = Depends(verify_user_token)):
         }
     }
 
+@api_router.get("/auth/my-referral")
+async def get_my_referral(user_data: dict = Depends(verify_user_token)):
+    """Get or create a personal referral code for the logged-in user"""
+    user_id = user_data.get('user_id')
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if user already has a referral code stored
+    my_code = user.get('my_referral_code')
+    if my_code:
+        return {"referral_code": my_code, "referral_url": f"/?ref={my_code}"}
+    
+    # Auto-generate code from name: FIRSTNAME + LAST_INITIAL
+    first = (user.get('first_name') or 'USER').strip().upper().replace(' ', '')
+    last = (user.get('last_name') or '').strip().upper()
+    base_code = first + (last[0] if last else '')
+    
+    # Ensure uniqueness
+    code = base_code
+    counter = 1
+    while await db.affiliates.find_one({"referral_code": code}):
+        code = f"{base_code}{counter}"
+        counter += 1
+    
+    # Create affiliate record for this user
+    affiliate = Affiliate(
+        user_id=user_id,
+        name=f"{user.get('first_name', '')} {user.get('last_name', '')}".strip(),
+        email=user.get('email', ''),
+        phone=user.get('phone'),
+        company=user.get('company'),
+        referral_code=code,
+        commission_rate=0  # Default, admin can adjust
+    )
+    aff_doc = affiliate.model_dump()
+    aff_doc["created_at"] = aff_doc["created_at"].isoformat()
+    await db.affiliates.insert_one(aff_doc)
+    
+    # Store code on user record
+    await db.users.update_one({"id": user_id}, {"$set": {"my_referral_code": code}})
+    
+    return {"referral_code": code, "referral_url": f"/?ref={code}"}
+
 @api_router.get("/auth/users")
 async def get_users(token: str = Depends(verify_admin_token)):
     """Get all registered users (admin only)"""

@@ -46,7 +46,10 @@ import {
   ZoomIn,
   Plus,
   Users,
-  MessageCircle
+  MessageCircle,
+  Share2,
+  Copy,
+  CheckCircle2
 } from "lucide-react";
 
 // Prevent right-click on images
@@ -6234,6 +6237,34 @@ const CatalogPage = () => {
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactForm, setContactForm] = useState({ name: '', email: '', company: '', message: '' });
   const [contactSending, setContactSending] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [myReferralCode, setMyReferralCode] = useState('');
+  const [referralCopied, setReferralCopied] = useState(false);
+  const [loadingReferral, setLoadingReferral] = useState(false);
+
+  const handleShareWithBuyer = async () => {
+    setShowShareModal(true);
+    if (myReferralCode) return; // Already fetched
+    setLoadingReferral(true);
+    try {
+      const response = await axios.get(`${API}/auth/my-referral`, {
+        headers: { Authorization: `Bearer ${userToken}` }
+      });
+      setMyReferralCode(response.data.referral_code);
+    } catch (err) {
+      toast.error('Failed to generate referral link');
+    } finally {
+      setLoadingReferral(false);
+    }
+  };
+
+  const copyReferralLink = () => {
+    const link = `${window.location.origin}/?ref=${myReferralCode}`;
+    navigator.clipboard.writeText(link);
+    setReferralCopied(true);
+    setTimeout(() => setReferralCopied(false), 2000);
+    toast.success('Link copied to clipboard!');
+  };
 
   const handleContactSubmit = async (e) => {
     e.preventDefault();
@@ -6476,6 +6507,14 @@ const CatalogPage = () => {
             <Leaf className="w-4 h-4" />
             Submit Your Product
           </a>
+          <button
+            onClick={handleShareWithBuyer}
+            data-testid="share-buyer-btn"
+            className="hidden md:flex items-center gap-2 border-2 border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-black font-bold uppercase tracking-widest px-5 py-2 text-xs transition-all"
+          >
+            <Share2 className="w-4 h-4" />
+            Share with Buyer
+          </button>
           {selectedStrains.length > 0 && (
             <button
               data-testid="open-inquiry-btn"
@@ -6559,6 +6598,14 @@ const CatalogPage = () => {
             <Leaf className="w-4 h-4" />
             Submit Your Product
           </a>
+          <button
+            onClick={handleShareWithBuyer}
+            data-testid="share-buyer-btn-mobile"
+            className="flex items-center justify-center gap-2 border-2 border-gold-500 text-gold-500 font-bold uppercase tracking-widest px-5 py-3 text-xs transition-all w-full"
+          >
+            <Share2 className="w-4 h-4" />
+            Share with Buyer
+          </button>
         </div>
 
         <div className="flex gap-12">
@@ -6760,6 +6807,62 @@ const CatalogPage = () => {
                 {contactSending ? 'Sending...' : 'Send Message'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Share with Buyer Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowShareModal(false)} />
+          <div data-testid="share-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-md p-8">
+            <button 
+              onClick={() => setShowShareModal(false)} 
+              data-testid="share-modal-close"
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-6">
+              <Share2 className="w-6 h-6 text-gold-500" />
+              <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest">Share with Buyer</h2>
+            </div>
+            <p className="text-zinc-400 text-sm mb-6">
+              Share this link with your buyer. When they register, they'll automatically be linked to your account.
+            </p>
+            {loadingReferral ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="w-6 h-6 text-gold-500 animate-spin" />
+              </div>
+            ) : myReferralCode ? (
+              <div className="space-y-4">
+                <div className="bg-zinc-900 border border-zinc-700 p-4 flex items-center justify-between gap-3">
+                  <div className="overflow-hidden">
+                    <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">Your Referral Link</p>
+                    <p data-testid="referral-link" className="text-gold-500 font-mono text-sm truncate">
+                      {window.location.origin}/?ref={myReferralCode}
+                    </p>
+                  </div>
+                  <button
+                    onClick={copyReferralLink}
+                    data-testid="copy-referral-btn"
+                    className="flex-shrink-0 bg-gold-500 hover:bg-gold-400 text-black px-4 py-2 font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-2"
+                  >
+                    {referralCopied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {referralCopied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <div className="bg-zinc-900/50 border border-zinc-800 p-4">
+                  <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">Your Code</p>
+                  <p className="text-white font-mono font-bold text-lg">{myReferralCode}</p>
+                </div>
+                <p className="text-zinc-600 text-xs mt-2">
+                  When your buyer registers through this link, they will be connected to you as their referral contact.
+                </p>
+              </div>
+            ) : (
+              <p className="text-red-500 text-sm">Failed to generate referral link. Please try again.</p>
+            )}
           </div>
         </div>
       )}
