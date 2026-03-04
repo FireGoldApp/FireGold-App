@@ -2772,7 +2772,10 @@ const AdminPage = () => {
   const [directoryLicenseForm, setDirectoryLicenseForm] = useState({});
   const [affiliates, setAffiliates] = useState([]);
   const [showAddAffiliate, setShowAddAffiliate] = useState(false);
-  const [affiliateForm, setAffiliateForm] = useState({ name: '', email: '', phone: '', company: '', referral_code: '', commission_rate: 10 });
+  const [affiliateForm, setAffiliateForm] = useState({ name: '', email: '', phone: '', company: '', referral_code: '', commission_type: 'per_gram', commission_value: 0.03 });
+  const [editingAffiliate, setEditingAffiliate] = useState(null);
+  const [convertingInquiry, setConvertingInquiry] = useState(null);
+  const [conversionData, setConversionData] = useState({ sale_amount: '', total_grams: '', commission_type: '', commission_value: '' });
 
   // Auto-generate referral code from name
   const autoGenerateCode = (name) => {
@@ -2946,7 +2949,7 @@ const AdminPage = () => {
       });
       toast.success(`Affiliate ${affiliateForm.referral_code.toUpperCase()} created`);
       setShowAddAffiliate(false);
-      setAffiliateForm({ name: '', email: '', phone: '', company: '', referral_code: '', commission_rate: 10 });
+      setAffiliateForm({ name: '', email: '', phone: '', company: '', referral_code: '', commission_type: 'per_gram', commission_value: 0.03 });
       fetchAffiliates();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to create affiliate');
@@ -2964,17 +2967,36 @@ const AdminPage = () => {
     }
   };
 
-  const recordConversion = async () => {
+  const saveAffiliateEdit = async () => {
+    if (!editingAffiliate) return;
     try {
-      const res = await axios.post(`${API}/admin/affiliates/conversion`, {
-        inquiry_id: conversionForm.inquiry_id,
-        sale_amount: parseFloat(conversionForm.sale_amount)
+      await axios.put(`${API}/admin/affiliates/${editingAffiliate.id}`, editingAffiliate, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      toast.success('Affiliate updated');
+      setEditingAffiliate(null);
+      fetchAffiliates();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update');
+    }
+  };
+
+  const recordConversion = async () => {
+    if (!convertingInquiry) return;
+    try {
+      const res = await axios.post(`${API}/admin/inquiries/${convertingInquiry.id}/convert`, {
+        sale_amount: parseFloat(conversionData.sale_amount),
+        total_grams: parseFloat(conversionData.total_grams) || 0,
+        commission_type: conversionData.commission_type || null,
+        commission_value: conversionData.commission_value ? parseFloat(conversionData.commission_value) : null
       }, {
         headers: { Authorization: `Bearer ${adminToken}` }
       });
       toast.success(res.data.message);
-      setConversionForm({ inquiry_id: '', sale_amount: '' });
+      setConvertingInquiry(null);
+      setConversionData({ sale_amount: '', total_grams: '', commission_type: '', commission_value: '' });
       fetchAffiliates();
+      fetchAdminInquiries(adminToken);
       if (selectedAffiliateDetail) fetchAffiliateDetail(selectedAffiliateDetail.affiliate.id);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to record conversion');
@@ -3692,7 +3714,12 @@ const AdminPage = () => {
                       <button onClick={() => setAffiliateForm(p => ({...p, referral_code: autoGenerateCode(p.name)}))} className="absolute right-2 top-1/2 -translate-y-1/2 text-gold-500 text-xs hover:underline">Generate</button>
                     )}
                   </div>
-                  <input data-testid="affiliate-rate" type="number" value={affiliateForm.commission_rate} onChange={e => setAffiliateForm(p => ({...p, commission_rate: parseFloat(e.target.value) || 0}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Commission %" />
+                  <select data-testid="affiliate-commission-type" value={affiliateForm.commission_type} onChange={e => setAffiliateForm(p => ({...p, commission_type: e.target.value, commission_value: e.target.value === 'per_gram' ? 0.03 : e.target.value === 'percentage' ? 5 : 500 }))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none">
+                    <option value="per_gram">Per Gram ($)</option>
+                    <option value="percentage">% of Deal</option>
+                    <option value="flat_fee">Flat Fee ($)</option>
+                  </select>
+                  <input data-testid="affiliate-commission-value" type="number" step="0.01" value={affiliateForm.commission_value} onChange={e => setAffiliateForm(p => ({...p, commission_value: parseFloat(e.target.value) || 0}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder={affiliateForm.commission_type === 'per_gram' ? '$/gram' : affiliateForm.commission_type === 'percentage' ? '%' : 'Flat $'} />
                 </div>
                 <div className="flex gap-3">
                   <button data-testid="save-affiliate-btn" onClick={createAffiliate} className="bg-gold-500 hover:bg-gold-400 text-black px-6 py-2 font-bold uppercase tracking-widest text-xs transition-colors">Create</button>
@@ -3734,7 +3761,9 @@ const AdminPage = () => {
                           <span>{aff.email}</span>
                           {aff.phone && <span>{aff.phone}</span>}
                           {aff.company && <span className="text-zinc-300">{aff.company}</span>}
-                          <span>{aff.commission_rate}% commission</span>
+                          <span className="bg-zinc-800 px-2 py-0.5 text-xs font-mono">
+                            {(aff.commission_type || 'per_gram') === 'per_gram' ? `$${aff.commission_value ?? 0.03}/gram` : (aff.commission_type || 'per_gram') === 'percentage' ? `${aff.commission_value ?? 5}%` : `$${aff.commission_value ?? 500} flat`}
+                          </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-6">
@@ -3744,6 +3773,10 @@ const AdminPage = () => {
                         <button onClick={async () => { await axios.put(`${API}/admin/affiliates/${aff.id}/toggle`, {}, { headers: { Authorization: `Bearer ${adminToken}` } }); fetchAffiliates(); }}
                           className={`text-xs font-bold uppercase px-3 py-1.5 transition-colors ${aff.is_active ? 'bg-yellow-500/20 text-yellow-500' : 'bg-cannabis-green/20 text-cannabis-green'}`}>
                           {aff.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button onClick={() => setEditingAffiliate({...aff})} data-testid={`edit-affiliate-${aff.id}`}
+                          className="text-xs font-bold uppercase px-3 py-1.5 bg-gold-500/20 text-gold-500 transition-colors hover:bg-gold-500/30">
+                          Edit
                         </button>
                       </div>
                     </div>
@@ -5750,6 +5783,7 @@ const AdminPage = () => {
                   <option value="all">All</option>
                   <option value="pending">Pending</option>
                   <option value="responded">Responded</option>
+                  <option value="converted">Converted</option>
                   <option value="archived">Archived</option>
                 </select>
               </div>
@@ -5806,6 +5840,7 @@ const AdminPage = () => {
                           <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${
                             inq.status === 'pending' ? 'bg-gold-500/20 text-gold-500' :
                             inq.status === 'responded' ? 'bg-cannabis-green/20 text-cannabis-green' :
+                            inq.status === 'converted' ? 'bg-purple-500/20 text-purple-400' :
                             'bg-zinc-700/30 text-zinc-500'
                           }`}>
                             {inq.status}
@@ -5957,6 +5992,20 @@ const AdminPage = () => {
                                   <RefreshCw className="w-4 h-4" />
                                   Reopen
                                 </button>
+                              )}
+                              {inq.status !== 'converted' && (
+                                <button
+                                  data-testid={`inquiry-convert-${inq.id}`}
+                                  onClick={() => { setConvertingInquiry(inq); setConversionData({ sale_amount: '', total_grams: '', commission_type: '', commission_value: '' }); }}
+                                  className="bg-gold-500 hover:bg-gold-400 text-black px-5 py-2 font-bold uppercase tracking-widest text-xs flex items-center gap-2 transition-colors whitespace-nowrap"
+                                >
+                                  Convert to Sale
+                                </button>
+                              )}
+                              {inq.status === 'converted' && (
+                                <span className="bg-gold-500/20 text-gold-500 px-4 py-2 text-xs font-bold uppercase tracking-widest">
+                                  Converted — ${inq.sale_amount?.toLocaleString() || '0'}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -6213,6 +6262,101 @@ const AdminPage = () => {
           </>
         )}
       </main>
+
+      {/* Edit Affiliate Modal */}
+      {editingAffiliate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setEditingAffiliate(null)} />
+          <div data-testid="edit-affiliate-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-lg p-8">
+            <button onClick={() => setEditingAffiliate(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+            <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest mb-6">Edit Affiliate</h2>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Name</label>
+                  <input type="text" value={editingAffiliate.name} onChange={e => setEditingAffiliate(p => ({...p, name: e.target.value}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Email</label>
+                  <input type="email" value={editingAffiliate.email} onChange={e => setEditingAffiliate(p => ({...p, email: e.target.value}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Phone</label>
+                  <input type="text" value={editingAffiliate.phone || ''} onChange={e => setEditingAffiliate(p => ({...p, phone: e.target.value}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Company</label>
+                  <input type="text" value={editingAffiliate.company || ''} onChange={e => setEditingAffiliate(p => ({...p, company: e.target.value}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Referral Code</label>
+                <input type="text" value={editingAffiliate.referral_code} onChange={e => setEditingAffiliate(p => ({...p, referral_code: e.target.value.toUpperCase()}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm font-mono uppercase" />
+              </div>
+              <div className="border border-gold-500/30 bg-gold-500/5 p-4">
+                <label className="block text-xs uppercase tracking-widest text-gold-500 mb-3 font-bold">Commission Structure</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-zinc-500 mb-1">Type</label>
+                    <select value={editingAffiliate.commission_type || 'per_gram'} onChange={e => setEditingAffiliate(p => ({...p, commission_type: e.target.value}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm">
+                      <option value="per_gram">Per Gram ($)</option>
+                      <option value="percentage">% of Deal</option>
+                      <option value="flat_fee">Flat Fee ($)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-500 mb-1">{editingAffiliate.commission_type === 'per_gram' ? '$ Per Gram' : editingAffiliate.commission_type === 'percentage' ? 'Percentage' : 'Flat Amount ($)'}</label>
+                    <input type="number" step="0.01" value={editingAffiliate.commission_value ?? 0.03} onChange={e => setEditingAffiliate(p => ({...p, commission_value: parseFloat(e.target.value) || 0}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm font-mono" />
+                  </div>
+                </div>
+                <p className="text-zinc-500 text-xs mt-2">
+                  {editingAffiliate.commission_type === 'per_gram' ? `$${editingAffiliate.commission_value || 0.03} x grams sold = commission` : editingAffiliate.commission_type === 'percentage' ? `${editingAffiliate.commission_value || 5}% of total sale = commission` : `Flat $${editingAffiliate.commission_value || 500} per deal`}
+                </p>
+              </div>
+              <button onClick={saveAffiliateEdit} data-testid="save-affiliate-btn" className="w-full bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest py-3 text-sm transition-all">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Convert Inquiry Modal */}
+      {convertingInquiry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setConvertingInquiry(null)} />
+          <div data-testid="convert-inquiry-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-lg p-8">
+            <button onClick={() => setConvertingInquiry(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+            <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest mb-2">Convert to Sale</h2>
+            <p className="text-zinc-400 text-sm mb-6">Inquiry from <span className="text-white">{convertingInquiry.contact_name}</span> — {convertingInquiry.company_name}</p>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Sale Amount ($) *</label>
+                  <input data-testid="convert-sale-amount" type="number" step="0.01" value={conversionData.sale_amount} onChange={e => setConversionData(p => ({...p, sale_amount: e.target.value}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm font-mono" placeholder="Total sale value" />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Total Grams</label>
+                  <input data-testid="convert-total-grams" type="number" step="0.01" value={conversionData.total_grams} onChange={e => setConversionData(p => ({...p, total_grams: e.target.value}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm font-mono" placeholder="Grams sold" />
+                </div>
+              </div>
+              <div className="border border-zinc-700 bg-zinc-900/50 p-4">
+                <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-3">Commission Override (leave blank to use affiliate default)</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <select value={conversionData.commission_type} onChange={e => setConversionData(p => ({...p, commission_type: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm">
+                    <option value="">Use Default</option>
+                    <option value="per_gram">Per Gram ($)</option>
+                    <option value="percentage">% of Deal</option>
+                    <option value="flat_fee">Flat Fee ($)</option>
+                  </select>
+                  {conversionData.commission_type && (
+                    <input type="number" step="0.01" value={conversionData.commission_value} onChange={e => setConversionData(p => ({...p, commission_value: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm font-mono" placeholder={conversionData.commission_type === 'per_gram' ? '$/gram' : conversionData.commission_type === 'percentage' ? '%' : 'Flat $'} />
+                  )}
+                </div>
+              </div>
+              <button onClick={recordConversion} disabled={!conversionData.sale_amount} data-testid="confirm-conversion-btn" className="w-full bg-cannabis-green hover:bg-green-600 disabled:opacity-50 text-white font-bold uppercase tracking-widest py-3 text-sm transition-all">Confirm Sale Conversion</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Toaster 
         position="bottom-right"

@@ -349,13 +349,14 @@ class SampleRequest(BaseModel):
 
 # Affiliate Models
 class AffiliateCreate(BaseModel):
-    user_id: Optional[str] = None  # Link to existing user, or standalone
+    user_id: Optional[str] = None
     name: str
     email: EmailStr
     phone: Optional[str] = None
     company: Optional[str] = None
-    referral_code: str  # Custom code like "WARREN"
-    commission_rate: float = 10.0  # Percentage
+    referral_code: str
+    commission_type: str = "per_gram"  # per_gram, percentage, flat_fee
+    commission_value: float = 0.03  # $0.03/gram default
 
 class Affiliate(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -367,7 +368,8 @@ class Affiliate(BaseModel):
     phone: Optional[str] = None
     company: Optional[str] = None
     referral_code: str
-    commission_rate: float = 10.0
+    commission_type: str = "per_gram"  # per_gram, percentage, flat_fee
+    commission_value: float = 0.03
     is_active: bool = True
     total_referrals: int = 0
     total_conversions: int = 0
@@ -375,17 +377,27 @@ class Affiliate(BaseModel):
     total_commission: float = 0.0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class ConvertInquiry(BaseModel):
+    sale_amount: float
+    total_grams: float = 0.0
+    commission_type: Optional[str] = None  # Override affiliate default
+    commission_value: Optional[float] = None  # Override affiliate default
+
 class ReferralEvent(BaseModel):
     model_config = ConfigDict(extra="ignore")
     
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     affiliate_id: str
+    affiliate_name: Optional[str] = None
     referral_code: str
     referred_user_id: Optional[str] = None
     referred_email: Optional[str] = None
-    event_type: str  # "registration", "inquiry", "conversion"
+    event_type: str  # "registration", "conversion"
     inquiry_id: Optional[str] = None
     sale_amount: Optional[float] = None
+    total_grams: Optional[float] = None
+    commission_type: Optional[str] = None
+    commission_value: Optional[float] = None
     commission_amount: Optional[float] = None
     status: str = "pending"  # pending, converted, paid
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -2796,7 +2808,6 @@ async def update_inquiry_status(
 @api_router.post("/admin/affiliates")
 async def create_affiliate(body: AffiliateCreate, token: str = Depends(verify_admin_token)):
     """Create a new affiliate (admin only)"""
-    # Check for duplicate code
     existing = await db.affiliates.find_one({"referral_code": body.referral_code.upper()}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=400, detail="Referral code already exists")
@@ -2805,8 +2816,11 @@ async def create_affiliate(body: AffiliateCreate, token: str = Depends(verify_ad
         user_id=body.user_id,
         name=body.name,
         email=body.email,
+        phone=body.phone,
+        company=body.company,
         referral_code=body.referral_code.upper(),
-        commission_rate=body.commission_rate
+        commission_type=body.commission_type,
+        commission_value=body.commission_value
     )
     doc = affiliate.model_dump()
     doc["created_at"] = doc["created_at"].isoformat()
@@ -2879,15 +2893,15 @@ async def get_affiliate_detail(affiliate_id: str, token: str = Depends(verify_ad
     }
 
 @api_router.put("/admin/affiliates/{affiliate_id}")
-async def update_affiliate(affiliate_id: str, body: AffiliateCreate, token: str = Depends(verify_admin_token)):
-    """Update affiliate details"""
-    update = {
-        "name": body.name,
-        "email": body.email,
-        "referral_code": body.referral_code.upper(),
-        "commission_rate": body.commission_rate,
-        "is_active": True
-    }
+async def update_affiliate(affiliate_id: str, body: dict, token: str = Depends(verify_admin_token)):
+    """Update affiliate details including commission structure"""
+    allowed = ["name", "email", "phone", "company", "referral_code", "commission_type", "commission_value", "is_active"]
+    update = {}
+    for k in allowed:
+        if k in body:
+            update[k] = body[k]
+    if "referral_code" in update:
+        update["referral_code"] = update["referral_code"].upper()
     result = await db.affiliates.update_one({"id": affiliate_id}, {"$set": update})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Affiliate not found")
@@ -2903,61 +2917,75 @@ async def toggle_affiliate(affiliate_id: str, token: str = Depends(verify_admin_
     await db.affiliates.update_one({"id": affiliate_id}, {"$set": {"is_active": new_status}})
     return {"message": f"Affiliate {'activated' if new_status else 'deactivated'}", "is_active": new_status}
 
-# Record a conversion (admin marks an inquiry as a sale)
-class ConversionCreate(BaseModel):
-    inquiry_id: str
-    sale_amount: float
-
-@api_router.post("/admin/affiliates/conversion")
-async def record_conversion(body: ConversionCreate, token: str = Depends(verify_admin_token)):
-    """Record a sale conversion tied to an affiliate referral"""
-    # Find the inquiry
-    inquiry = await db.inquiries.find_one({"id": body.inquiry_id}, {"_id": 0})
+@api_router.post("/admin/inquiries/{inquiry_id}/convert")
+async def convert_inquiry(inquiry_id: str, body: ConvertInquiry, token: str = Depends(verify_admin_token)):
+    """Convert an inquiry to a sale, calculate affiliate commission (one level deep only)"""
+    inquiry = await db.inquiries.find_one({"id": inquiry_id}, {"_id": 0})
     if not inquiry:
         raise HTTPException(status_code=404, detail="Inquiry not found")
     
-    # Check if this user was referred
-    ref_code = inquiry.get("referral_code")
     referred_user_id = inquiry.get("user_id")
     
-    # Find referral event for this user/inquiry
+    # Find the DIRECT referrer only (one level deep)
     affiliate = None
-    if ref_code:
-        affiliate = await db.affiliates.find_one({"referral_code": ref_code, "is_active": True}, {"_id": 0})
+    if referred_user_id:
+        user = await db.users.find_one({"id": referred_user_id}, {"_id": 0})
+        ref_code = user.get("referred_by") if user else None
+        if ref_code:
+            affiliate = await db.affiliates.find_one({"referral_code": ref_code, "is_active": True}, {"_id": 0})
     
-    if not affiliate and referred_user_id:
-        # Check if user was referred during registration
-        ref_event = await db.referral_events.find_one(
-            {"referred_user_id": referred_user_id, "event_type": "registration"}, {"_id": 0}
+    commission = 0.0
+    c_type = body.commission_type
+    c_value = body.commission_value
+    
+    if affiliate:
+        # Use override if provided, else use affiliate's default
+        if not c_type:
+            c_type = affiliate.get("commission_type", "per_gram")
+        if c_value is None:
+            c_value = affiliate.get("commission_value", 0.03)
+        
+        if c_type == "per_gram":
+            commission = c_value * body.total_grams
+        elif c_type == "percentage":
+            commission = (c_value / 100) * body.sale_amount
+        elif c_type == "flat_fee":
+            commission = c_value
+        
+        event = ReferralEvent(
+            affiliate_id=affiliate["id"],
+            affiliate_name=affiliate.get("name"),
+            referral_code=affiliate["referral_code"],
+            referred_user_id=referred_user_id,
+            referred_email=inquiry.get("email"),
+            event_type="conversion",
+            inquiry_id=inquiry_id,
+            sale_amount=body.sale_amount,
+            total_grams=body.total_grams,
+            commission_type=c_type,
+            commission_value=c_value,
+            commission_amount=commission,
+            status="pending"
         )
-        if ref_event:
-            affiliate = await db.affiliates.find_one({"id": ref_event["affiliate_id"]}, {"_id": 0})
-    
-    if not affiliate:
-        raise HTTPException(status_code=400, detail="No affiliate referral found for this inquiry")
-    
-    commission = body.sale_amount * (affiliate["commission_rate"] / 100)
-    
-    event = ReferralEvent(
-        affiliate_id=affiliate["id"],
-        referral_code=affiliate["referral_code"],
-        referred_user_id=referred_user_id,
-        referred_email=inquiry.get("email"),
-        event_type="conversion",
-        inquiry_id=body.inquiry_id,
-        sale_amount=body.sale_amount,
-        commission_amount=commission,
-        status="pending"
-    )
-    doc = event.model_dump()
-    doc["created_at"] = doc["created_at"].isoformat()
-    await db.referral_events.insert_one(doc)
-    del doc["_id"]
+        doc = event.model_dump()
+        doc["created_at"] = doc["created_at"].isoformat()
+        await db.referral_events.insert_one(doc)
+        doc.pop("_id", None)
     
     # Mark inquiry as converted
-    await db.inquiries.update_one({"id": body.inquiry_id}, {"$set": {"status": "converted", "sale_amount": body.sale_amount}})
+    await db.inquiries.update_one({"id": inquiry_id}, {"$set": {
+        "status": "converted",
+        "sale_amount": body.sale_amount,
+        "total_grams": body.total_grams,
+        "commission_amount": commission,
+        "converted_at": datetime.now(timezone.utc).isoformat()
+    }})
     
-    return {"message": f"Conversion recorded. Commission: ${commission:.2f}", "event": doc}
+    return {
+        "message": f"Sale recorded. Commission: ${commission:.2f}" if affiliate else "Sale recorded. No affiliate referral found.",
+        "commission": commission,
+        "affiliate_name": affiliate["name"] if affiliate else None
+    }
 
 @api_router.put("/admin/referrals/{event_id}/paid")
 async def mark_referral_paid(event_id: str, token: str = Depends(verify_admin_token)):
