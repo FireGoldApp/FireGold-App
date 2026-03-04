@@ -1206,6 +1206,15 @@ async def login_user(login: UserLogin):
         'expires_at': expires_at
     }
     
+    # Track login event
+    await db.analytics.insert_one({
+        "user_id": user['id'],
+        "user_email": user['email'],
+        "event_type": "login",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "data": {}
+    })
+    
     return {
         "message": "Login successful",
         "token": token,
@@ -1284,6 +1293,101 @@ async def remove_user(user_id: str, token: str = Depends(verify_admin_token)):
         del USER_TOKENS[t]
     
     return {"message": "User removed"}
+
+
+@api_router.get("/admin/users/{user_id}/profile")
+async def get_user_profile(user_id: str, token: str = Depends(verify_admin_token)):
+    """Get comprehensive user profile with activity history"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get all inquiries from this user
+    user_inquiries = await db.inquiries.find(
+        {"user_id": user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    # Resolve strain names for inquiries
+    all_strain_ids = set()
+    for inq in user_inquiries:
+        all_strain_ids.update(inq.get("strain_ids", []))
+    strain_map = {}
+    if all_strain_ids:
+        strains_list = await db.strains.find({"id": {"$in": list(all_strain_ids)}}, {"_id": 0, "id": 1, "strain_name": 1}).to_list(500)
+        strain_map = {s["id"]: s["strain_name"] for s in strains_list}
+    
+    for inq in user_inquiries:
+        inq["strain_names"] = inq.get("strain_names") or [strain_map.get(sid, "Unknown") for sid in inq.get("strain_ids", [])]
+        if isinstance(inq.get("created_at"), datetime):
+            inq["created_at"] = inq["created_at"].isoformat()
+    
+    # Get all sample requests from this user
+    user_samples = await db.sample_requests.find(
+        {"user_id": user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    for sr in user_samples:
+        if isinstance(sr.get("created_at"), datetime):
+            sr["created_at"] = sr["created_at"].isoformat()
+    
+    # Get analytics events (strain views, filter usage, etc.)
+    user_events = await db.analytics.find(
+        {"user_id": user_id}, {"_id": 0}
+    ).sort("timestamp", -1).to_list(500)
+    
+    # Compute strain view counts
+    strain_views = {}
+    login_history = []
+    filter_usage = {}
+    total_page_views = 0
+    
+    for evt in user_events:
+        evt_type = evt.get("event_type", "")
+        if isinstance(evt.get("timestamp"), datetime):
+            evt["timestamp"] = evt["timestamp"].isoformat()
+        
+        if evt_type == "strain_view":
+            sid = evt.get("strain_id") or evt.get("data", {}).get("strain_id") or evt.get("event_data", {}).get("strain_id")
+            sname = evt.get("strain_name") or evt.get("data", {}).get("strain_name") or evt.get("event_data", {}).get("strain_name", "Unknown")
+            if sid:
+                if sid not in strain_views:
+                    strain_views[sid] = {"name": sname, "count": 0, "last_viewed": evt.get("timestamp")}
+                strain_views[sid]["count"] += 1
+        elif evt_type == "page_view":
+            total_page_views += 1
+        elif evt_type == "login":
+            login_history.append(evt.get("timestamp"))
+        elif evt_type in ("filter_change", "filter_apply"):
+            fdata = evt.get("filters_applied") or evt.get("event_data", {}).get("filters") or evt.get("data", {})
+            if isinstance(fdata, dict):
+                for k, v in fdata.items():
+                    if v:
+                        filter_usage[k] = filter_usage.get(k, 0) + 1
+    
+    # Sort strain views by count
+    top_strains = sorted(strain_views.values(), key=lambda x: x["count"], reverse=True)
+    
+    # Convert user dates
+    if isinstance(user.get("created_at"), datetime):
+        user["created_at"] = user["created_at"].isoformat()
+    
+    return {
+        "user": user,
+        "inquiries": user_inquiries,
+        "sample_requests": user_samples,
+        "activity_summary": {
+            "total_page_views": total_page_views,
+            "total_strain_views": sum(s["count"] for s in strain_views.values()),
+            "total_inquiries": len(user_inquiries),
+            "total_sample_requests": len(user_samples),
+            "login_count": len(login_history),
+            "last_login": login_history[0] if login_history else None,
+            "login_history": login_history[:20],
+        },
+        "top_strains_viewed": top_strains[:15],
+        "filter_usage": filter_usage,
+        "recent_events": user_events[:30]
+    }
+
 
 # Analytics Tracking Endpoints
 @api_router.post("/analytics/track")
@@ -2183,6 +2287,35 @@ async def get_inventory_summary(token: str = Depends(verify_admin_token)):
     data.pop("_id", None)
     data["total_inventory_kg"] = data["total_grade_a"] + data["total_grade_b"] + data["total_grade_c"]
     return data
+
+
+class UpdateStrainLicense(BaseModel):
+    license_number: Optional[str] = None
+    grower_company: Optional[str] = None
+    grower_name: Optional[str] = None
+    grower_email: Optional[str] = None
+
+@api_router.put("/admin/strain-directory/{strain_id}/license")
+async def update_strain_license(strain_id: str, body: UpdateStrainLicense, token: str = Depends(verify_admin_token)):
+    """Update license and grower info for a strain in the directory"""
+    update_fields = {}
+    if body.license_number is not None:
+        update_fields["license_number"] = body.license_number
+    if body.grower_company is not None:
+        update_fields["grower_company"] = body.grower_company
+    if body.grower_name is not None:
+        update_fields["grower_name"] = body.grower_name
+    if body.grower_email is not None:
+        update_fields["grower_email"] = body.grower_email
+    
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    result = await db.strains.update_one({"id": strain_id}, {"$set": update_fields})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Strain not found")
+    return {"message": "Strain license info updated"}
+
 
 @api_router.get("/admin/strain-directory/csv")
 async def export_strain_directory_csv(token: str = Depends(verify_admin_token)):

@@ -43,7 +43,8 @@ import {
   Edit2,
   Download,
   RefreshCw,
-  ZoomIn
+  ZoomIn,
+  Plus
 } from "lucide-react";
 
 // Prevent right-click on images
@@ -2621,6 +2622,10 @@ const AdminPage = () => {
   const [processingInquiry, setProcessingInquiry] = useState(null);
   const [inquiryNotes, setInquiryNotes] = useState('');
   const [expandedInquiry, setExpandedInquiry] = useState(null);
+  const [selectedUserProfile, setSelectedUserProfile] = useState(null);
+  const [userProfileLoading, setUserProfileLoading] = useState(false);
+  const [editingDirectoryLicense, setEditingDirectoryLicense] = useState(null);
+  const [directoryLicenseForm, setDirectoryLicenseForm] = useState({});
 
   const fetchDirectory = async (token) => {
     try {
@@ -2672,6 +2677,33 @@ const AdminPage = () => {
       toast.error(err.response?.data?.detail || 'Failed to update inquiry');
     }
     setProcessingInquiry(null);
+  };
+
+  const fetchUserProfile = async (userId) => {
+    setUserProfileLoading(true);
+    try {
+      const response = await axios.get(`${API}/admin/users/${userId}/profile`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setSelectedUserProfile(response.data);
+    } catch (err) {
+      toast.error('Failed to load user profile');
+    }
+    setUserProfileLoading(false);
+  };
+
+  const updateDirectoryLicense = async (strainId) => {
+    try {
+      await axios.put(`${API}/admin/strain-directory/${strainId}/license`, directoryLicenseForm, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      toast.success('License info updated');
+      setEditingDirectoryLicense(null);
+      setDirectoryLicenseForm({});
+      fetchDirectory(adminToken);
+    } catch (err) {
+      toast.error('Failed to update license');
+    }
   };
 
   const handleCoaUpload = async (strainId, file) => {
@@ -3207,6 +3239,7 @@ const AdminPage = () => {
           </button>
           <button
             onClick={() => setActiveTab('users')}
+            data-testid="admin-tab-users"
             className={`px-6 py-2 font-bold uppercase tracking-widest text-sm transition-all ${
               activeTab === 'users' ? 'bg-gold-500 text-black' : 'text-zinc-400 hover:text-white'
             }`}
@@ -4546,10 +4579,168 @@ const AdminPage = () => {
         {/* Users Tab */}
         {activeTab === 'users' && (
           <>
+            {/* User Detail Modal */}
+            {selectedUserProfile && (
+              <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedUserProfile(null)}>
+                <div className="bg-charcoal border border-white/10 max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="sticky top-0 bg-charcoal border-b border-white/5 p-6 flex justify-between items-start z-10">
+                    <div>
+                      <h2 className="font-cinzel font-bold text-2xl text-white">{selectedUserProfile.user.first_name} {selectedUserProfile.user.last_name}</h2>
+                      <p className="text-zinc-400 text-sm">{selectedUserProfile.user.company} · {selectedUserProfile.user.email}</p>
+                    </div>
+                    <button onClick={() => setSelectedUserProfile(null)} className="w-10 h-10 bg-zinc-800 hover:bg-gold-500 hover:text-black text-white flex items-center justify-center transition-all">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    {/* User Info Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-zinc-900/50 border border-white/5 p-4">
+                        <p className="text-zinc-600 text-[10px] uppercase tracking-widest mb-1">Phone</p>
+                        <p className="text-zinc-200 text-sm">{selectedUserProfile.user.phone || 'N/A'}</p>
+                      </div>
+                      <div className="bg-zinc-900/50 border border-white/5 p-4">
+                        <p className="text-zinc-600 text-[10px] uppercase tracking-widest mb-1">Country</p>
+                        <p className="text-zinc-200 text-sm">{selectedUserProfile.user.country || 'N/A'}</p>
+                      </div>
+                      <div className="bg-zinc-900/50 border border-white/5 p-4">
+                        <p className="text-zinc-600 text-[10px] uppercase tracking-widest mb-1">License #</p>
+                        <p className="text-zinc-200 text-sm font-mono">{selectedUserProfile.user.license_number || 'N/A'}</p>
+                      </div>
+                      <div className="bg-zinc-900/50 border border-white/5 p-4">
+                        <p className="text-zinc-600 text-[10px] uppercase tracking-widest mb-1">Registered</p>
+                        <p className="text-zinc-200 text-sm">{selectedUserProfile.user.created_at ? new Date(selectedUserProfile.user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    {/* Activity Summary */}
+                    <div>
+                      <h3 className="font-manrope font-bold text-xs uppercase tracking-widest text-gold-500 mb-3">Activity Summary</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        {[
+                          { label: 'Logins', value: selectedUserProfile.activity_summary.login_count },
+                          { label: 'Page Views', value: selectedUserProfile.activity_summary.total_page_views },
+                          { label: 'Strains Viewed', value: selectedUserProfile.activity_summary.total_strain_views },
+                          { label: 'Inquiries', value: selectedUserProfile.activity_summary.total_inquiries },
+                          { label: 'Sample Requests', value: selectedUserProfile.activity_summary.total_sample_requests },
+                        ].map((stat) => (
+                          <div key={stat.label} className="bg-zinc-900 border border-white/5 p-3 text-center">
+                            <p className="text-2xl font-bold text-white">{stat.value}</p>
+                            <p className="text-zinc-500 text-[10px] uppercase tracking-widest">{stat.label}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {selectedUserProfile.activity_summary.last_login && (
+                        <p className="text-zinc-500 text-xs mt-2">Last login: {new Date(selectedUserProfile.activity_summary.last_login).toLocaleString()}</p>
+                      )}
+                    </div>
+
+                    {/* Top Strains Viewed */}
+                    {selectedUserProfile.top_strains_viewed.length > 0 && (
+                      <div>
+                        <h3 className="font-manrope font-bold text-xs uppercase tracking-widest text-gold-500 mb-3">Top Strains Viewed</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {selectedUserProfile.top_strains_viewed.map((s, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-zinc-900/50 border border-white/5 px-4 py-2">
+                              <span className="text-zinc-200 text-sm">{s.name}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-gold-500 font-mono text-sm font-bold">{s.count}x</span>
+                                {s.last_viewed && <span className="text-zinc-600 text-xs">{new Date(s.last_viewed).toLocaleDateString()}</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Login History */}
+                    {selectedUserProfile.activity_summary.login_history.length > 0 && (
+                      <div>
+                        <h3 className="font-manrope font-bold text-xs uppercase tracking-widest text-gold-500 mb-3">Login History</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedUserProfile.activity_summary.login_history.map((ts, idx) => (
+                            <span key={idx} className="bg-zinc-900 border border-white/5 text-zinc-400 text-xs px-3 py-1.5 font-mono">
+                              {new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inquiries */}
+                    {selectedUserProfile.inquiries.length > 0 && (
+                      <div>
+                        <h3 className="font-manrope font-bold text-xs uppercase tracking-widest text-gold-500 mb-3">Inquiries ({selectedUserProfile.inquiries.length})</h3>
+                        <div className="space-y-2">
+                          {selectedUserProfile.inquiries.map((inq, idx) => (
+                            <div key={idx} className="bg-zinc-900/50 border border-white/5 p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex flex-wrap gap-1">
+                                  {(inq.strain_names || []).map((name, i) => (
+                                    <span key={i} className="bg-gold-500/10 border border-gold-500/20 text-gold-500 text-[10px] font-bold px-2 py-0.5">{name}</span>
+                                  ))}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 ${inq.status === 'pending' ? 'bg-gold-500/20 text-gold-500' : inq.status === 'responded' ? 'bg-cannabis-green/20 text-cannabis-green' : 'bg-zinc-700/30 text-zinc-500'}`}>{inq.status}</span>
+                                  <span className="text-zinc-600 text-xs">{inq.created_at ? new Date(inq.created_at).toLocaleDateString() : ''}</span>
+                                </div>
+                              </div>
+                              <p className="text-zinc-400 text-sm">{inq.message}</p>
+                              {inq.strain_volumes && Object.keys(inq.strain_volumes).length > 0 && (
+                                <div className="mt-2 flex gap-2">
+                                  {(inq.strain_names || []).map((name, i) => {
+                                    const vol = inq.strain_volumes[(inq.strain_ids || [])[i]];
+                                    return vol ? <span key={i} className="text-zinc-500 text-xs">{name}: {vol}kg</span> : null;
+                                  })}
+                                </div>
+                              )}
+                              {inq.market_of_interest && <p className="text-gold-500/70 text-xs mt-1">Market: {inq.market_of_interest}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sample Requests */}
+                    {selectedUserProfile.sample_requests.length > 0 && (
+                      <div>
+                        <h3 className="font-manrope font-bold text-xs uppercase tracking-widest text-gold-500 mb-3">Sample Requests ({selectedUserProfile.sample_requests.length})</h3>
+                        <div className="space-y-2">
+                          {selectedUserProfile.sample_requests.map((sr, idx) => (
+                            <div key={idx} className="bg-zinc-900/50 border border-white/5 p-4 flex justify-between items-center">
+                              <div>
+                                <p className="text-zinc-200 text-sm">{sr.strain_name || 'Unknown strain'}</p>
+                                <p className="text-zinc-500 text-xs">{sr.message}</p>
+                              </div>
+                              <span className="text-zinc-600 text-xs">{sr.created_at ? new Date(sr.created_at).toLocaleDateString() : ''}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Filter Usage */}
+                    {Object.keys(selectedUserProfile.filter_usage).length > 0 && (
+                      <div>
+                        <h3 className="font-manrope font-bold text-xs uppercase tracking-widest text-gold-500 mb-3">Filter Usage</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(selectedUserProfile.filter_usage).sort((a, b) => b[1] - a[1]).map(([filter, count]) => (
+                            <span key={filter} className="bg-zinc-900 border border-white/5 text-zinc-400 text-xs px-3 py-1.5">
+                              {filter}: <span className="text-gold-500 font-bold">{count}x</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Registered Users</h2>
-                <p className="text-zinc-500 text-sm">{users.length} total users</p>
+                <p className="text-zinc-500 text-sm">{users.length} total users · Click any name for detailed profile</p>
               </div>
               <button
                 onClick={() => exportCSV('users')}
@@ -4568,6 +4759,7 @@ const AdminPage = () => {
                     <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Company</th>
                     <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Country</th>
                     <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Email</th>
+                    <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">License #</th>
                     <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Status</th>
                     <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Registered</th>
                     <th className="text-right text-zinc-500 text-xs uppercase tracking-widest p-4">Actions</th>
@@ -4576,10 +4768,19 @@ const AdminPage = () => {
                 <tbody>
                   {users.map((user, i) => (
                     <tr key={user.id || i} className={`border-t border-white/5 hover:bg-zinc-900/50 ${user.status === 'suspended' ? 'opacity-60' : ''} ${user.status === 'removed' ? 'opacity-30' : ''}`}>
-                      <td className="p-4 text-white">{user.first_name} {user.last_name}</td>
+                      <td className="p-4">
+                        <button
+                          data-testid={`user-profile-${user.id}`}
+                          onClick={() => fetchUserProfile(user.id)}
+                          className="text-gold-500 hover:text-gold-400 hover:underline font-bold text-left transition-colors"
+                        >
+                          {user.first_name} {user.last_name}
+                        </button>
+                      </td>
                       <td className="p-4 text-zinc-400">{user.company}</td>
                       <td className="p-4 text-zinc-400">{user.country}</td>
                       <td className="p-4 text-zinc-400">{user.email}</td>
+                      <td className="p-4 text-zinc-400 font-mono text-xs">{user.license_number || '—'}</td>
                       <td className="p-4">
                         {user.status === 'suspended' ? (
                           <span data-testid={`user-status-${user.id}`} className="bg-yellow-500/20 text-yellow-500 text-xs font-bold uppercase tracking-widest px-2 py-1">Paused</span>
@@ -4645,7 +4846,7 @@ const AdminPage = () => {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan="7" className="p-8 text-center text-zinc-600">No users registered yet</td>
+                      <td colSpan="8" className="p-8 text-center text-zinc-600">No users registered yet</td>
                     </tr>
                   )}
                 </tbody>
@@ -5387,27 +5588,100 @@ const AdminPage = () => {
                       {/* Grower/LP Contact Column */}
                       <div className="p-4">
                         <p className="text-zinc-600 text-xs uppercase tracking-widest mb-3 font-bold">Grower / LP Contact</p>
-                        {entry.grower_name ? (
+                        {entry.grower_name || entry.company_name ? (
                           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                             <div>
                               <p className="text-zinc-600 text-[10px] uppercase tracking-widest">Name</p>
-                              <p className="text-zinc-200 text-sm">{entry.grower_name}</p>
+                              <p className="text-zinc-200 text-sm">{entry.grower_name || 'N/A'}</p>
                             </div>
                             <div>
                               <p className="text-zinc-600 text-[10px] uppercase tracking-widest">Company</p>
-                              <p className="text-zinc-200 text-sm">{entry.company_name}</p>
+                              <p className="text-zinc-200 text-sm">{entry.company_name || 'N/A'}</p>
                             </div>
                             <div>
                               <p className="text-zinc-600 text-[10px] uppercase tracking-widest">Email</p>
-                              <a href={`mailto:${entry.grower_email}`} className="text-gold-500 text-sm hover:underline">{entry.grower_email}</a>
+                              <a href={`mailto:${entry.grower_email}`} className="text-gold-500 text-sm hover:underline">{entry.grower_email || 'N/A'}</a>
                             </div>
                             <div>
                               <p className="text-zinc-600 text-[10px] uppercase tracking-widest">Phone</p>
                               <a href={`tel:${entry.grower_phone}`} className="text-gold-500 text-sm hover:underline">{entry.grower_phone || 'N/A'}</a>
                             </div>
+                            <div className="col-span-2">
+                              <p className="text-zinc-600 text-[10px] uppercase tracking-widest">License #</p>
+                              {entry.license_number ? (
+                                <p className="text-zinc-200 text-sm font-mono">{entry.license_number}</p>
+                              ) : editingDirectoryLicense === entry.id ? (
+                                <div className="flex gap-2 mt-1">
+                                  <input
+                                    data-testid={`dir-license-input-${entry.id}`}
+                                    type="text"
+                                    value={directoryLicenseForm.license_number || ''}
+                                    onChange={(e) => setDirectoryLicenseForm(prev => ({ ...prev, license_number: e.target.value }))}
+                                    className="flex-1 bg-zinc-900 border border-gold-500/50 text-white text-sm h-8 px-3 outline-none"
+                                    placeholder="Enter license #"
+                                    autoFocus
+                                  />
+                                  <button
+                                    data-testid={`dir-license-save-${entry.id}`}
+                                    onClick={() => updateDirectoryLicense(entry.id)}
+                                    className="bg-gold-500 text-black px-3 h-8 text-xs font-bold uppercase"
+                                  >Save</button>
+                                  <button
+                                    onClick={() => { setEditingDirectoryLicense(null); setDirectoryLicenseForm({}); }}
+                                    className="bg-zinc-700 text-white px-3 h-8 text-xs"
+                                  >Cancel</button>
+                                </div>
+                              ) : (
+                                <button
+                                  data-testid={`dir-add-license-${entry.id}`}
+                                  onClick={() => {
+                                    setEditingDirectoryLicense(entry.id);
+                                    setDirectoryLicenseForm({ license_number: '', grower_company: entry.company_name || '', grower_name: entry.grower_name || '', grower_email: entry.grower_email || '' });
+                                  }}
+                                  className="text-gold-500 text-xs hover:underline cursor-pointer mt-1 flex items-center gap-1"
+                                >
+                                  <Plus className="w-3 h-3" /> Add License #
+                                </button>
+                              )}
+                            </div>
+                            {entry.gacp_compliant && (
+                              <div>
+                                <p className="text-zinc-600 text-[10px] uppercase tracking-widest">GACP</p>
+                                <p className={`text-sm font-medium ${entry.gacp_compliant === 'Yes' ? 'text-cannabis-green' : 'text-red-400'}`}>{entry.gacp_compliant}</p>
+                              </div>
+                            )}
+                          </div>
+                        ) : editingDirectoryLicense === entry.id ? (
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              <input type="text" value={directoryLicenseForm.grower_company || ''} onChange={(e) => setDirectoryLicenseForm(prev => ({ ...prev, grower_company: e.target.value }))}
+                                className="bg-zinc-900 border border-zinc-700 text-white text-sm h-8 px-3 outline-none" placeholder="Company" />
+                              <input type="text" value={directoryLicenseForm.grower_name || ''} onChange={(e) => setDirectoryLicenseForm(prev => ({ ...prev, grower_name: e.target.value }))}
+                                className="bg-zinc-900 border border-zinc-700 text-white text-sm h-8 px-3 outline-none" placeholder="Contact name" />
+                              <input type="email" value={directoryLicenseForm.grower_email || ''} onChange={(e) => setDirectoryLicenseForm(prev => ({ ...prev, grower_email: e.target.value }))}
+                                className="bg-zinc-900 border border-zinc-700 text-white text-sm h-8 px-3 outline-none" placeholder="Email" />
+                              <input type="text" value={directoryLicenseForm.license_number || ''} onChange={(e) => setDirectoryLicenseForm(prev => ({ ...prev, license_number: e.target.value }))}
+                                className="bg-zinc-900 border border-zinc-700 text-white text-sm h-8 px-3 outline-none" placeholder="License #" />
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => updateDirectoryLicense(entry.id)} className="bg-gold-500 text-black px-3 py-1.5 text-xs font-bold uppercase">Save</button>
+                              <button onClick={() => { setEditingDirectoryLicense(null); setDirectoryLicenseForm({}); }} className="bg-zinc-700 text-white px-3 py-1.5 text-xs">Cancel</button>
+                            </div>
                           </div>
                         ) : (
-                          <p className="text-zinc-600 text-sm italic">No grower submission linked</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-zinc-600 text-sm italic">No grower info linked</p>
+                            <button
+                              data-testid={`dir-add-grower-${entry.id}`}
+                              onClick={() => {
+                                setEditingDirectoryLicense(entry.id);
+                                setDirectoryLicenseForm({});
+                              }}
+                              className="text-gold-500 text-xs hover:underline flex items-center gap-1"
+                            >
+                              <Plus className="w-3 h-3" /> Add Info
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
