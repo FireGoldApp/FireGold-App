@@ -4,7 +4,7 @@
 Build a B2B database catalog for cannabis whole flower sales called "Firegold" with admin panel, grower submissions, affiliate marketing, and user inquiry management.
 
 ## Architecture
-- **Frontend**: React, Tailwind CSS, Axios, Lucide React (single App.js)
+- **Frontend**: React, Tailwind CSS, Axios, Lucide React (single App.js ~6500 lines)
 - **Backend**: FastAPI, Pydantic, Motor (async MongoDB), python-jose (JWT)
 - **Database**: MongoDB
 - **Auth**: JWT tokens for users and admins
@@ -19,9 +19,13 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
 - Image zoom, marketplace logo on strain detail
 - License verification for intake form
 - Post-submission license download popup
+- **Contact Us** feature — button on main page (auth + catalog), modal form, backend endpoint, admin retrieval
 
-## Bug Fixes (Feb 2026)
-- Fixed admin login crash: Missing `Users` lucide-react import in App.js
+## Recent Changes (Mar 4, 2026)
+- Fixed admin login crash: Missing `Users` lucide-react import
+- Removed "Country/Countries of Export" field from Submit Your Product form
+- Added Contact Us button (top right of main page) with modal form for visitors to leave messages
+- Backend endpoints: `POST /api/contact`, `GET /api/admin/contact-messages`, `PUT /api/admin/contact-messages/{id}/read`
 
 ## P0 - In Progress
 - Complete Affiliate Marketing System:
@@ -42,5 +46,8 @@ Build a B2B database catalog for cannabis whole flower sales called "Firegold" w
 - Users: Register via UI
 
 ## Key Files
-- `/app/frontend/src/App.js` — Entire frontend (6400+ lines)
-- `/app/backend/server.py` — Entire backend
+- `/app/frontend/src/App.js` — Entire frontend (~6500 lines)
+- `/app/backend/server.py` — Entire backend (~3200 lines)
+
+## DB Collections
+- strains, users, grower_submissions, inquiries, analytics, affiliates, referral_events, sample_requests, contact_messages

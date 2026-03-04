@@ -387,6 +387,24 @@ class ReferralEvent(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class ContactMessageCreate(BaseModel):
+    name: str
+    email: EmailStr
+    company: Optional[str] = None
+    message: str
+
+class ContactMessage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    email: str
+    company: Optional[str] = None
+    message: str
+    status: str = "unread"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 # Strain image mapping (filename in /strains/ folder)
 STRAIN_IMAGE_MAP = {
     "Jealousy": "Jealousy.png",
@@ -3143,6 +3161,40 @@ async def update_strain(strain_id: str, strain_input: StrainCreate, token: str =
     return updated
 
 # Include the router in the main app
+
+# --- Contact Messages ---
+@api_router.post("/contact")
+async def submit_contact_message(msg: ContactMessageCreate):
+    """Public endpoint for visitors to leave a message for admin"""
+    contact = ContactMessage(
+        name=msg.name,
+        email=msg.email,
+        company=msg.company,
+        message=msg.message
+    )
+    doc = contact.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    await db.contact_messages.insert_one(doc)
+    doc.pop("_id", None)
+    return {"message": "Your message has been sent. We'll be in touch soon!"}
+
+@api_router.get("/admin/contact-messages")
+async def get_contact_messages(token: str = Depends(verify_admin_token)):
+    """Admin endpoint to view contact messages"""
+    messages = await db.contact_messages.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return messages
+
+@api_router.put("/admin/contact-messages/{message_id}/read")
+async def mark_message_read(message_id: str, token: str = Depends(verify_admin_token)):
+    """Mark a contact message as read"""
+    result = await db.contact_messages.update_one(
+        {"id": message_id},
+        {"$set": {"status": "read"}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return {"message": "Marked as read"}
+
 app.include_router(api_router)
 
 app.add_middleware(

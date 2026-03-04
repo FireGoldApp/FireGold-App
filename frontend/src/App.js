@@ -45,7 +45,8 @@ import {
   RefreshCw,
   ZoomIn,
   Plus,
-  Users
+  Users,
+  MessageCircle
 } from "lucide-react";
 
 // Prevent right-click on images
@@ -1187,7 +1188,7 @@ const GrowerSubmitPage = () => {
     lot_size_kg: '',
     effects: '',
     growing_method: 'Indoor',
-    export_country: '',
+    /* export_country removed */
     open_permit: '',
     is_irradiated: '',
     willing_to_irradiate: '',
@@ -1267,7 +1268,6 @@ const GrowerSubmitPage = () => {
       submitData.append('lot_size_kg', lotKg);
       submitData.append('effects', formData.effects);
       submitData.append('growing_method', formData.growing_method || '');
-      submitData.append('export_country', formData.export_country || '');
       submitData.append('open_permit', formData.open_permit || '');
       submitData.append('is_irradiated', formData.is_irradiated || '');
       submitData.append('willing_to_irradiate', formData.willing_to_irradiate || '');
@@ -1691,17 +1691,7 @@ const GrowerSubmitPage = () => {
                   <option value="No">No</option>
                 </select>
               </div>
-              <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Country/Countries of Export</label>
-                <input
-                  data-testid="grower-export-country-input"
-                  type="text"
-                  value={formData.export_country}
-                  onChange={(e) => setFormData(prev => ({ ...prev, export_country: e.target.value }))}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
-                  placeholder="e.g., Canada, Germany, Australia"
-                />
-              </div>
+              {/* Export country field removed */}
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Growing Method</label>
                 <select
@@ -1996,6 +1986,28 @@ const AuthPage = ({ onAuth }) => {
     password: ''
   });
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showContactFromAuth, setShowContactFromAuth] = useState(false);
+  const [authContactForm, setAuthContactForm] = useState({ name: '', email: '', company: '', message: '' });
+  const [authContactSending, setAuthContactSending] = useState(false);
+
+  const handleAuthContactSubmit = async (e) => {
+    e.preventDefault();
+    if (!authContactForm.name || !authContactForm.email || !authContactForm.message) {
+      toast.error('Please fill in name, email, and message');
+      return;
+    }
+    setAuthContactSending(true);
+    try {
+      await axios.post(`${API}/contact`, authContactForm);
+      toast.success('Message sent! We\'ll be in touch soon.');
+      setAuthContactForm({ name: '', email: '', company: '', message: '' });
+      setShowContactFromAuth(false);
+    } catch (err) {
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setAuthContactSending(false);
+    }
+  };
 
   // Capture referral code from URL
   useEffect(() => {
@@ -2058,7 +2070,91 @@ const AuthPage = ({ onAuth }) => {
   };
 
   return (
-    <div className="min-h-screen bg-obsidian flex items-center justify-center p-6">
+    <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 relative">
+      {/* Contact Us floating button */}
+      <button
+        onClick={() => setShowContactFromAuth(true)}
+        data-testid="auth-contact-btn"
+        className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-zinc-900/80 border border-zinc-700 hover:border-gold-500 text-zinc-300 hover:text-gold-500 px-4 py-2 transition-all backdrop-blur-sm"
+      >
+        <MessageCircle className="w-4 h-4" />
+        <span className="text-xs uppercase tracking-widest font-manrope">Contact Us</span>
+      </button>
+
+      {/* Contact Us Modal */}
+      {showContactFromAuth && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowContactFromAuth(false)} />
+          <div data-testid="auth-contact-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-lg p-8">
+            <button 
+              onClick={() => setShowContactFromAuth(false)} 
+              data-testid="auth-contact-modal-close"
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-6">
+              <MessageCircle className="w-6 h-6 text-gold-500" />
+              <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest">Contact Us</h2>
+            </div>
+            <p className="text-zinc-400 text-sm mb-6">Leave a message and our team will get back to you shortly.</p>
+            <form onSubmit={handleAuthContactSubmit} className="space-y-4">
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Name *</label>
+                <input
+                  data-testid="auth-contact-name"
+                  type="text"
+                  value={authContactForm.name}
+                  onChange={(e) => setAuthContactForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Email *</label>
+                <input
+                  data-testid="auth-contact-email"
+                  type="email"
+                  value={authContactForm.email}
+                  onChange={(e) => setAuthContactForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm"
+                  placeholder="your@email.com"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Company</label>
+                <input
+                  data-testid="auth-contact-company"
+                  type="text"
+                  value={authContactForm.company}
+                  onChange={(e) => setAuthContactForm(prev => ({ ...prev, company: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm"
+                  placeholder="Company name (optional)"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Message *</label>
+                <textarea
+                  data-testid="auth-contact-message"
+                  value={authContactForm.message}
+                  onChange={(e) => setAuthContactForm(prev => ({ ...prev, message: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white px-4 py-3 outline-none text-sm min-h-[120px] resize-none"
+                  placeholder="How can we help you?"
+                />
+              </div>
+              <button
+                type="submit"
+                data-testid="auth-contact-submit"
+                disabled={authContactSending}
+                className="w-full bg-gold-500 hover:bg-gold-400 disabled:opacity-50 text-black font-bold uppercase tracking-widest py-3 text-sm transition-all"
+              >
+                {authContactSending ? 'Sending...' : 'Send Message'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="bg-charcoal border border-white/10 p-8 max-w-lg w-full">
         {/* Logo */}
         <div className="flex justify-center mb-8">
@@ -5961,6 +6057,28 @@ const CatalogPage = () => {
   const [showSampleModal, setShowSampleModal] = useState(false);
   const [sampleStrain, setSampleStrain] = useState(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: '', email: '', company: '', message: '' });
+  const [contactSending, setContactSending] = useState(false);
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    if (!contactForm.name || !contactForm.email || !contactForm.message) {
+      toast.error('Please fill in name, email, and message');
+      return;
+    }
+    setContactSending(true);
+    try {
+      await axios.post(`${API}/contact`, contactForm);
+      toast.success('Message sent! We\'ll be in touch soon.');
+      setContactForm({ name: '', email: '', company: '', message: '' });
+      setShowContactModal(false);
+    } catch (err) {
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setContactSending(false);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('userToken');
@@ -6167,6 +6285,15 @@ const CatalogPage = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowContactModal(true)}
+            data-testid="contact-us-btn"
+            className="hidden md:flex items-center gap-2 text-zinc-400 hover:text-gold-500 transition-colors"
+            title="Contact Us"
+          >
+            <MessageCircle className="w-5 h-5" />
+            <span className="text-xs uppercase tracking-widest font-manrope">Contact</span>
+          </button>
           <a
             href="/submit-strain"
             data-testid="submit-strain-cta"
@@ -6288,6 +6415,13 @@ const CatalogPage = () => {
               >
                 Apply Filters
               </button>
+              <button 
+                onClick={() => { setMobileFiltersOpen(false); setShowContactModal(true); }}
+                data-testid="mobile-contact-btn"
+                className="w-full mt-4 border border-gold-500 text-gold-500 font-bold uppercase tracking-widest px-6 py-4 flex items-center justify-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" /> Contact Us
+              </button>
             </div>
           )}
 
@@ -6381,6 +6515,80 @@ const CatalogPage = () => {
         userData={userData}
         userToken={userToken}
       />
+
+      {/* Contact Us Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowContactModal(false)} />
+          <div data-testid="contact-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-lg p-8">
+            <button 
+              onClick={() => setShowContactModal(false)} 
+              data-testid="contact-modal-close"
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-6">
+              <MessageCircle className="w-6 h-6 text-gold-500" />
+              <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest">Contact Us</h2>
+            </div>
+            <p className="text-zinc-400 text-sm mb-6">Leave a message and our team will get back to you shortly.</p>
+            <form onSubmit={handleContactSubmit} className="space-y-4">
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Name *</label>
+                <input
+                  data-testid="contact-name-input"
+                  type="text"
+                  value={contactForm.name}
+                  onChange={(e) => setContactForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Email *</label>
+                <input
+                  data-testid="contact-email-input"
+                  type="email"
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm"
+                  placeholder="your@email.com"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Company</label>
+                <input
+                  data-testid="contact-company-input"
+                  type="text"
+                  value={contactForm.company}
+                  onChange={(e) => setContactForm(prev => ({ ...prev, company: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm"
+                  placeholder="Company name (optional)"
+                />
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Message *</label>
+                <textarea
+                  data-testid="contact-message-input"
+                  value={contactForm.message}
+                  onChange={(e) => setContactForm(prev => ({ ...prev, message: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white px-4 py-3 outline-none text-sm min-h-[120px] resize-none"
+                  placeholder="How can we help you?"
+                />
+              </div>
+              <button
+                type="submit"
+                data-testid="contact-submit-btn"
+                disabled={contactSending}
+                className="w-full bg-gold-500 hover:bg-gold-400 disabled:opacity-50 text-black font-bold uppercase tracking-widest py-3 text-sm transition-all"
+              >
+                {contactSending ? 'Sending...' : 'Send Message'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <Toaster 
         position="bottom-right"
