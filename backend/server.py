@@ -352,6 +352,8 @@ class AffiliateCreate(BaseModel):
     user_id: Optional[str] = None  # Link to existing user, or standalone
     name: str
     email: EmailStr
+    phone: Optional[str] = None
+    company: Optional[str] = None
     referral_code: str  # Custom code like "WARREN"
     commission_rate: float = 10.0  # Percentage
 
@@ -362,6 +364,8 @@ class Affiliate(BaseModel):
     user_id: Optional[str] = None
     name: str
     email: str
+    phone: Optional[str] = None
+    company: Optional[str] = None
     referral_code: str
     commission_rate: float = 10.0
     is_active: bool = True
@@ -2171,38 +2175,86 @@ async def export_analytics_csv(
 
 @api_router.get("/users/export/csv")
 async def export_users_csv(token: str = Depends(verify_admin_token)):
-    """Export registered users to CSV (admin only)"""
+    """Export comprehensive marketing-ready user list to CSV (admin only)"""
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(10000)
+    
+    # Gather inquiry counts and last inquiry date per user
+    inquiries = await db.inquiries.find({}, {"_id": 0, "user_id": 1, "created_at": 1, "status": 1, "strain_ids": 1}).to_list(10000)
+    user_inquiry_map = {}
+    for inq in inquiries:
+        uid = inq.get("user_id")
+        if uid:
+            if uid not in user_inquiry_map:
+                user_inquiry_map[uid] = {"count": 0, "last_date": None, "strain_count": 0}
+            user_inquiry_map[uid]["count"] += 1
+            user_inquiry_map[uid]["strain_count"] += len(inq.get("strain_ids", []))
+            inq_date = inq.get("created_at")
+            if inq_date and (user_inquiry_map[uid]["last_date"] is None or str(inq_date) > str(user_inquiry_map[uid]["last_date"])):
+                user_inquiry_map[uid]["last_date"] = inq_date
+    
+    # Gather sample request counts per user
+    samples = await db.sample_requests.find({}, {"_id": 0, "user_id": 1}).to_list(10000)
+    user_sample_map = {}
+    for sr in samples:
+        uid = sr.get("user_id")
+        if uid:
+            user_sample_map[uid] = user_sample_map.get(uid, 0) + 1
+    
+    # Gather analytics event counts per user
+    analytics_pipeline = [
+        {"$group": {"_id": "$user_id", "total_events": {"$sum": 1}, "last_active": {"$max": "$created_at"}}}
+    ]
+    activity = await db.analytics.aggregate(analytics_pipeline).to_list(10000)
+    user_activity_map = {a["_id"]: a for a in activity if a["_id"]}
+    
+    # Gather referral info
+    referral_map = {}
+    affiliates_list = await db.affiliates.find({}, {"_id": 0}).to_list(1000)
+    aff_code_map = {a["referral_code"]: a["name"] for a in affiliates_list}
     
     output = io.StringIO()
     writer = csv.writer(output)
     
-    # Header
     writer.writerow([
-        'User ID', 'First Name', 'Last Name', 'Company', 'Country',
-        'Email', 'Phone', 'Status', 'Has Flags', 'Registered At'
+        'First Name', 'Last Name', 'Company', 'Country', 'Email', 'Phone',
+        'License Number', 'Status', 'Registered Date',
+        'Total Inquiries', 'Strains Inquired', 'Last Inquiry Date',
+        'Sample Requests', 'Total Events', 'Last Active',
+        'Referred By Code', 'Referred By Name'
     ])
     
-    # Data rows
     for user in users:
+        uid = user.get('id', '')
+        inq_info = user_inquiry_map.get(uid, {})
+        activity_info = user_activity_map.get(uid, {})
+        ref_code = user.get('referred_by_code', '') or user.get('referral_code', '') or ''
+        ref_name = aff_code_map.get(ref_code, '') if ref_code else ''
+        
         writer.writerow([
-            user.get('id', ''),
             user.get('first_name', ''),
             user.get('last_name', ''),
             user.get('company', ''),
             user.get('country', ''),
             user.get('email', ''),
             user.get('phone', ''),
+            user.get('license_number', ''),
             user.get('status', 'active'),
-            user.get('has_flags', False),
-            user.get('created_at', '')
+            user.get('created_at', ''),
+            inq_info.get('count', 0),
+            inq_info.get('strain_count', 0),
+            inq_info.get('last_date', ''),
+            user_sample_map.get(uid, 0),
+            activity_info.get('total_events', 0),
+            activity_info.get('last_active', ''),
+            ref_code,
+            ref_name
         ])
     
     output.seek(0)
     return StreamingResponse(
         io.BytesIO(output.getvalue().encode()),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=firegold_users.csv"}
+        headers={"Content-Disposition": f"attachment; filename=firegold_marketing_users_{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"}
     )
 
 @api_router.get("/analytics/flags")

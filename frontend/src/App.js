@@ -2769,7 +2769,15 @@ const AdminPage = () => {
   const [directoryLicenseForm, setDirectoryLicenseForm] = useState({});
   const [affiliates, setAffiliates] = useState([]);
   const [showAddAffiliate, setShowAddAffiliate] = useState(false);
-  const [affiliateForm, setAffiliateForm] = useState({ name: '', email: '', referral_code: '', commission_rate: 10 });
+  const [affiliateForm, setAffiliateForm] = useState({ name: '', email: '', phone: '', company: '', referral_code: '', commission_rate: 10 });
+
+  // Auto-generate referral code from name
+  const autoGenerateCode = (name) => {
+    if (!name) return '';
+    const parts = name.trim().toUpperCase().split(/\s+/);
+    if (parts.length >= 2) return parts[0] + parts[parts.length - 1].charAt(0);
+    return parts[0].slice(0, 8);
+  };
   const [selectedAffiliateDetail, setSelectedAffiliateDetail] = useState(null);
   const [conversionForm, setConversionForm] = useState({ inquiry_id: '', sale_amount: '' });
 
@@ -2935,7 +2943,7 @@ const AdminPage = () => {
       });
       toast.success(`Affiliate ${affiliateForm.referral_code.toUpperCase()} created`);
       setShowAddAffiliate(false);
-      setAffiliateForm({ name: '', email: '', referral_code: '', commission_rate: 10 });
+      setAffiliateForm({ name: '', email: '', phone: '', company: '', referral_code: '', commission_rate: 10 });
       fetchAffiliates();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to create affiliate');
@@ -3670,10 +3678,17 @@ const AdminPage = () => {
             {showAddAffiliate && (
               <div className="bg-charcoal border border-gold-500/30 p-6 mb-8">
                 <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">New Affiliate</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <input data-testid="affiliate-name" type="text" value={affiliateForm.name} onChange={e => setAffiliateForm(p => ({...p, name: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Full Name" />
-                  <input data-testid="affiliate-email" type="email" value={affiliateForm.email} onChange={e => setAffiliateForm(p => ({...p, email: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Email" />
-                  <input data-testid="affiliate-code" type="text" value={affiliateForm.referral_code} onChange={e => setAffiliateForm(p => ({...p, referral_code: e.target.value.toUpperCase()}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none font-mono uppercase" placeholder="Code (e.g. WARREN)" />
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                  <input data-testid="affiliate-name" type="text" value={affiliateForm.name} onChange={e => { const name = e.target.value; setAffiliateForm(p => ({...p, name, referral_code: p.referral_code || autoGenerateCode(name)})); }} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Full Name *" />
+                  <input data-testid="affiliate-email" type="email" value={affiliateForm.email} onChange={e => setAffiliateForm(p => ({...p, email: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Email *" />
+                  <input data-testid="affiliate-phone" type="text" value={affiliateForm.phone} onChange={e => setAffiliateForm(p => ({...p, phone: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Phone" />
+                  <input data-testid="affiliate-company" type="text" value={affiliateForm.company} onChange={e => setAffiliateForm(p => ({...p, company: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Company" />
+                  <div className="relative">
+                    <input data-testid="affiliate-code" type="text" value={affiliateForm.referral_code} onChange={e => setAffiliateForm(p => ({...p, referral_code: e.target.value.toUpperCase()}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none font-mono uppercase w-full" placeholder="Code (auto-generated)" />
+                    {affiliateForm.name && !affiliateForm.referral_code && (
+                      <button onClick={() => setAffiliateForm(p => ({...p, referral_code: autoGenerateCode(p.name)}))} className="absolute right-2 top-1/2 -translate-y-1/2 text-gold-500 text-xs hover:underline">Generate</button>
+                    )}
+                  </div>
                   <input data-testid="affiliate-rate" type="number" value={affiliateForm.commission_rate} onChange={e => setAffiliateForm(p => ({...p, commission_rate: parseFloat(e.target.value) || 0}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Commission %" />
                 </div>
                 <div className="flex gap-3">
@@ -3711,9 +3726,11 @@ const AdminPage = () => {
                           <button onClick={() => fetchAffiliateDetail(aff.id)} className="text-gold-500 hover:text-gold-400 hover:underline font-bold text-base transition-colors">{aff.name}</button>
                           <span className={`text-[10px] font-bold uppercase px-2 py-0.5 ${aff.is_active ? 'bg-cannabis-green/20 text-cannabis-green' : 'bg-red-500/20 text-red-500'}`}>{aff.is_active ? 'Active' : 'Inactive'}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-zinc-400 text-sm">
+                        <div className="flex items-center gap-4 text-zinc-400 text-sm flex-wrap">
                           <span className="font-mono text-gold-500/70">?ref={aff.referral_code}</span>
                           <span>{aff.email}</span>
+                          {aff.phone && <span>{aff.phone}</span>}
+                          {aff.company && <span className="text-zinc-300">{aff.company}</span>}
                           <span>{aff.commission_rate}% commission</span>
                         </div>
                       </div>
@@ -5198,13 +5215,13 @@ const AdminPage = () => {
                 onClick={() => exportCSV('users')}
                 className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 text-sm flex items-center gap-2 transition-colors"
               >
-                <FileText className="w-4 h-4" />
-                Export CSV
+                <Download className="w-4 h-4" />
+                Marketing CSV
               </button>
             </div>
 
             <div className="bg-charcoal border border-white/5 overflow-x-auto">
-              <table className="w-full min-w-[900px]">
+              <table className="w-full min-w-[1100px]">
                 <SortableHeader
                   testPrefix="users"
                   sortState={usersSort}
@@ -5214,6 +5231,7 @@ const AdminPage = () => {
                     { key: 'company', label: 'Company' },
                     { key: 'country', label: 'Country' },
                     { key: 'email', label: 'Email' },
+                    { key: 'phone', label: 'Phone' },
                     { key: 'license_number', label: 'License #' },
                     { key: 'status', label: 'Status' },
                     { key: 'created_at', label: 'Registered' },
@@ -5235,6 +5253,7 @@ const AdminPage = () => {
                       <td className="p-4 text-zinc-400">{user.company}</td>
                       <td className="p-4 text-zinc-400">{user.country}</td>
                       <td className="p-4 text-zinc-400">{user.email}</td>
+                      <td className="p-4 text-zinc-400 text-sm">{user.phone || '—'}</td>
                       <td className="p-4 text-zinc-400 font-mono text-xs">{user.license_number || '—'}</td>
                       <td className="p-4">
                         {user.status === 'suspended' ? (
@@ -5301,7 +5320,7 @@ const AdminPage = () => {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan="8" className="p-8 text-center text-zinc-600">No users registered yet</td>
+                      <td colSpan="9" className="p-8 text-center text-zinc-600">No users registered yet</td>
                     </tr>
                   )}
                 </tbody>
