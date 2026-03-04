@@ -44,7 +44,8 @@ import {
   Download,
   RefreshCw,
   ZoomIn,
-  Plus
+  Plus,
+  Users
 } from "lucide-react";
 
 // Prevent right-click on images
@@ -1975,9 +1976,11 @@ const GrowerSubmitPage = () => {
 
 // Auth Page Component (Register/Login)
 const AuthPage = ({ onAuth }) => {
-  const [mode, setMode] = useState('register'); // 'register' or 'login'
+  const [mode, setMode] = useState('register');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [referralName, setReferralName] = useState('');
   const [registerData, setRegisterData] = useState({
     first_name: '',
     last_name: '',
@@ -1994,6 +1997,20 @@ const AuthPage = ({ onAuth }) => {
   });
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Capture referral code from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      setReferralCode(ref.toUpperCase());
+      axios.get(`${API}/affiliate/resolve/${ref}`).then(res => {
+        if (res.data.valid) {
+          setReferralName(res.data.affiliate_name);
+        }
+      }).catch(() => {});
+    }
+  }, []);
+
   const handleRegister = async (e) => {
     e.preventDefault();
     if (registerData.password.length < 6) {
@@ -2008,7 +2025,7 @@ const AuthPage = ({ onAuth }) => {
     setError('');
 
     try {
-      const response = await axios.post(`${API}/auth/register`, registerData);
+      const response = await axios.post(`${API}/auth/register`, { ...registerData, referral_code: referralCode || undefined });
       localStorage.setItem('userToken', response.data.token);
       localStorage.setItem('userData', JSON.stringify(response.data.user));
       localStorage.setItem('sessionId', response.data.session_id);
@@ -2076,6 +2093,11 @@ const AuthPage = ({ onAuth }) => {
 
         {mode === 'register' ? (
           <form onSubmit={handleRegister} className="space-y-4">
+            {referralName && (
+              <div className="bg-gold-500/10 border border-gold-500/30 p-3 text-center mb-2" data-testid="referral-banner">
+                <p className="text-gold-500 text-sm font-bold">Referred by {referralName}</p>
+              </div>
+            )}
             <p className="text-zinc-400 text-sm text-center mb-6">
               Register to access our premium cultivar catalog
             </p>
@@ -2626,6 +2648,11 @@ const AdminPage = () => {
   const [userProfileLoading, setUserProfileLoading] = useState(false);
   const [editingDirectoryLicense, setEditingDirectoryLicense] = useState(null);
   const [directoryLicenseForm, setDirectoryLicenseForm] = useState({});
+  const [affiliates, setAffiliates] = useState([]);
+  const [showAddAffiliate, setShowAddAffiliate] = useState(false);
+  const [affiliateForm, setAffiliateForm] = useState({ name: '', email: '', referral_code: '', commission_rate: 10 });
+  const [selectedAffiliateDetail, setSelectedAffiliateDetail] = useState(null);
+  const [conversionForm, setConversionForm] = useState({ inquiry_id: '', sale_amount: '' });
 
   const fetchDirectory = async (token) => {
     try {
@@ -2703,6 +2730,71 @@ const AdminPage = () => {
       fetchDirectory(adminToken);
     } catch (err) {
       toast.error('Failed to update license');
+    }
+  };
+
+  const fetchAffiliates = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/affiliates`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setAffiliates(response.data);
+    } catch (err) {
+      console.error('Failed to load affiliates');
+    }
+  };
+
+  const createAffiliate = async () => {
+    try {
+      await axios.post(`${API}/admin/affiliates`, affiliateForm, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      toast.success(`Affiliate ${affiliateForm.referral_code.toUpperCase()} created`);
+      setShowAddAffiliate(false);
+      setAffiliateForm({ name: '', email: '', referral_code: '', commission_rate: 10 });
+      fetchAffiliates();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to create affiliate');
+    }
+  };
+
+  const fetchAffiliateDetail = async (affiliateId) => {
+    try {
+      const response = await axios.get(`${API}/admin/affiliates/${affiliateId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setSelectedAffiliateDetail(response.data);
+    } catch (err) {
+      toast.error('Failed to load affiliate details');
+    }
+  };
+
+  const recordConversion = async () => {
+    try {
+      const res = await axios.post(`${API}/admin/affiliates/conversion`, {
+        inquiry_id: conversionForm.inquiry_id,
+        sale_amount: parseFloat(conversionForm.sale_amount)
+      }, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      toast.success(res.data.message);
+      setConversionForm({ inquiry_id: '', sale_amount: '' });
+      fetchAffiliates();
+      if (selectedAffiliateDetail) fetchAffiliateDetail(selectedAffiliateDetail.affiliate.id);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to record conversion');
+    }
+  };
+
+  const markCommissionPaid = async (eventId) => {
+    try {
+      await axios.put(`${API}/admin/referrals/${eventId}/paid`, {}, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      toast.success('Commission marked as paid');
+      if (selectedAffiliateDetail) fetchAffiliateDetail(selectedAffiliateDetail.affiliate.id);
+    } catch (err) {
+      toast.error('Failed to update');
     }
   };
 
@@ -3296,9 +3388,155 @@ const AdminPage = () => {
               </span>
             )}
           </button>
+          <button
+            onClick={() => { setActiveTab('affiliates'); fetchAffiliates(); }}
+            data-testid="admin-tab-affiliates"
+            className={`px-6 py-2 font-bold uppercase tracking-widest text-sm transition-all ${
+              activeTab === 'affiliates' ? 'bg-gold-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Users className="w-4 h-4 inline mr-2" />Affiliates
+          </button>
         </div>
+        {/* Affiliates Tab */}
+        {activeTab === 'affiliates' && (
+          <>
+            {/* Affiliate Detail Modal */}
+            {selectedAffiliateDetail && (
+              <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedAffiliateDetail(null)}>
+                <div className="bg-charcoal border border-white/10 max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="sticky top-0 bg-charcoal border-b border-white/5 p-6 flex justify-between items-start z-10">
+                    <div>
+                      <h2 className="font-cinzel font-bold text-2xl text-white">{selectedAffiliateDetail.affiliate.name}</h2>
+                      <p className="text-gold-500 font-mono text-sm">Code: {selectedAffiliateDetail.affiliate.referral_code} &middot; {selectedAffiliateDetail.affiliate.commission_rate}% commission</p>
+                    </div>
+                    <button onClick={() => setSelectedAffiliateDetail(null)} className="w-10 h-10 bg-zinc-800 hover:bg-gold-500 hover:text-black text-white flex items-center justify-center transition-all">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        { label: 'Referrals', value: selectedAffiliateDetail.stats.total_referrals },
+                        { label: 'Conversions', value: selectedAffiliateDetail.stats.total_conversions },
+                        { label: 'Revenue', value: `$${selectedAffiliateDetail.stats.total_revenue.toLocaleString()}` },
+                        { label: 'Commission', value: `$${selectedAffiliateDetail.stats.total_commission.toLocaleString()}` },
+                      ].map(s => (
+                        <div key={s.label} className="bg-zinc-900 border border-white/5 p-4 text-center">
+                          <p className="text-2xl font-bold text-white">{s.value}</p>
+                          <p className="text-zinc-500 text-[10px] uppercase tracking-widest">{s.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-gold-500/10 border border-gold-500/30 p-4 text-center">
+                        <p className="text-xl font-bold text-gold-500">${selectedAffiliateDetail.stats.pending_commission.toLocaleString()}</p>
+                        <p className="text-gold-500/60 text-xs uppercase">Pending Payout</p>
+                      </div>
+                      <div className="bg-cannabis-green/10 border border-cannabis-green/30 p-4 text-center">
+                        <p className="text-xl font-bold text-cannabis-green">${selectedAffiliateDetail.stats.paid_commission.toLocaleString()}</p>
+                        <p className="text-cannabis-green/60 text-xs uppercase">Paid Out</p>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-manrope font-bold text-xs uppercase tracking-widest text-gold-500 mb-3">Referral Events</h3>
+                      {selectedAffiliateDetail.events.length === 0 ? (
+                        <p className="text-zinc-600 text-sm">No events yet</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {selectedAffiliateDetail.events.map((evt, idx) => (
+                            <div key={idx} className="bg-zinc-900/50 border border-white/5 p-4 flex items-center justify-between">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 ${evt.event_type === 'conversion' ? 'bg-cannabis-green/20 text-cannabis-green' : 'bg-gold-500/20 text-gold-500'}`}>{evt.event_type}</span>
+                                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 ${evt.status === 'paid' ? 'bg-cannabis-green/20 text-cannabis-green' : 'bg-zinc-700/30 text-zinc-400'}`}>{evt.status}</span>
+                                </div>
+                                <p className="text-zinc-300 text-sm">{evt.referred_user ? `${evt.referred_user.first_name} ${evt.referred_user.last_name} (${evt.referred_user.company})` : evt.referred_email || 'Unknown'}</p>
+                                {evt.sale_amount > 0 && <p className="text-zinc-500 text-xs">Sale: ${evt.sale_amount.toLocaleString()} &middot; Commission: ${evt.commission_amount?.toLocaleString()}</p>}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-zinc-600 text-xs">{evt.created_at ? new Date(evt.created_at).toLocaleDateString() : ''}</span>
+                                {evt.event_type === 'conversion' && evt.status === 'pending' && (
+                                  <button onClick={() => markCommissionPaid(evt.id)} className="bg-cannabis-green/20 hover:bg-cannabis-green/30 text-cannabis-green text-xs font-bold uppercase px-3 py-1.5 transition-colors">Mark Paid</button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-zinc-500">
+                      <span>Shareable link:</span>
+                      <code className="bg-zinc-900 border border-white/10 px-3 py-1 text-gold-500 font-mono text-xs">{window.location.origin}?ref={selectedAffiliateDetail.affiliate.referral_code}</code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-        {/* Images Tab */}
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Affiliate Program</h2>
+                <p className="text-zinc-500 text-sm">{affiliates.length} affiliates</p>
+              </div>
+              <button data-testid="add-affiliate-btn" onClick={() => setShowAddAffiliate(true)} className="bg-gold-500 hover:bg-gold-400 text-black px-5 py-2 font-bold uppercase tracking-widest text-xs transition-colors flex items-center gap-2">
+                <Plus className="w-4 h-4" /> Add Affiliate
+              </button>
+            </div>
+            {showAddAffiliate && (
+              <div className="bg-charcoal border border-gold-500/30 p-6 mb-8">
+                <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">New Affiliate</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <input data-testid="affiliate-name" type="text" value={affiliateForm.name} onChange={e => setAffiliateForm(p => ({...p, name: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Full Name" />
+                  <input data-testid="affiliate-email" type="email" value={affiliateForm.email} onChange={e => setAffiliateForm(p => ({...p, email: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Email" />
+                  <input data-testid="affiliate-code" type="text" value={affiliateForm.referral_code} onChange={e => setAffiliateForm(p => ({...p, referral_code: e.target.value.toUpperCase()}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none font-mono uppercase" placeholder="Code (e.g. WARREN)" />
+                  <input data-testid="affiliate-rate" type="number" value={affiliateForm.commission_rate} onChange={e => setAffiliateForm(p => ({...p, commission_rate: parseFloat(e.target.value) || 0}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Commission %" />
+                </div>
+                <div className="flex gap-3">
+                  <button data-testid="save-affiliate-btn" onClick={createAffiliate} className="bg-gold-500 hover:bg-gold-400 text-black px-6 py-2 font-bold uppercase tracking-widest text-xs transition-colors">Create</button>
+                  <button onClick={() => setShowAddAffiliate(false)} className="bg-zinc-700 text-white px-6 py-2 text-xs uppercase tracking-widest">Cancel</button>
+                </div>
+              </div>
+            )}
+            {affiliates.length === 0 ? (
+              <div className="bg-charcoal border border-white/5 p-12 text-center">
+                <Users className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+                <p className="text-zinc-400">No affiliates yet</p>
+                <p className="text-zinc-600 text-sm mt-1">Click "Add Affiliate" to start the referral program</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {affiliates.map(aff => (
+                  <div key={aff.id} className="bg-charcoal border border-white/5 hover:border-gold-500/30 transition-colors p-5">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <button onClick={() => fetchAffiliateDetail(aff.id)} className="text-gold-500 hover:text-gold-400 hover:underline font-bold text-base transition-colors">{aff.name}</button>
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 ${aff.is_active ? 'bg-cannabis-green/20 text-cannabis-green' : 'bg-red-500/20 text-red-500'}`}>{aff.is_active ? 'Active' : 'Inactive'}</span>
+                        </div>
+                        <div className="flex items-center gap-4 text-zinc-400 text-sm">
+                          <span className="font-mono text-gold-500/70">?ref={aff.referral_code}</span>
+                          <span>{aff.email}</span>
+                          <span>{aff.commission_rate}% commission</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="text-center"><p className="text-white font-bold text-lg">{aff.total_referrals}</p><p className="text-zinc-600 text-[10px] uppercase">Referrals</p></div>
+                        <div className="text-center"><p className="text-cannabis-green font-bold text-lg">{aff.total_conversions}</p><p className="text-zinc-600 text-[10px] uppercase">Sales</p></div>
+                        <div className="text-center"><p className="text-gold-500 font-bold text-lg">${aff.total_commission.toLocaleString()}</p><p className="text-zinc-600 text-[10px] uppercase">Commission</p></div>
+                        <button onClick={async () => { await axios.put(`${API}/admin/affiliates/${aff.id}/toggle`, {}, { headers: { Authorization: `Bearer ${adminToken}` } }); fetchAffiliates(); }}
+                          className={`text-xs font-bold uppercase px-3 py-1.5 transition-colors ${aff.is_active ? 'bg-yellow-500/20 text-yellow-500' : 'bg-cannabis-green/20 text-cannabis-green'}`}>
+                          {aff.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
         {activeTab === 'images' && (
           <>
             <div className="flex justify-between items-center mb-8">

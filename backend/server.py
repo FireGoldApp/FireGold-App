@@ -50,6 +50,7 @@ class UserRegister(BaseModel):
     phone: str
     password: str
     license_number: Optional[str] = None
+    referral_code: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -344,6 +345,47 @@ class SampleRequest(BaseModel):
     message: Optional[str] = None
     status: str = "pending"  # pending, approved, shipped, rejected
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# Affiliate Models
+class AffiliateCreate(BaseModel):
+    user_id: Optional[str] = None  # Link to existing user, or standalone
+    name: str
+    email: EmailStr
+    referral_code: str  # Custom code like "WARREN"
+    commission_rate: float = 10.0  # Percentage
+
+class Affiliate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: Optional[str] = None
+    name: str
+    email: str
+    referral_code: str
+    commission_rate: float = 10.0
+    is_active: bool = True
+    total_referrals: int = 0
+    total_conversions: int = 0
+    total_revenue: float = 0.0
+    total_commission: float = 0.0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ReferralEvent(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    affiliate_id: str
+    referral_code: str
+    referred_user_id: Optional[str] = None
+    referred_email: Optional[str] = None
+    event_type: str  # "registration", "inquiry", "conversion"
+    inquiry_id: Optional[str] = None
+    sale_amount: Optional[float] = None
+    commission_amount: Optional[float] = None
+    status: str = "pending"  # pending, converted, paid
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 
 # Strain image mapping (filename in /strains/ folder)
 STRAIN_IMAGE_MAP = {
@@ -1163,6 +1205,25 @@ async def register_user(user_data: UserRegister):
     session_doc = session.model_dump()
     session_doc['session_start'] = session_doc['session_start'].isoformat()
     await db.user_sessions.insert_one(session_doc)
+    
+    # Track affiliate referral if present
+    if user_data.referral_code:
+        affiliate = await db.affiliates.find_one(
+            {"referral_code": user_data.referral_code.upper(), "is_active": True}, {"_id": 0}
+        )
+        if affiliate:
+            ref_event = ReferralEvent(
+                affiliate_id=affiliate["id"],
+                referral_code=affiliate["referral_code"],
+                referred_user_id=user.id,
+                referred_email=user.email,
+                event_type="registration"
+            )
+            ref_doc = ref_event.model_dump()
+            ref_doc["created_at"] = ref_doc["created_at"].isoformat()
+            await db.referral_events.insert_one(ref_doc)
+            # Store the referral code on the user
+            await db.users.update_one({"id": user.id}, {"$set": {"referred_by": affiliate["referral_code"]}})
     
     return {
         "message": "Registration successful",
@@ -2614,6 +2675,238 @@ async def update_inquiry_status(
         raise HTTPException(status_code=404, detail="Inquiry not found")
 
     return {"message": f"Inquiry marked as {body.status}", "inquiry_id": inquiry_id}
+
+
+# ============== AFFILIATE SYSTEM ==============
+
+@api_router.post("/admin/affiliates")
+async def create_affiliate(body: AffiliateCreate, token: str = Depends(verify_admin_token)):
+    """Create a new affiliate (admin only)"""
+    # Check for duplicate code
+    existing = await db.affiliates.find_one({"referral_code": body.referral_code.upper()}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Referral code already exists")
+    
+    affiliate = Affiliate(
+        user_id=body.user_id,
+        name=body.name,
+        email=body.email,
+        referral_code=body.referral_code.upper(),
+        commission_rate=body.commission_rate
+    )
+    doc = affiliate.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    await db.affiliates.insert_one(doc)
+    del doc["_id"]
+    return doc
+
+@api_router.get("/admin/affiliates")
+async def get_affiliates(token: str = Depends(verify_admin_token)):
+    """Get all affiliates with stats"""
+    affiliates = await db.affiliates.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    
+    # Enrich with live referral counts
+    for aff in affiliates:
+        ref_count = await db.referral_events.count_documents({"affiliate_id": aff["id"]})
+        conv_count = await db.referral_events.count_documents({"affiliate_id": aff["id"], "event_type": "conversion"})
+        
+        # Calculate totals from conversion events
+        conversions = await db.referral_events.find(
+            {"affiliate_id": aff["id"], "event_type": "conversion"}, {"_id": 0}
+        ).to_list(500)
+        total_revenue = sum(c.get("sale_amount", 0) or 0 for c in conversions)
+        total_commission = sum(c.get("commission_amount", 0) or 0 for c in conversions)
+        
+        aff["total_referrals"] = ref_count
+        aff["total_conversions"] = conv_count
+        aff["total_revenue"] = total_revenue
+        aff["total_commission"] = total_commission
+    
+    return affiliates
+
+@api_router.get("/admin/affiliates/{affiliate_id}")
+async def get_affiliate_detail(affiliate_id: str, token: str = Depends(verify_admin_token)):
+    """Get detailed affiliate profile with all referral events"""
+    affiliate = await db.affiliates.find_one({"id": affiliate_id}, {"_id": 0})
+    if not affiliate:
+        raise HTTPException(status_code=404, detail="Affiliate not found")
+    
+    events = await db.referral_events.find(
+        {"affiliate_id": affiliate_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(500)
+    
+    # Get referred users info
+    referred_user_ids = [e.get("referred_user_id") for e in events if e.get("referred_user_id")]
+    user_map = {}
+    if referred_user_ids:
+        users = await db.users.find({"id": {"$in": referred_user_ids}}, {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "email": 1, "company": 1}).to_list(500)
+        user_map = {u["id"]: u for u in users}
+    
+    for evt in events:
+        if evt.get("referred_user_id") and evt["referred_user_id"] in user_map:
+            evt["referred_user"] = user_map[evt["referred_user_id"]]
+    
+    total_revenue = sum(e.get("sale_amount", 0) or 0 for e in events if e.get("event_type") == "conversion")
+    total_commission = sum(e.get("commission_amount", 0) or 0 for e in events if e.get("event_type") == "conversion")
+    pending_commission = sum(e.get("commission_amount", 0) or 0 for e in events if e.get("status") == "pending" and e.get("event_type") == "conversion")
+    paid_commission = sum(e.get("commission_amount", 0) or 0 for e in events if e.get("status") == "paid")
+    
+    return {
+        "affiliate": affiliate,
+        "events": events,
+        "stats": {
+            "total_referrals": len(events),
+            "total_conversions": len([e for e in events if e.get("event_type") == "conversion"]),
+            "total_revenue": total_revenue,
+            "total_commission": total_commission,
+            "pending_commission": pending_commission,
+            "paid_commission": paid_commission
+        }
+    }
+
+@api_router.put("/admin/affiliates/{affiliate_id}")
+async def update_affiliate(affiliate_id: str, body: AffiliateCreate, token: str = Depends(verify_admin_token)):
+    """Update affiliate details"""
+    update = {
+        "name": body.name,
+        "email": body.email,
+        "referral_code": body.referral_code.upper(),
+        "commission_rate": body.commission_rate,
+        "is_active": True
+    }
+    result = await db.affiliates.update_one({"id": affiliate_id}, {"$set": update})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Affiliate not found")
+    return {"message": "Affiliate updated"}
+
+@api_router.put("/admin/affiliates/{affiliate_id}/toggle")
+async def toggle_affiliate(affiliate_id: str, token: str = Depends(verify_admin_token)):
+    """Toggle affiliate active/inactive"""
+    affiliate = await db.affiliates.find_one({"id": affiliate_id}, {"_id": 0, "is_active": 1})
+    if not affiliate:
+        raise HTTPException(status_code=404, detail="Affiliate not found")
+    new_status = not affiliate.get("is_active", True)
+    await db.affiliates.update_one({"id": affiliate_id}, {"$set": {"is_active": new_status}})
+    return {"message": f"Affiliate {'activated' if new_status else 'deactivated'}", "is_active": new_status}
+
+# Record a conversion (admin marks an inquiry as a sale)
+class ConversionCreate(BaseModel):
+    inquiry_id: str
+    sale_amount: float
+
+@api_router.post("/admin/affiliates/conversion")
+async def record_conversion(body: ConversionCreate, token: str = Depends(verify_admin_token)):
+    """Record a sale conversion tied to an affiliate referral"""
+    # Find the inquiry
+    inquiry = await db.inquiries.find_one({"id": body.inquiry_id}, {"_id": 0})
+    if not inquiry:
+        raise HTTPException(status_code=404, detail="Inquiry not found")
+    
+    # Check if this user was referred
+    ref_code = inquiry.get("referral_code")
+    referred_user_id = inquiry.get("user_id")
+    
+    # Find referral event for this user/inquiry
+    affiliate = None
+    if ref_code:
+        affiliate = await db.affiliates.find_one({"referral_code": ref_code, "is_active": True}, {"_id": 0})
+    
+    if not affiliate and referred_user_id:
+        # Check if user was referred during registration
+        ref_event = await db.referral_events.find_one(
+            {"referred_user_id": referred_user_id, "event_type": "registration"}, {"_id": 0}
+        )
+        if ref_event:
+            affiliate = await db.affiliates.find_one({"id": ref_event["affiliate_id"]}, {"_id": 0})
+    
+    if not affiliate:
+        raise HTTPException(status_code=400, detail="No affiliate referral found for this inquiry")
+    
+    commission = body.sale_amount * (affiliate["commission_rate"] / 100)
+    
+    event = ReferralEvent(
+        affiliate_id=affiliate["id"],
+        referral_code=affiliate["referral_code"],
+        referred_user_id=referred_user_id,
+        referred_email=inquiry.get("email"),
+        event_type="conversion",
+        inquiry_id=body.inquiry_id,
+        sale_amount=body.sale_amount,
+        commission_amount=commission,
+        status="pending"
+    )
+    doc = event.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    await db.referral_events.insert_one(doc)
+    del doc["_id"]
+    
+    # Mark inquiry as converted
+    await db.inquiries.update_one({"id": body.inquiry_id}, {"$set": {"status": "converted", "sale_amount": body.sale_amount}})
+    
+    return {"message": f"Conversion recorded. Commission: ${commission:.2f}", "event": doc}
+
+@api_router.put("/admin/referrals/{event_id}/paid")
+async def mark_referral_paid(event_id: str, token: str = Depends(verify_admin_token)):
+    """Mark a referral commission as paid"""
+    result = await db.referral_events.update_one({"id": event_id}, {"$set": {"status": "paid"}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Referral event not found")
+    return {"message": "Commission marked as paid"}
+
+# Public: Resolve referral code (for tracking on frontend)
+@api_router.get("/affiliate/resolve/{code}")
+async def resolve_referral_code(code: str):
+    """Check if a referral code is valid"""
+    affiliate = await db.affiliates.find_one(
+        {"referral_code": code.upper(), "is_active": True},
+        {"_id": 0, "id": 1, "name": 1, "referral_code": 1}
+    )
+    if not affiliate:
+        return {"valid": False}
+    return {"valid": True, "affiliate_name": affiliate["name"], "referral_code": affiliate["referral_code"]}
+
+# Affiliate dashboard (for affiliates themselves)
+@api_router.get("/affiliate/dashboard/{code}")
+async def get_affiliate_dashboard(code: str):
+    """Public dashboard for affiliates to see their stats"""
+    affiliate = await db.affiliates.find_one({"referral_code": code.upper()}, {"_id": 0})
+    if not affiliate:
+        raise HTTPException(status_code=404, detail="Affiliate not found")
+    
+    events = await db.referral_events.find(
+        {"affiliate_id": affiliate["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(500)
+    
+    registrations = [e for e in events if e.get("event_type") == "registration"]
+    conversions = [e for e in events if e.get("event_type") == "conversion"]
+    
+    total_revenue = sum(c.get("sale_amount", 0) or 0 for c in conversions)
+    total_commission = sum(c.get("commission_amount", 0) or 0 for c in conversions)
+    pending = sum(c.get("commission_amount", 0) or 0 for c in conversions if c.get("status") == "pending")
+    paid = sum(c.get("commission_amount", 0) or 0 for c in conversions if c.get("status") == "paid")
+    
+    return {
+        "name": affiliate["name"],
+        "referral_code": affiliate["referral_code"],
+        "commission_rate": affiliate["commission_rate"],
+        "is_active": affiliate["is_active"],
+        "stats": {
+            "total_referrals": len(registrations),
+            "total_conversions": len(conversions),
+            "total_revenue": total_revenue,
+            "total_commission": total_commission,
+            "pending_commission": pending,
+            "paid_commission": paid
+        },
+        "recent_events": [{
+            "type": e.get("event_type"),
+            "date": e.get("created_at"),
+            "sale_amount": e.get("sale_amount"),
+            "commission": e.get("commission_amount"),
+            "status": e.get("status")
+        } for e in events[:20]]
+    }
+
 
 @api_router.post("/sample-requests/upload")
 async def create_sample_request_with_files(
