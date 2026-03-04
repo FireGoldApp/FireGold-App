@@ -2665,6 +2665,29 @@ const AdminPage = () => {
   const [analyticsView, setAnalyticsView] = useState('overview'); // overview, users, user-detail, engagement
   const [userActivityReport, setUserActivityReport] = useState([]);
   const [userActivitySort, setUserActivitySort] = useState('login_count');
+  const [columnSort, setColumnSort] = useState({ key: 'login_count', dir: 'desc' });
+
+  const handleColumnSort = (key) => {
+    setColumnSort(prev => ({
+      key,
+      dir: prev.key === key && prev.dir === 'desc' ? 'asc' : 'desc'
+    }));
+  };
+
+  const sortedActivityReport = useMemo(() => {
+    if (!userActivityReport.length) return [];
+    const { key, dir } = columnSort;
+    return [...userActivityReport].sort((a, b) => {
+      let aVal = a[key];
+      let bVal = b[key];
+      if (key === 'name') { aVal = (a.name || '').toLowerCase(); bVal = (b.name || '').toLowerCase(); }
+      if (key === 'company') { aVal = (a.company || '').toLowerCase(); bVal = (b.company || '').toLowerCase(); }
+      if (key === 'last_active') { aVal = aVal ? new Date(aVal).getTime() : 0; bVal = bVal ? new Date(bVal).getTime() : 0; }
+      if (aVal < bVal) return dir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [userActivityReport, columnSort]);
   const [selectedUserDetail, setSelectedUserDetail] = useState(null);
   const [engagementData, setEngagementData] = useState(null);
   const [globalData, setGlobalData] = useState(null);
@@ -4325,20 +4348,36 @@ const AdminPage = () => {
                     <table className="w-full" data-testid="user-activity-table">
                       <thead className="bg-zinc-900">
                         <tr>
-                          <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">User</th>
-                          <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Company</th>
-                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Logins</th>
-                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Events</th>
-                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Strains</th>
-                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Searches</th>
-                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">COA Views</th>
-                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Samples</th>
-                          <th className="text-center text-zinc-500 text-xs uppercase tracking-widest p-4">Time Spent</th>
-                          <th className="text-left text-zinc-500 text-xs uppercase tracking-widest p-4">Last Active</th>
+                          {[
+                            { key: 'name', label: 'User', align: 'left' },
+                            { key: 'company', label: 'Company', align: 'left' },
+                            { key: 'login_count', label: 'Logins', align: 'center' },
+                            { key: 'total_events', label: 'Events', align: 'center' },
+                            { key: 'strains_viewed', label: 'Strains', align: 'center' },
+                            { key: 'searches', label: 'Searches', align: 'center' },
+                            { key: 'coa_views', label: 'COA Views', align: 'center' },
+                            { key: 'sample_requests', label: 'Samples', align: 'center' },
+                            { key: 'total_duration_seconds', label: 'Time Spent', align: 'center' },
+                            { key: 'last_active', label: 'Last Active', align: 'left' },
+                          ].map(col => (
+                            <th
+                              key={col.key}
+                              data-testid={`sort-col-${col.key}`}
+                              onClick={() => handleColumnSort(col.key)}
+                              className={`text-${col.align} text-xs uppercase tracking-widest p-4 cursor-pointer select-none transition-colors hover:text-gold-500 ${
+                                columnSort.key === col.key ? 'text-gold-500' : 'text-zinc-500'
+                              }`}
+                            >
+                              {col.label}
+                              {columnSort.key === col.key && (
+                                <span className="ml-1">{columnSort.dir === 'desc' ? '\u25BC' : '\u25B2'}</span>
+                              )}
+                            </th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {userActivityReport.map((u, i) => (
+                        {sortedActivityReport.map((u, i) => (
                           <tr
                             key={u.user_id}
                             data-testid={`user-row-${u.user_id}`}
