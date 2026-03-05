@@ -2456,7 +2456,7 @@ const AuthPage = ({ onAuth }) => {
                 <select
                   data-testid="register-open-permit"
                   value={registerData.open_permit}
-                  onChange={(e) => setRegisterData(prev => ({ ...prev, open_permit: e.target.value }))}
+                  onChange={(e) => setRegisterData(prev => ({ ...prev, open_permit: e.target.value, permit_jurisdiction: e.target.value !== 'Yes' ? '' : prev.permit_jurisdiction }))}
                   className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
                 >
                   <option value="">Select...</option>
@@ -2944,6 +2944,9 @@ const AdminPage = () => {
       grade_c_kg: strain.grade_c_kg || '',
       harvest_date: strain.harvest_date || '',
       growing_method: strain.growing_method || 'Indoor',
+      category: strain.category || 'Dried Flower',
+      bc_dd_compliant: strain.bc_dd_compliant || false,
+      terpene_percentage: strain.terpene_percentage || '',
       grower_company: strain.grower_company || '',
       grower_name: strain.grower_name || '',
       grower_email: strain.grower_email || ''
@@ -2961,6 +2964,9 @@ const AdminPage = () => {
         grade_c_kg: parseFloat(editForm.grade_c_kg) || null,
         harvest_date: editForm.harvest_date || null,
         growing_method: editForm.growing_method || null,
+        category: editForm.category || null,
+        bc_dd_compliant: editForm.bc_dd_compliant || false,
+        terpene_percentage: parseFloat(editForm.terpene_percentage) || null,
         grower_company: editForm.grower_company || null,
         grower_name: editForm.grower_name || null,
         grower_email: editForm.grower_email || null
@@ -3489,7 +3495,9 @@ const AdminPage = () => {
     lineage: '',
     lot_size: '',
     effects: '',
-    bc_dd_compliant: false
+    bc_dd_compliant: false,
+    terpene_percentage: '',
+    category: 'Dried Flower'
   });
   const [newStrainImage, setNewStrainImage] = useState(null);
   const [addingStrain, setAddingStrain] = useState(false);
@@ -4446,6 +4454,15 @@ const AdminPage = () => {
                         className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" />
                     </div>
                     <div>
+                      <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Terpene %</label>
+                      <input data-testid="edit-strain-terpene-pct" type="number" step="0.1" min="0" value={editForm.terpene_percentage}
+                        onChange={e => setEditForm(p => ({...p, terpene_percentage: e.target.value}))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="e.g., 3.5" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
                       <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Price Tier *</label>
                       <select data-testid="edit-strain-tier" value={editForm.price_tier}
                         onChange={e => setEditForm(p => ({...p, price_tier: e.target.value}))}
@@ -4454,6 +4471,25 @@ const AdminPage = () => {
                         <option value="$$">$$</option>
                         <option value="$$$">$$$</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Category</label>
+                      <select data-testid="edit-strain-category" value={editForm.category}
+                        onChange={e => setEditForm(p => ({...p, category: e.target.value}))}
+                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none">
+                        <option value="Dried Flower">Dried Flower</option>
+                        <option value="Fresh Frozen">Fresh Frozen</option>
+                        <option value="Trim">Trim</option>
+                        <option value="Concentrates">Concentrates</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end pb-2">
+                      <label className="flex items-center gap-3 cursor-pointer" data-testid="edit-strain-bc-dd">
+                        <input type="checkbox" checked={editForm.bc_dd_compliant}
+                          onChange={e => setEditForm(p => ({...p, bc_dd_compliant: e.target.checked}))}
+                          className="w-5 h-5 accent-gold-500" />
+                        <span className="text-white font-bold text-xs uppercase tracking-widest">BC DD Compliant</span>
+                      </label>
                     </div>
                   </div>
 
@@ -7229,7 +7265,7 @@ const CatalogPage = () => {
     setIsAuthenticated(true);
     fetchStrains(token);
     // Replace history so back button doesn't go to login
-    window.history.replaceState(null, '', '/');
+    window.history.replaceState({ page: 'catalog' }, '', '/');
     trackEvent('page_view', { page: 'catalog', event_data: { first_visit: true } });
   };
 
@@ -7241,8 +7277,20 @@ const CatalogPage = () => {
     setUserData(null);
     setIsAuthenticated(false);
     setStrains([]);
-    window.history.replaceState(null, '', '/');
+    window.history.replaceState({ page: 'login' }, '', '/');
   };
+
+  // Handle browser back button for internal views
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (viewingStrain) {
+        e.preventDefault();
+        setViewingStrain(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [viewingStrain]);
 
   const fetchStrains = async (token) => {
     try {
@@ -7287,6 +7335,7 @@ const CatalogPage = () => {
   // Track strain view
   const handleViewStrain = (strain) => {
     setViewingStrain(strain);
+    window.history.pushState({ view: 'strain' }, '', '/');
     trackEvent('strain_view', {
       strain_id: strain.id,
       strain_name: strain.strain_name,
@@ -8204,7 +8253,6 @@ function App() {
           <Route path="/" element={<CatalogPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/submit-strain" element={<GrowerSubmitPage />} />
-          <Route path="/track" element={<SubmissionTracker />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/affiliate/:code" element={<AffiliateDashboard />} />
         </Routes>

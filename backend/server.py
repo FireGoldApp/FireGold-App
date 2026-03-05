@@ -275,6 +275,7 @@ class Strain(BaseModel):
     image_url: Optional[str] = None
     coa_url: Optional[str] = None  # Path to redacted COA PDF
     bc_dd_compliant: Optional[bool] = False  # BC Direct Delivery compliant
+    terpene_percentage: Optional[float] = None  # Terpene percentage
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class StrainCreate(BaseModel):
@@ -294,12 +295,13 @@ class StrainCreate(BaseModel):
     growing_method: Optional[str] = None
     category: Optional[str] = None
     bc_dd_compliant: Optional[bool] = False
+    terpene_percentage: Optional[float] = None
     grower_company: Optional[str] = None
     grower_name: Optional[str] = None
     grower_email: Optional[str] = None
+    image_url: Optional[str] = None
 
 # Grower Submission Model
-    image_url: Optional[str] = None
 class GrowerSubmission(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     # Grower info
@@ -3932,15 +3934,22 @@ async def startup_event():
         {"category": {"$exists": False}},
         {"$set": {"category": "Dried Flower"}}
     )
+    await db.strains.update_many(
+        {"terpene_percentage": {"$exists": False}},
+        {"$set": {"terpene_percentage": None}}
+    )
     
-    # Migration: set COA URLs for strains that are missing them
+    # Migration: set COA URLs for strains — FORCE update to ensure data consistency across environments
     COA_MAPPING = {"Jealousy": "/coa/5b2e6ecc-77a3-4488-915e-c8b9f8926c14.pdf", "AIS": "/coa/341d303a-8d1e-4d28-b09b-86484d179a39.pdf", "Animal Mints": "/coa/ab4b23c6-5b79-4dcb-93ed-d470b4b7234e.pdf", "Black Tuna": "/coa/032e5b6b-c18f-4e36-aebb-f18b6b216101.pdf", "Bubble Gum": "/coa/ed0bf094-4e22-41ec-b466-1c45e9dff15c.pdf", "BCC": "/coa/32635610-bd85-4c6b-a67d-379102bf1bff.pdf", "Cadillac Rainbows": "/coa/97db0b6b-75e0-4c04-a31f-294e4aa05692.pdf", "Cerberus": "/coa/636ef5a0-a511-41fd-a303-16284b753270.pdf", "Chemo Kush": "/coa/341f9778-edd6-4c84-915b-e3ade4a0d9eb.pdf", "Crystal Caviar": "/coa/b5c07ca3-f82d-4d69-9e2e-f003d4312e33.pdf", "G-Force": "/coa/85669ca0-7670-47f5-a615-93c38c395fd2.pdf", "Grape Galena": "/coa/0b320b8b-4cc7-4649-baf0-04cac3fa7a6e.pdf", "Integrator": "/coa/1cd0eb7f-212f-44a4-8af6-2523e14d4d84.pdf", "Jager": "/coa/b7bd1ee7-ca53-44ce-a4b5-46575b65fd6d.pdf", "Juciy Jay": "/coa/73a92ea9-603b-49a3-9fa2-d8264f558bdc.pdf", "London Zoap": "/coa/088578d9-5f65-4145-8ba3-73e0aa3265aa.pdf", "Marshmallow OG": "/coa/6675e526-c92e-444f-bbc0-20442b5a55fa.pdf", "MAC 1": "/coa/3df312de-a234-4f01-8da6-7eecd67d2828.pdf", "Motor Breath": "/coa/8ff0f974-acce-4974-a60d-5eb5428bdfdc.pdf", "Papaya Bombs": "/coa/1af59a60-db2b-43e6-ace4-7e52d153a39b.pdf", "Purple Platinum": "/coa/7f697039-1bb0-4aa4-9020-060561c29f27.pdf", "Rainbow": "/coa/3001ec99-75a1-4d27-b8d7-b40c4de9fcd1.pdf", "Runtz Coffin Candy": "/coa/59e90613-b651-4760-8937-08d611bee1d5.pdf", "Rainbow Driver": "/coa/b88e4b94-0ba1-48fa-8827-9cd434ea84e3.pdf", "King  Sherb": "/coa/21a73034-8c3c-4f16-b0a6-9b8622ea87e3.pdf", "Souffle": "/coa/38da590c-3713-4e2d-b7f6-abc4fc39dd68.pdf", "Strawberry Froyo": "/coa/1f9ec6cb-bd5f-497e-95ca-87e5a577c4d7.pdf", "24K gold ": "/coa/d592440b-0c92-4400-a87c-814f32bd3770.pdf", "Garlic Funk ": "/coa/63a73a22-f671-45e4-af43-7a6898aeb453.pdf", "Garlic Funk": "/coa/033b68c1-f54f-4156-8bdf-9a5e92d76aaf.pdf", "Dantes Inferno": "/coa/677ad769-3c4f-4e1d-ad30-592624cd5953.pdf", "Sunset Struedel": "/coa/e1a86ff2-d648-431c-9ce1-f8259ac17f45.pdf"}
+    coa_updated = 0
     for strain_name, coa_path in COA_MAPPING.items():
-        await db.strains.update_many(
-            {"strain_name": strain_name, "$or": [{"coa_url": None}, {"coa_url": {"$exists": False}}]},
+        # Force-update: use case-insensitive match and always set the coa_url
+        result = await db.strains.update_many(
+            {"strain_name": {"$regex": f"^{strain_name.strip()}$", "$options": "i"}},
             {"$set": {"coa_url": coa_path}}
         )
-    logger.info("COA migration complete")
+        coa_updated += result.modified_count
+    logger.info(f"COA migration complete — updated {coa_updated} strains")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
