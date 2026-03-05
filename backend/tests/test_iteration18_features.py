@@ -12,7 +12,7 @@ from datetime import datetime
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://firegold-preview.preview.emergentagent.com"
+    BASE_URL = "https://flower-marketplace-2.preview.emergentagent.com"
 
 ADMIN_PASSWORD = "firegold2026"
 

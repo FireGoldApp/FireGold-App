@@ -3198,7 +3198,8 @@ async def get_affiliate_dashboard(code: str):
     return {
         "name": affiliate["name"],
         "referral_code": affiliate["referral_code"],
-        "commission_rate": affiliate["commission_rate"],
+        "commission_type": affiliate.get("commission_type", "per_gram"),
+        "commission_value": affiliate.get("commission_value", 0),
         "is_active": affiliate["is_active"],
         "stats": {
             "total_referrals": len(registrations),
@@ -3503,6 +3504,51 @@ async def mark_message_read(message_id: str, token: str = Depends(verify_admin_t
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Message not found")
     return {"message": "Marked as read"}
+
+@api_router.delete("/admin/contact-messages/{message_id}")
+async def delete_contact_message(message_id: str, token: str = Depends(verify_admin_token)):
+    """Delete a contact message"""
+    result = await db.contact_messages.delete_one({"id": message_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return {"message": "Message deleted"}
+
+class ReplyMessageBody(BaseModel):
+    reply_text: str
+
+@api_router.post("/admin/contact-messages/{message_id}/reply")
+async def reply_to_message(message_id: str, body: ReplyMessageBody, token: str = Depends(verify_admin_token)):
+    """Reply to a contact message via email"""
+    msg = await db.contact_messages.find_one({"id": message_id}, {"_id": 0})
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    # Send reply email
+    await send_email(
+        msg["email"],
+        f"Re: Your message to Firegold",
+        email_template("Reply from Firegold", f"""
+            <p>Hi {msg['name']},</p>
+            <p>Thank you for reaching out. Here is our response:</p>
+            <div style="background: #111; padding: 15px; border-left: 3px solid #D4AF37; margin: 15px 0;">
+                {body.reply_text.replace(chr(10), '<br>')}
+            </div>
+            <hr style="border-color: #333; margin: 20px 0;">
+            <p style="color: #888; font-size: 12px;">Your original message:</p>
+            <p style="color: #aaa; font-style: italic;">{msg['message']}</p>
+        """)
+    )
+    
+    # Update message status and store reply
+    reply_record = {
+        "text": body.reply_text,
+        "sent_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.contact_messages.update_one(
+        {"id": message_id},
+        {"$set": {"status": "replied"}, "$push": {"replies": reply_record}}
+    )
+    return {"message": "Reply sent successfully"}
 
 app.include_router(api_router)
 

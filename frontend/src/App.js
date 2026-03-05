@@ -1,5 +1,5 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
@@ -2852,12 +2852,20 @@ const AdminPage = () => {
   const [selectedAffiliateDetail, setSelectedAffiliateDetail] = useState(null);
   const [conversionForm, setConversionForm] = useState({ inquiry_id: '', sale_amount: '' });
 
+  // Messages state
+  const [contactMessages, setContactMessages] = useState([]);
+  const [replyingMessage, setReplyingMessage] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+  const [messagesFilter, setMessagesFilter] = useState('all');
+
   // Sort state for all admin tabs
   const [usersSort, setUsersSort] = useState({ key: 'created_at', dir: 'desc' });
   const [submissionsSort, setSubmissionsSort] = useState({ key: 'created_at', dir: 'desc' });
   const [inquiriesSort, setInquiriesSort] = useState({ key: 'created_at', dir: 'desc' });
   const [directorySort, setDirectorySort] = useState({ key: 'strain_name', dir: 'asc' });
   const [affiliatesSort, setAffiliatesSort] = useState({ key: 'total_referrals', dir: 'desc' });
+  const [messagesSort, setMessagesSort] = useState({ key: 'created_at', dir: 'desc' });
 
   const makeSortHandler = (setter) => (key) => {
     setter(prev => ({ key, dir: prev.key === key && prev.dir === 'desc' ? 'asc' : 'desc' }));
@@ -3004,6 +3012,61 @@ const AdminPage = () => {
       setAffiliates(response.data);
     } catch (err) {
       console.error('Failed to load affiliates');
+    }
+  };
+
+  const fetchContactMessages = async (token) => {
+    try {
+      const response = await axios.get(`${API}/admin/contact-messages`, {
+        headers: { Authorization: `Bearer ${token || adminToken}` }
+      });
+      setContactMessages(response.data);
+    } catch (err) {
+      console.error('Failed to load messages');
+    }
+  };
+
+  const handleMarkRead = async (messageId) => {
+    try {
+      await axios.put(`${API}/admin/contact-messages/${messageId}/read`, {}, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setContactMessages(prev => prev.map(m => m.id === messageId ? {...m, status: 'read'} : m));
+      toast.success('Marked as read');
+    } catch (err) {
+      toast.error('Failed to update message');
+    }
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm('Delete this message permanently?')) return;
+    try {
+      await axios.delete(`${API}/admin/contact-messages/${messageId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setContactMessages(prev => prev.filter(m => m.id !== messageId));
+      toast.success('Message deleted');
+    } catch (err) {
+      toast.error('Failed to delete message');
+    }
+  };
+
+  const handleReplyMessage = async () => {
+    if (!replyText.trim()) return;
+    setSendingReply(true);
+    try {
+      await axios.post(`${API}/admin/contact-messages/${replyingMessage.id}/reply`, 
+        { reply_text: replyText },
+        { headers: { Authorization: `Bearer ${adminToken}` } }
+      );
+      setContactMessages(prev => prev.map(m => m.id === replyingMessage.id ? {...m, status: 'replied'} : m));
+      toast.success('Reply sent to ' + replyingMessage.email);
+      setReplyingMessage(null);
+      setReplyText('');
+    } catch (err) {
+      toast.error('Failed to send reply');
+    } finally {
+      setSendingReply(false);
     }
   };
 
@@ -3157,6 +3220,7 @@ const AdminPage = () => {
     fetchSubmissions(token);
     fetchInventory(token);
     fetchAdminInquiries(token);
+    fetchContactMessages(token);
   };
 
   const handleLogout = async () => {
@@ -3678,6 +3742,20 @@ const AdminPage = () => {
             }`}
           >
             <Users className="w-4 h-4 inline mr-2" />Affiliates
+          </button>
+          <button
+            onClick={() => { setActiveTab('messages'); fetchContactMessages(); }}
+            data-testid="admin-tab-messages"
+            className={`px-6 py-2 font-bold uppercase tracking-widest text-sm transition-all relative ${
+              activeTab === 'messages' ? 'bg-gold-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <MessageCircle className="w-4 h-4 inline mr-2" />Messages
+            {contactMessages.filter(m => m.status === 'unread').length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                {contactMessages.filter(m => m.status === 'unread').length}
+              </span>
+            )}
           </button>
         </div>
         {/* Affiliates Tab */}
@@ -6326,9 +6404,139 @@ const AdminPage = () => {
             )}
           </>
         )}
-      </main>
+        {activeTab === 'messages' && (
+          <>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+              <div>
+                <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Messages</h2>
+                <p className="text-zinc-500 text-sm">{contactMessages.length} messages · {contactMessages.filter(m => m.status === 'unread').length} unread</p>
+              </div>
+              <div className="flex gap-2">
+                {['all', 'unread', 'read', 'replied'].map(f => (
+                  <button key={f} onClick={() => setMessagesFilter(f)}
+                    data-testid={`messages-filter-${f}`}
+                    className={`px-4 py-2 text-xs uppercase tracking-widest font-bold transition-all ${messagesFilter === f ? 'bg-gold-500 text-black' : 'bg-zinc-900 text-zinc-400 hover:text-white border border-white/5'}`}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-      {/* Edit Affiliate Modal */}
+            {/* Reply Modal */}
+            {replyingMessage && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { setReplyingMessage(null); setReplyText(''); }} />
+                <div data-testid="reply-message-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-lg p-8">
+                  <button onClick={() => { setReplyingMessage(null); setReplyText(''); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+                  <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest mb-2">Reply</h2>
+                  <p className="text-zinc-500 text-sm mb-4">To: {replyingMessage.name} ({replyingMessage.email})</p>
+                  <div className="bg-zinc-900 border border-white/5 p-4 mb-4">
+                    <p className="text-zinc-500 text-xs uppercase tracking-widest mb-2">Original Message</p>
+                    <p className="text-zinc-300 text-sm">{replyingMessage.message}</p>
+                  </div>
+                  <textarea
+                    data-testid="reply-text-input"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Type your reply..."
+                    rows={5}
+                    className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white px-4 py-3 outline-none text-sm resize-none mb-4"
+                  />
+                  <button
+                    data-testid="send-reply-btn"
+                    onClick={handleReplyMessage}
+                    disabled={sendingReply || !replyText.trim()}
+                    className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-zinc-700 text-black font-bold uppercase tracking-widest px-6 py-3 transition-all"
+                  >
+                    {sendingReply ? 'Sending...' : 'Send Reply'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {sortData(
+              contactMessages.filter(m => messagesFilter === 'all' || m.status === messagesFilter),
+              messagesSort
+            ).length === 0 ? (
+              <div className="bg-zinc-900/30 border border-white/5 p-12 text-center">
+                <MessageCircle className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+                <p className="text-zinc-500">No messages found</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Sort headers */}
+                <div className="grid grid-cols-12 gap-4 px-6 py-3 text-xs uppercase tracking-widest text-zinc-600 border-b border-white/5">
+                  <div className="col-span-2 cursor-pointer hover:text-gold-500" onClick={() => makeSortHandler(setMessagesSort)('name')}>
+                    Name {messagesSort.key === 'name' && (messagesSort.dir === 'asc' ? '↑' : '↓')}
+                  </div>
+                  <div className="col-span-2 cursor-pointer hover:text-gold-500" onClick={() => makeSortHandler(setMessagesSort)('email')}>
+                    Email {messagesSort.key === 'email' && (messagesSort.dir === 'asc' ? '↑' : '↓')}
+                  </div>
+                  <div className="col-span-1 cursor-pointer hover:text-gold-500" onClick={() => makeSortHandler(setMessagesSort)('company')}>
+                    Company {messagesSort.key === 'company' && (messagesSort.dir === 'asc' ? '↑' : '↓')}
+                  </div>
+                  <div className="col-span-3">Message</div>
+                  <div className="col-span-1 cursor-pointer hover:text-gold-500" onClick={() => makeSortHandler(setMessagesSort)('status')}>
+                    Status {messagesSort.key === 'status' && (messagesSort.dir === 'asc' ? '↑' : '↓')}
+                  </div>
+                  <div className="col-span-1 cursor-pointer hover:text-gold-500" onClick={() => makeSortHandler(setMessagesSort)('created_at')}>
+                    Date {messagesSort.key === 'created_at' && (messagesSort.dir === 'asc' ? '↑' : '↓')}
+                  </div>
+                  <div className="col-span-2 text-right">Actions</div>
+                </div>
+                {sortData(
+                  contactMessages.filter(m => messagesFilter === 'all' || m.status === messagesFilter),
+                  messagesSort
+                ).map(msg => (
+                  <div key={msg.id} data-testid={`message-row-${msg.id}`}
+                    className={`grid grid-cols-12 gap-4 px-6 py-4 border border-white/5 items-center transition-all hover:border-gold-500/30 ${msg.status === 'unread' ? 'bg-zinc-900/60 border-l-2 border-l-gold-500' : 'bg-zinc-900/20'}`}>
+                    <div className="col-span-2">
+                      <p className={`text-sm font-bold ${msg.status === 'unread' ? 'text-white' : 'text-zinc-400'}`}>{msg.name}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-zinc-400 text-sm truncate">{msg.email}</p>
+                    </div>
+                    <div className="col-span-1">
+                      <p className="text-zinc-500 text-sm truncate">{msg.company || '—'}</p>
+                    </div>
+                    <div className="col-span-3">
+                      <p className="text-zinc-300 text-sm line-clamp-2">{msg.message}</p>
+                    </div>
+                    <div className="col-span-1">
+                      <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 ${
+                        msg.status === 'unread' ? 'bg-gold-500/20 text-gold-500' : 
+                        msg.status === 'replied' ? 'bg-cannabis-green/20 text-cannabis-green' : 
+                        'bg-zinc-700/50 text-zinc-500'
+                      }`}>
+                        {msg.status}
+                      </span>
+                    </div>
+                    <div className="col-span-1">
+                      <p className="text-zinc-600 text-xs">{msg.created_at ? new Date(msg.created_at).toLocaleDateString() : '—'}</p>
+                    </div>
+                    <div className="col-span-2 flex gap-2 justify-end">
+                      {msg.status === 'unread' && (
+                        <button data-testid={`mark-read-${msg.id}`} onClick={() => handleMarkRead(msg.id)}
+                          className="text-zinc-400 hover:text-gold-500 transition-colors" title="Mark as read">
+                          <Check className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button data-testid={`reply-msg-${msg.id}`} onClick={() => { setReplyingMessage(msg); setReplyText(''); }}
+                        className="text-zinc-400 hover:text-cannabis-green transition-colors" title="Reply">
+                        <Send className="w-4 h-4" />
+                      </button>
+                      <button data-testid={`delete-msg-${msg.id}`} onClick={() => handleDeleteMessage(msg.id)}
+                        className="text-zinc-400 hover:text-red-500 transition-colors" title="Delete">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </main>
       {editingAffiliate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setEditingAffiliate(null)} />
@@ -7165,6 +7373,174 @@ const ResetPasswordPage = () => {
   );
 };
 
+// Affiliate Dashboard Component
+const AffiliateDashboard = () => {
+  const { code } = useParams();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const resp = await axios.get(`${API}/affiliate/dashboard/${code}`);
+        setData(resp.data);
+      } catch (err) {
+        setError(err.response?.data?.detail || 'Dashboard not found');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, [code]);
+
+  if (loading) return (
+    <div className="min-h-screen bg-obsidian flex items-center justify-center">
+      <div className="text-gold-500 font-mono text-sm animate-pulse">Loading dashboard...</div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen bg-obsidian flex items-center justify-center p-6">
+      <div className="bg-charcoal border border-white/10 p-12 text-center max-w-md">
+        <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+        <h2 className="font-cinzel font-bold text-xl text-white mb-2">Not Found</h2>
+        <p className="text-zinc-500 text-sm">{error}</p>
+        <a href="/" className="inline-block mt-6 text-gold-500 text-sm hover:underline">← Back to Marketplace</a>
+      </div>
+    </div>
+  );
+
+  const { stats, recent_events } = data;
+
+  const formatCommission = () => {
+    if (data.commission_type === 'per_gram') return `$${data.commission_value}/gram`;
+    if (data.commission_type === 'percentage') return `${data.commission_value}%`;
+    return `$${data.commission_value} flat`;
+  };
+
+  return (
+    <div className="min-h-screen bg-obsidian" data-testid="affiliate-dashboard">
+      {/* Header */}
+      <div className="border-b border-white/5">
+        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <img src={FIREGOLD_LOGO} alt="Firegold" className="h-12 w-auto" />
+            <div>
+              <h1 className="font-cinzel font-bold text-xl text-white">Affiliate Dashboard</h1>
+              <p className="text-zinc-500 text-sm font-mono">{data.name}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 ${data.is_active ? 'bg-cannabis-green/20 text-cannabis-green border border-cannabis-green/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+              {data.is_active ? 'Active' : 'Inactive'}
+            </span>
+            <span className="text-zinc-600 text-xs font-mono">CODE: {data.referral_code}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+          <div className="bg-charcoal border border-white/5 p-6" data-testid="stat-referrals">
+            <p className="text-zinc-500 text-xs uppercase tracking-widest mb-2">Referrals</p>
+            <p className="font-cinzel font-bold text-3xl text-white">{stats.total_referrals}</p>
+          </div>
+          <div className="bg-charcoal border border-white/5 p-6" data-testid="stat-conversions">
+            <p className="text-zinc-500 text-xs uppercase tracking-widest mb-2">Conversions</p>
+            <p className="font-cinzel font-bold text-3xl text-cannabis-green">{stats.total_conversions}</p>
+          </div>
+          <div className="bg-charcoal border border-white/5 p-6" data-testid="stat-revenue">
+            <p className="text-zinc-500 text-xs uppercase tracking-widest mb-2">Revenue Generated</p>
+            <p className="font-cinzel font-bold text-3xl text-white">${stats.total_revenue.toLocaleString()}</p>
+          </div>
+          <div className="bg-charcoal border border-white/5 p-6" data-testid="stat-commission">
+            <p className="text-zinc-500 text-xs uppercase tracking-widest mb-2">Total Commission</p>
+            <p className="font-cinzel font-bold text-3xl text-gold-500">${stats.total_commission.toLocaleString()}</p>
+          </div>
+        </div>
+
+        {/* Commission Details */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+          <div className="bg-charcoal border border-white/5 p-6">
+            <p className="text-zinc-500 text-xs uppercase tracking-widest mb-2">Commission Rate</p>
+            <p className="text-white font-bold text-lg">{formatCommission()}</p>
+          </div>
+          <div className="bg-charcoal border border-white/5 p-6">
+            <p className="text-zinc-500 text-xs uppercase tracking-widest mb-2">Pending Commission</p>
+            <p className="text-gold-500 font-bold text-lg">${stats.pending_commission.toLocaleString()}</p>
+          </div>
+          <div className="bg-charcoal border border-white/5 p-6">
+            <p className="text-zinc-500 text-xs uppercase tracking-widest mb-2">Paid Commission</p>
+            <p className="text-cannabis-green font-bold text-lg">${stats.paid_commission.toLocaleString()}</p>
+          </div>
+        </div>
+
+        {/* Your Referral Link */}
+        <div className="bg-charcoal border border-gold-500/30 p-6 mb-10">
+          <p className="text-gold-500 text-xs uppercase tracking-widest font-bold mb-3">Your Referral Link</p>
+          <div className="flex items-center gap-3">
+            <code className="flex-1 bg-black/40 border border-white/10 text-zinc-300 px-4 py-3 text-sm font-mono truncate" data-testid="referral-link">
+              {window.location.origin}/?ref={data.referral_code}
+            </code>
+            <button
+              data-testid="copy-referral-link-btn"
+              onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/?ref=${data.referral_code}`); toast.success('Link copied!'); }}
+              className="bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-6 py-3 text-sm transition-all whitespace-nowrap"
+            >
+              <Copy className="w-4 h-4 inline mr-2" />Copy
+            </button>
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div>
+          <h2 className="font-cinzel font-bold text-xl text-white mb-6">Recent Activity</h2>
+          {recent_events.length === 0 ? (
+            <div className="bg-zinc-900/30 border border-white/5 p-12 text-center">
+              <Clock className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+              <p className="text-zinc-500">No activity yet. Share your referral link to get started!</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {recent_events.map((event, idx) => (
+                <div key={idx} className="bg-charcoal border border-white/5 px-6 py-4 flex items-center justify-between" data-testid={`event-row-${idx}`}>
+                  <div className="flex items-center gap-4">
+                    <div className={`w-8 h-8 flex items-center justify-center ${event.type === 'conversion' ? 'bg-cannabis-green/20' : 'bg-gold-500/20'}`}>
+                      {event.type === 'conversion' ? <DollarSign className="w-4 h-4 text-cannabis-green" /> : <UserPlus className="w-4 h-4 text-gold-500" />}
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-bold capitalize">{event.type === 'registration' ? 'New Referral' : 'Sale Conversion'}</p>
+                      {event.sale_amount && <p className="text-zinc-500 text-xs">Sale: ${event.sale_amount.toLocaleString()}</p>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    {event.commission != null && (
+                      <span className="text-cannabis-green font-bold text-sm">+${event.commission.toLocaleString()}</span>
+                    )}
+                    {event.status && (
+                      <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 ${event.status === 'paid' ? 'bg-cannabis-green/20 text-cannabis-green' : 'bg-gold-500/20 text-gold-500'}`}>
+                        {event.status}
+                      </span>
+                    )}
+                    <span className="text-zinc-600 text-xs">{event.date ? new Date(event.date).toLocaleDateString() : ''}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-10 text-center">
+          <a href="/" className="text-zinc-500 hover:text-gold-500 text-sm transition-colors">← Back to Firegold Marketplace</a>
+        </div>
+      </div>
+      <Toaster position="top-right" theme="dark" richColors />
+    </div>
+  );
+};
+
 function App() {
   return (
     <div className="App dark">
@@ -7175,6 +7551,7 @@ function App() {
           <Route path="/submit-strain" element={<GrowerSubmitPage />} />
           <Route path="/track" element={<SubmissionTracker />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/affiliate/:code" element={<AffiliateDashboard />} />
         </Routes>
       </BrowserRouter>
     </div>
