@@ -3606,41 +3606,40 @@ async def chat_endpoint(body: ChatMessage):
         raise HTTPException(status_code=500, detail="Chat service unavailable")
     
     session_id = body.session_id or str(uuid.uuid4())
+    budget_fallback = "Thank you for your interest! Our AI assistant is temporarily at capacity. Please don't hesitate to reach out directly — you can email us at warren@firegold.ca or use the Contact Us button above, and our team will get back to you promptly."
     
-    # Load conversation history from DB
-    history = await db.chat_sessions.find_one({"session_id": session_id}, {"_id": 0})
-    
-    chat = LlmChat(
-        api_key=llm_key,
-        session_id=session_id,
-        system_message=CHATBOT_SYSTEM_PROMPT
-    ).with_model("openai", "gpt-5.2")
-    
-    # Replay history into the chat object
-    if history and history.get("messages"):
-        for msg in history["messages"]:
-            if msg["role"] == "user":
-                user_msg = UserMessage(text=msg["text"])
-                # We need to add to internal history without calling API
-                chat._messages.append({"role": "user", "content": msg["text"]})
-            elif msg["role"] == "assistant":
-                chat._messages.append({"role": "assistant", "content": msg["text"]})
-    
-    # Send new message
-    user_msg = UserMessage(text=body.message)
     try:
+        # Load conversation history from DB
+        history = await db.chat_sessions.find_one({"session_id": session_id}, {"_id": 0})
+        
+        chat = LlmChat(
+            api_key=llm_key,
+            session_id=session_id,
+            system_message=CHATBOT_SYSTEM_PROMPT
+        ).with_model("openai", "gpt-5.2")
+        
+        # Replay history into the chat object
+        if history and history.get("messages"):
+            for msg in history["messages"]:
+                if msg["role"] == "user":
+                    chat._messages.append({"role": "user", "content": msg["text"]})
+                elif msg["role"] == "assistant":
+                    chat._messages.append({"role": "assistant", "content": msg["text"]})
+        
+        # Send new message
+        user_msg = UserMessage(text=body.message)
         response = await chat.send_message(user_msg)
     except Exception as chat_err:
         error_msg = str(chat_err)
         if "budget" in error_msg.lower() or "exceeded" in error_msg.lower():
-            response = "Thank you for your interest! Our AI assistant is temporarily at capacity. Please don't hesitate to reach out directly — you can email us at warren@firegold.ca or use the Contact Us button above, and our team will get back to you promptly."
+            response = budget_fallback
         else:
-            raise HTTPException(status_code=500, detail="Chat service temporarily unavailable")
+            logging.error(f"Chat error: {error_msg}")
+            response = budget_fallback
     
     # Save to DB
-    new_messages = []
-    if history and history.get("messages"):
-        new_messages = history["messages"]
+    history = await db.chat_sessions.find_one({"session_id": session_id}, {"_id": 0})
+    new_messages = history["messages"] if history and history.get("messages") else []
     new_messages.append({"role": "user", "text": body.message, "ts": datetime.now(timezone.utc).isoformat()})
     new_messages.append({"role": "assistant", "text": response, "ts": datetime.now(timezone.utc).isoformat()})
     
