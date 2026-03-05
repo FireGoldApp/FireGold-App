@@ -104,6 +104,9 @@ class UserRegister(BaseModel):
     password: str
     license_number: Optional[str] = None
     referral_code: Optional[str] = None
+    open_permit: Optional[str] = None
+    permit_jurisdiction: Optional[str] = None
+    user_type: Optional[str] = None  # buyer, seller, both
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -122,6 +125,9 @@ class User(BaseModel):
     password_hash: str
     license_number: Optional[str] = None
     status: str = "active"  # active, suspended
+    open_permit: Optional[str] = None
+    permit_jurisdiction: Optional[str] = None
+    user_type: Optional[str] = None  # buyer, seller, both
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Analytics Event Model
@@ -872,6 +878,7 @@ async def submit_strain(
     is_irradiated: str = Form(""),
     willing_to_irradiate: str = Form(""),
     gacp_compliant: str = Form(""),
+    gmp_compliant: str = Form(""),
     additional_notes: str = Form(""),
     grade_a_kg: float = Form(0),
     grade_b_kg: float = Form(0),
@@ -880,7 +887,8 @@ async def submit_strain(
     strain_image: Optional[UploadFile] = File(None),
     coa_file: Optional[UploadFile] = File(None),
     health_canada_license: Optional[UploadFile] = File(None),
-    cra_license: Optional[UploadFile] = File(None)
+    cra_license: Optional[UploadFile] = File(None),
+    ddc_file: Optional[UploadFile] = File(None)
 ):
     """Public endpoint for growers to submit their strains for consideration"""
     import shutil
@@ -936,6 +944,7 @@ async def submit_strain(
     coa_path = save_upload(coa_file, "docs", pdf_exts)
     hc_license_path = save_upload(health_canada_license, "docs", pdf_exts)
     cra_license_path = save_upload(cra_license, "docs", pdf_exts)
+    ddc_path = save_upload(ddc_file, "docs", pdf_exts)
     
     sub_id = str(uuid.uuid4())
     doc = {
@@ -960,6 +969,7 @@ async def submit_strain(
         "is_irradiated": is_irradiated or None,
         "willing_to_irradiate": willing_to_irradiate or None,
         "gacp_compliant": gacp_compliant or None,
+        "gmp_compliant": gmp_compliant or None,
         "license_number": license_number or None,
         "grade_a_kg": grade_a_kg if grade_a_kg > 0 else None,
         "grade_b_kg": grade_b_kg if grade_b_kg > 0 else None,
@@ -969,6 +979,7 @@ async def submit_strain(
         "coa_path": coa_path,
         "health_canada_license_path": hc_license_path,
         "cra_license_path": cra_license_path,
+        "ddc_path": ddc_path,
         "additional_notes": additional_notes or None,
         "status": "pending",
         "admin_notes": None,
@@ -1252,7 +1263,10 @@ async def register_user(user_data: UserRegister):
         email=user_data.email.lower(),
         phone=user_data.phone,
         password_hash=password_hash,
-        license_number=user_data.license_number
+        license_number=user_data.license_number,
+        open_permit=user_data.open_permit,
+        permit_jurisdiction=user_data.permit_jurisdiction,
+        user_type=user_data.user_type
     )
     
     doc = user.model_dump()
@@ -3549,6 +3563,94 @@ async def reply_to_message(message_id: str, body: ReplyMessageBody, token: str =
         {"$set": {"status": "replied"}, "$push": {"replies": reply_record}}
     )
     return {"message": "Reply sent successfully"}
+
+# --- AI Chatbot ---
+class ChatMessage(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+
+CHATBOT_SYSTEM_PROMPT = """You are Firegold's AI assistant for the Firegold Marketplace — a premium B2B wholesale cannabis flower platform based in Canada.
+
+Your role is to warmly greet visitors, answer questions, qualify leads, and advance conversations so the Firegold team can step in at the right moment. Be professional, knowledgeable, and personable — you represent the Firegold brand.
+
+Key information you know:
+- Firegold is a wholesale marketplace connecting licensed cannabis growers with buyers (Licensed Producers, distributors, and international importers)
+- We offer premium whole flower including Dried Flower, Fresh Frozen, Trim, and Concentrates
+- All products are from licensed Canadian growers with Health Canada approval
+- Minimum lot sizes start at 30kg
+- Products are graded: Grade A (Bigs), Grade B (Mids), Grade C (Smalls)
+- We provide Certificates of Analysis (COA) for all products
+- Growing methods include Indoor, Outdoor, and Greenhouse
+- We support international markets including Australia, Germany, Portugal, UK, Czech Republic, Israel, and South Africa
+- Buyers need to register on the platform to view the full catalog
+- Growers can submit products through our submission form
+- We handle compliance including GACP, GMP, and irradiation requirements
+
+Conversation guidelines:
+- Keep responses concise (2-4 sentences max unless detail is requested)
+- If someone is interested in buying, collect their company name, volume needs, and market/country — then let them know our team will follow up
+- If someone wants to sell/submit product, direct them to the "Submit Your Product" page
+- For pricing questions, explain that pricing depends on strain, grade, volume, and market — our team handles specific quotes
+- Always be helpful but don't make up specific prices, strain availability, or commitments
+- If a question is beyond your scope, offer to connect them with the Firegold team
+- Use a warm, professional tone — no emojis, keep it business-appropriate
+"""
+
+@api_router.post("/chat")
+async def chat_endpoint(body: ChatMessage):
+    """AI chatbot endpoint for visitor inquiries"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    
+    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not llm_key:
+        raise HTTPException(status_code=500, detail="Chat service unavailable")
+    
+    session_id = body.session_id or str(uuid.uuid4())
+    
+    # Load conversation history from DB
+    history = await db.chat_sessions.find_one({"session_id": session_id}, {"_id": 0})
+    
+    chat = LlmChat(
+        api_key=llm_key,
+        session_id=session_id,
+        system_message=CHATBOT_SYSTEM_PROMPT
+    ).with_model("openai", "gpt-5.2")
+    
+    # Replay history into the chat object
+    if history and history.get("messages"):
+        for msg in history["messages"]:
+            if msg["role"] == "user":
+                user_msg = UserMessage(text=msg["text"])
+                # We need to add to internal history without calling API
+                chat._messages.append({"role": "user", "content": msg["text"]})
+            elif msg["role"] == "assistant":
+                chat._messages.append({"role": "assistant", "content": msg["text"]})
+    
+    # Send new message
+    user_msg = UserMessage(text=body.message)
+    try:
+        response = await chat.send_message(user_msg)
+    except Exception as chat_err:
+        error_msg = str(chat_err)
+        if "budget" in error_msg.lower() or "exceeded" in error_msg.lower():
+            response = "Thank you for your interest! Our AI assistant is temporarily at capacity. Please don't hesitate to reach out directly — you can email us at warren@firegold.ca or use the Contact Us button above, and our team will get back to you promptly."
+        else:
+            raise HTTPException(status_code=500, detail="Chat service temporarily unavailable")
+    
+    # Save to DB
+    new_messages = []
+    if history and history.get("messages"):
+        new_messages = history["messages"]
+    new_messages.append({"role": "user", "text": body.message, "ts": datetime.now(timezone.utc).isoformat()})
+    new_messages.append({"role": "assistant", "text": response, "ts": datetime.now(timezone.utc).isoformat()})
+    
+    await db.chat_sessions.update_one(
+        {"session_id": session_id},
+        {"$set": {"session_id": session_id, "messages": new_messages, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    return {"response": response, "session_id": session_id}
 
 app.include_router(api_router)
 

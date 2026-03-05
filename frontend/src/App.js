@@ -1,6 +1,6 @@
 import "@/App.css";
 import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
 import { 
@@ -49,7 +49,9 @@ import {
   MessageCircle,
   Share2,
   Copy,
-  CheckCircle2
+  CheckCircle2,
+  Bot,
+  Minimize2
 } from "lucide-react";
 
 // Prevent right-click on images
@@ -1196,6 +1198,7 @@ const GrowerSubmitPage = () => {
     is_irradiated: '',
     willing_to_irradiate: '',
     gacp_compliant: '',
+    gmp_compliant: '',
     grade_a_kg: '',
     grade_b_kg: '',
     grade_c_kg: '',
@@ -1210,6 +1213,7 @@ const GrowerSubmitPage = () => {
   const [coaFile, setCoaFile] = useState(null);
   const [hcLicenseFile, setHcLicenseFile] = useState(null);
   const [craLicenseFile, setCraLicenseFile] = useState(null);
+  const [ddcFile, setDdcFile] = useState(null);
   const [licensesOnFile, setLicensesOnFile] = useState(null);
   const [checkingLicenses, setCheckingLicenses] = useState(false);
 
@@ -1275,6 +1279,7 @@ const GrowerSubmitPage = () => {
       submitData.append('is_irradiated', formData.is_irradiated || '');
       submitData.append('willing_to_irradiate', formData.willing_to_irradiate || '');
       submitData.append('gacp_compliant', formData.gacp_compliant || '');
+      submitData.append('gmp_compliant', formData.gmp_compliant || '');
       submitData.append('additional_notes', formData.additional_notes || '');
       submitData.append('grade_a_kg', parseFloat(formData.grade_a_kg) || 0);
       submitData.append('grade_b_kg', parseFloat(formData.grade_b_kg) || 0);
@@ -1291,6 +1296,9 @@ const GrowerSubmitPage = () => {
       }
       if (craLicenseFile) {
         submitData.append('cra_license', craLicenseFile);
+      }
+      if (ddcFile) {
+        submitData.append('ddc_file', ddcFile);
       }
 
       const response = await axios.post(`${API}/grower/submit`, submitData, {
@@ -1680,20 +1688,6 @@ const GrowerSubmitPage = () => {
                 />
               </div>
 
-              <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Do you have an Open Permit? *</label>
-                <select
-                  data-testid="grower-open-permit-select"
-                  required
-                  value={formData.open_permit}
-                  onChange={(e) => setFormData(prev => ({ ...prev, open_permit: e.target.value }))}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
-                >
-                  <option value="">Select...</option>
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
               {/* Export country field removed */}
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Growing Method</label>
@@ -1714,7 +1708,7 @@ const GrowerSubmitPage = () => {
           {/* Irradiation */}
           <div>
             <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5" /> Irradiation & Microbials
+              <ShieldCheck className="w-5 h-5" /> Irradiation & Compliance
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -1752,6 +1746,20 @@ const GrowerSubmitPage = () => {
                   required
                   value={formData.gacp_compliant}
                   onChange={(e) => setFormData(prev => ({ ...prev, gacp_compliant: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                >
+                  <option value="">Select...</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Is your product GMP compliant? *</label>
+                <select
+                  data-testid="grower-gmp-select"
+                  required
+                  value={formData.gmp_compliant}
+                  onChange={(e) => setFormData(prev => ({ ...prev, gmp_compliant: e.target.value }))}
                   className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
                 >
                   <option value="">Select...</option>
@@ -1830,14 +1838,14 @@ const GrowerSubmitPage = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* COA Upload */}
-              <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+              <div className="flex flex-col">
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2 min-h-[2rem] flex items-end">
                   Certificate of Analysis (COA)
                   {licensesOnFile?.licenses_on_file?.coa && <span className="text-cannabis-green ml-1">- on file</span>}
                 </label>
-                <div className="relative">
+                <div className="relative flex-1">
                   <input
                     data-testid="grower-coa-upload"
                     type="file"
@@ -1845,10 +1853,10 @@ const GrowerSubmitPage = () => {
                     onChange={(e) => setCoaFile(e.target.files[0] || null)}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
-                  <div className={`w-full border-2 border-dashed ${coaFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors text-center`}>
+                  <div className={`w-full h-full min-h-[80px] border-2 border-dashed ${coaFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors flex items-center justify-center`}>
                     {coaFile ? (
                       <div className="flex items-center justify-center gap-2 text-cannabis-green">
-                        <Check className="w-4 h-4" />
+                        <Check className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm truncate">{coaFile.name}</span>
                       </div>
                     ) : (
@@ -1862,12 +1870,12 @@ const GrowerSubmitPage = () => {
               </div>
 
               {/* Health Canada License Upload */}
-              <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+              <div className="flex flex-col">
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2 min-h-[2rem] flex items-end">
                   Health Canada License
                   {licensesOnFile?.licenses_on_file?.health_canada_license && <span className="text-cannabis-green ml-1">- on file</span>}
                 </label>
-                <div className="relative">
+                <div className="relative flex-1">
                   <input
                     data-testid="grower-hc-license-upload"
                     type="file"
@@ -1875,10 +1883,10 @@ const GrowerSubmitPage = () => {
                     onChange={(e) => setHcLicenseFile(e.target.files[0] || null)}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
-                  <div className={`w-full border-2 border-dashed ${hcLicenseFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors text-center`}>
+                  <div className={`w-full h-full min-h-[80px] border-2 border-dashed ${hcLicenseFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors flex items-center justify-center`}>
                     {hcLicenseFile ? (
                       <div className="flex items-center justify-center gap-2 text-cannabis-green">
-                        <Check className="w-4 h-4" />
+                        <Check className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm truncate">{hcLicenseFile.name}</span>
                       </div>
                     ) : (
@@ -1892,12 +1900,12 @@ const GrowerSubmitPage = () => {
               </div>
 
               {/* CRA License Upload */}
-              <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+              <div className="flex flex-col">
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2 min-h-[2rem] flex items-end">
                   CRA Excise License
                   {licensesOnFile?.licenses_on_file?.cra_license && <span className="text-cannabis-green ml-1">- on file</span>}
                 </label>
-                <div className="relative">
+                <div className="relative flex-1">
                   <input
                     data-testid="grower-cra-license-upload"
                     type="file"
@@ -1905,10 +1913,10 @@ const GrowerSubmitPage = () => {
                     onChange={(e) => setCraLicenseFile(e.target.files[0] || null)}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
-                  <div className={`w-full border-2 border-dashed ${craLicenseFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors text-center`}>
+                  <div className={`w-full h-full min-h-[80px] border-2 border-dashed ${craLicenseFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors flex items-center justify-center`}>
                     {craLicenseFile ? (
                       <div className="flex items-center justify-center gap-2 text-cannabis-green">
-                        <Check className="w-4 h-4" />
+                        <Check className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm truncate">{craLicenseFile.name}</span>
                       </div>
                     ) : (
@@ -1920,8 +1928,37 @@ const GrowerSubmitPage = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Direct Delivery Compliance Document Upload */}
+              <div className="flex flex-col">
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2 min-h-[2rem] flex items-end">
+                  Direct Delivery Compliance
+                </label>
+                <div className="relative flex-1">
+                  <input
+                    data-testid="grower-ddc-upload"
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => setDdcFile(e.target.files[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className={`w-full h-full min-h-[80px] border-2 border-dashed ${ddcFile ? 'border-cannabis-green bg-cannabis-green/10' : 'border-zinc-700 hover:border-gold-500/50'} p-4 transition-colors flex items-center justify-center`}>
+                    {ddcFile ? (
+                      <div className="flex items-center justify-center gap-2 text-cannabis-green">
+                        <Check className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-sm truncate">{ddcFile.name}</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-zinc-500">
+                        <Upload className="w-6 h-6" />
+                        <span className="text-xs">Upload PDF</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="text-zinc-600 text-xs mt-2">Upload PDFs of your COA, Health Canada, and CRA Excise licenses if available.</p>
+            <p className="text-zinc-600 text-xs mt-2">Upload PDFs of your COA, Health Canada License, CRA Excise License, and Direct Delivery Compliance document if available.</p>
           </div>
 
           {/* Additional Notes */}
@@ -1982,7 +2019,10 @@ const AuthPage = ({ onAuth }) => {
     email: '',
     phone: '',
     password: '',
-    license_number: ''
+    license_number: '',
+    open_permit: '',
+    permit_jurisdiction: '',
+    user_type: ''
   });
   const [loginData, setLoginData] = useState({
     email: '',
@@ -2323,6 +2363,64 @@ const AuthPage = ({ onAuth }) => {
                 className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
                 placeholder="e.g. LIC-123456"
               />
+            </div>
+
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                I am a... *
+              </label>
+              <select
+                data-testid="register-user-type"
+                required
+                value={registerData.user_type}
+                onChange={(e) => setRegisterData(prev => ({ ...prev, user_type: e.target.value }))}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+              >
+                <option value="">Select your role...</option>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Both">Buyer & Seller</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                  Do you have an Open Permit?
+                </label>
+                <select
+                  data-testid="register-open-permit"
+                  value={registerData.open_permit}
+                  onChange={(e) => setRegisterData(prev => ({ ...prev, open_permit: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                >
+                  <option value="">Select...</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                  Permit Jurisdiction
+                </label>
+                <select
+                  data-testid="register-jurisdiction"
+                  value={registerData.permit_jurisdiction}
+                  onChange={(e) => setRegisterData(prev => ({ ...prev, permit_jurisdiction: e.target.value }))}
+                  className={`w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none ${registerData.open_permit !== 'Yes' ? 'opacity-50' : ''}`}
+                  disabled={registerData.open_permit !== 'Yes'}
+                >
+                  <option value="">Select jurisdiction...</option>
+                  <option value="Australia">Australia</option>
+                  <option value="Czech Republic">Czech Republic</option>
+                  <option value="Germany">Germany</option>
+                  <option value="Israel">Israel</option>
+                  <option value="Portugal">Portugal</option>
+                  <option value="South Africa">South Africa</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
 
             <div>
@@ -2859,6 +2957,65 @@ const AdminPage = () => {
   const [sendingReply, setSendingReply] = useState(false);
   const [messagesFilter, setMessagesFilter] = useState('all');
 
+  // Notification state
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const prevCountsRef = useRef({ messages: 0, inquiries: 0 });
+
+  // Request notification permission and set up polling
+  useEffect(() => {
+    if (!isAuthenticated || !adminToken) return;
+    
+    // Request permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(p => setNotificationsEnabled(p === 'granted'));
+    } else if ('Notification' in window) {
+      setNotificationsEnabled(Notification.permission === 'granted');
+    }
+
+    // Poll for new messages/inquiries every 30 seconds
+    const interval = setInterval(async () => {
+      try {
+        const [msgResp, inqResp] = await Promise.all([
+          axios.get(`${API}/admin/contact-messages`, { headers: { Authorization: `Bearer ${adminToken}` } }),
+          axios.get(`${API}/admin/inquiries`, { headers: { Authorization: `Bearer ${adminToken}` } })
+        ]);
+        
+        const newMsgCount = msgResp.data.filter(m => m.status === 'unread').length;
+        const newInqCount = inqResp.data.filter(i => i.status === 'pending' || i.status === 'new').length;
+        const prev = prevCountsRef.current;
+        
+        if (newMsgCount > prev.messages && prev.messages > 0) {
+          playNotificationSound();
+          if (notificationsEnabled) {
+            new Notification('Firegold - New Message', {
+              body: `You have ${newMsgCount} unread message${newMsgCount > 1 ? 's' : ''}`,
+              icon: '/firegold_logo_only.png'
+            });
+          }
+          toast.info(`${newMsgCount - prev.messages} new message(s) received`);
+        }
+        
+        if (newInqCount > prev.inquiries && prev.inquiries > 0) {
+          playNotificationSound();
+          if (notificationsEnabled) {
+            new Notification('Firegold - New Inquiry', {
+              body: `You have ${newInqCount} pending inquir${newInqCount > 1 ? 'ies' : 'y'}`,
+              icon: '/firegold_logo_only.png'
+            });
+          }
+          toast.info(`${newInqCount - prev.inquiries} new inquiry(ies) received`);
+        }
+        
+        prevCountsRef.current = { messages: newMsgCount, inquiries: newInqCount };
+        setContactMessages(msgResp.data);
+      } catch (err) {
+        // Silently fail on polling
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, adminToken, notificationsEnabled]);
+
   // Sort state for all admin tabs
   const [usersSort, setUsersSort] = useState({ key: 'created_at', dir: 'desc' });
   const [submissionsSort, setSubmissionsSort] = useState({ key: 'created_at', dir: 'desc' });
@@ -3221,6 +3378,17 @@ const AdminPage = () => {
     fetchInventory(token);
     fetchAdminInquiries(token);
     fetchContactMessages(token);
+    
+    // Set baseline counts for notifications
+    Promise.all([
+      axios.get(`${API}/admin/contact-messages`, { headers: { Authorization: `Bearer ${token}` } }),
+      axios.get(`${API}/admin/inquiries`, { headers: { Authorization: `Bearer ${token}` } })
+    ]).then(([msgResp, inqResp]) => {
+      prevCountsRef.current = {
+        messages: msgResp.data.filter(m => m.status === 'unread').length,
+        inquiries: inqResp.data.filter(i => i.status === 'pending' || i.status === 'new').length
+      };
+    }).catch(() => {});
   };
 
   const handleLogout = async () => {
@@ -7373,6 +7541,155 @@ const ResetPasswordPage = () => {
   );
 };
 
+// Chat Widget Component
+const ChatWidget = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      setMessages([{ role: 'assistant', text: 'Welcome to Firegold. How can I help you today? Whether you\'re looking to buy premium wholesale cannabis flower or submit your product, I\'m here to assist.' }]);
+    }
+  }, [isOpen, messages.length]);
+
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setLoading(true);
+
+    try {
+      const resp = await axios.post(`${API}/chat`, {
+        message: userMsg,
+        session_id: sessionId
+      });
+      setSessionId(resp.data.session_id);
+      setMessages(prev => [...prev, { role: 'assistant', text: resp.data.response }]);
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', text: 'I apologize, but I\'m having trouble connecting right now. Please try again or reach out to us at warren@firegold.ca.' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50" data-testid="chat-widget">
+      {/* Chat Window */}
+      {isOpen && (
+        <div className="absolute bottom-16 right-0 w-[380px] h-[520px] bg-zinc-950 border border-zinc-800 shadow-2xl flex flex-col overflow-hidden"
+          style={{ animation: 'fadeIn 0.2s ease-out' }} data-testid="chat-window">
+          {/* Header */}
+          <div className="bg-charcoal border-b border-zinc-800 px-5 py-4 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gold-500/20 flex items-center justify-center">
+                <Bot className="w-4 h-4 text-gold-500" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">Firegold Assistant</p>
+                <p className="text-cannabis-green text-[10px] uppercase tracking-widest">Online</p>
+              </div>
+            </div>
+            <button onClick={() => setIsOpen(false)} className="text-zinc-500 hover:text-white transition-colors" data-testid="chat-close-btn">
+              <Minimize2 className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4" data-testid="chat-messages">
+            {messages.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed ${
+                  msg.role === 'user' 
+                    ? 'bg-gold-500/20 text-gold-100 border border-gold-500/30' 
+                    : 'bg-zinc-900 text-zinc-300 border border-white/5'
+                }`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-zinc-900 border border-white/5 px-4 py-3">
+                  <div className="flex gap-1.5">
+                    <div className="w-2 h-2 bg-gold-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-gold-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 bg-gold-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="border-t border-zinc-800 p-3 flex gap-2 flex-shrink-0">
+            <input
+              data-testid="chat-input"
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+              placeholder="Type your message..."
+              className="flex-1 bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white text-sm px-4 py-3 outline-none"
+            />
+            <button
+              data-testid="chat-send-btn"
+              onClick={sendMessage}
+              disabled={loading || !input.trim()}
+              className="bg-gold-500 hover:bg-gold-400 disabled:bg-zinc-700 text-black px-4 py-3 transition-all"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toggle Button */}
+      <button
+        data-testid="chat-toggle-btn"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-14 h-14 flex items-center justify-center shadow-lg transition-all ${
+          isOpen ? 'bg-zinc-800 border border-zinc-700 text-white' : 'bg-gold-500 hover:bg-gold-400 text-black'
+        }`}
+      >
+        {isOpen ? <X className="w-5 h-5" /> : <MessageCircle className="w-5 h-5" />}
+      </button>
+    </div>
+  );
+};
+
+// Notification sound using Web Audio API
+const playNotificationSound = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1047, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+  } catch (e) {
+    // Audio not available
+  }
+};
+
 // Affiliate Dashboard Component
 const AffiliateDashboard = () => {
   const { code } = useParams();
@@ -7553,9 +7870,17 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/affiliate/:code" element={<AffiliateDashboard />} />
         </Routes>
+        <ChatWidgetWrapper />
       </BrowserRouter>
     </div>
   );
 }
+
+// Only show chat widget on non-admin pages
+const ChatWidgetWrapper = () => {
+  const location = window.location.pathname;
+  if (location === '/admin') return null;
+  return <ChatWidget />;
+};
 
 export default App;
