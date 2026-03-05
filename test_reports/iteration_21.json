@@ -62,7 +62,7 @@
 
   "test_credentials": {
     "admin_password": "firegold2026",
-    "backend_url": "https://flower-marketplace-2.preview.emergentagent.com"
+    "backend_url": "https://strain-database-4.preview.emergentagent.com"
   },
 
   "seed_data_creation": "Created test bot training entries during API and UI tests (TEST_question_*, TEST_PLAYWRIGHT_QUESTION_21, Updated question)",

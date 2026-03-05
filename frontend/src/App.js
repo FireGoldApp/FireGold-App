@@ -233,7 +233,6 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
     setCoaLoading(true);
     try {
       const token = localStorage.getItem('userToken');
-      // Track COA view
       trackEvent('coa_view', { strain_name: strain.strain_name }, null, strain.id, strain.strain_name);
       const response = await axios.get(`${API}/strains/${strain.id}/coa`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -243,7 +242,12 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
       setCoaBlobUrl(blobUrl);
       setShowCoa(true);
     } catch {
-      toast.error('Unable to load COA');
+      // Fallback: try to open COA URL directly
+      if (strain.coa_url) {
+        window.open(strain.coa_url, '_blank');
+      } else {
+        toast.error('Unable to load COA');
+      }
     } finally {
       setCoaLoading(false);
     }
@@ -650,7 +654,7 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
                   : 'border-zinc-800 text-zinc-400 hover:border-gold-500/50'
               } transition-all`}
             >
-              Grade {grade}
+              Grade {grade === 'A' ? 'A (Bigs)' : grade === 'B' ? 'B (Mids)' : 'C (Smalls)'}
             </button>
           ))}
         </div>
@@ -1412,9 +1416,6 @@ const GrowerSubmitPage = () => {
           <a href="/" className="block w-full bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-8 py-4 transition-all text-center mb-3">
             Back to Catalog
           </a>
-          <a href="/track" className="block w-full border-2 border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-black font-bold uppercase tracking-widest px-8 py-3 transition-all text-center">
-            Track Submission Status
-          </a>
         </div>
       </div>
     );
@@ -1758,7 +1759,7 @@ const GrowerSubmitPage = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Has the flower been irradiated for micros? *</label>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Has the flower been irradiated? *</label>
                 <select
                   data-testid="grower-irradiated-select"
                   required
@@ -7227,7 +7228,8 @@ const CatalogPage = () => {
     setUserData(user);
     setIsAuthenticated(true);
     fetchStrains(token);
-    // Track registration/login
+    // Replace history so back button doesn't go to login
+    window.history.replaceState(null, '', '/');
     trackEvent('page_view', { page: 'catalog', event_data: { first_visit: true } });
   };
 
@@ -7239,7 +7241,7 @@ const CatalogPage = () => {
     setUserData(null);
     setIsAuthenticated(false);
     setStrains([]);
-    toast.success('Logged out successfully');
+    window.history.replaceState(null, '', '/');
   };
 
   const fetchStrains = async (token) => {

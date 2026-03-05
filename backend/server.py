@@ -1131,6 +1131,23 @@ async def update_submission_status(
             
             for qa_email in ["lynette@firegold.ca", "qa@firegold.ca"]:
                 await send_email(qa_email, f"Approved: {submission['strain_name']} — {submission.get('company_name', '')}", approval_email_body)
+            
+            # Send notification to the grower
+            grower_email = submission.get("email")
+            if grower_email:
+                await send_email(
+                    grower_email,
+                    f"Your Submission Has Been Approved — {submission['strain_name']}",
+                    email_template("Submission Approved", f"""
+                        <p>Great news! Your product submission has been <strong style="color: #4CAF50;">approved</strong> by the Firegold team.</p>
+                        <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                            <tr><td style="color: #888; padding: 4px 8px;">Strain:</td><td style="color: #fff; padding: 4px 8px;">{submission['strain_name']}</td></tr>
+                            <tr><td style="color: #888; padding: 4px 8px;">Company:</td><td style="color: #fff; padding: 4px 8px;">{submission.get('company_name', 'N/A')}</td></tr>
+                        </table>
+                        <p>Your product is now listed on the Firegold Marketplace and is visible to qualified buyers.</p>
+                        <p>If you have any questions, don't hesitate to reach out to us at <a href="mailto:warren@firegold.ca" style="color: #D4AF37;">warren@firegold.ca</a>.</p>
+                    """)
+                )
     
     return {"message": f"Submission {body.status}", "submission_id": submission_id}
 
@@ -3483,11 +3500,22 @@ async def view_strain_coa(strain_id: str, user_data: dict = Depends(verify_any_t
     if not strain.get("coa_url"):
         raise HTTPException(status_code=404, detail="No COA available for this strain")
     
-    file_path = f"/app/uploads/coa/{strain_id}.pdf"
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="COA file not found")
+    coa_url = strain["coa_url"]
     
-    return FileResponse(file_path, media_type="application/pdf", headers={"Content-Disposition": "inline"})
+    # Check multiple possible locations for the COA file
+    possible_paths = [
+        f"/app{coa_url}",                           # /app/coa/xxx.pdf (public dir)
+        f"/app/frontend/public{coa_url}",            # /app/frontend/public/coa/xxx.pdf
+        f"/app/uploads{coa_url.replace('/uploads', '')}",  # Legacy uploads path
+        f"/app/uploads/coa/{strain_id}.pdf"          # Old format
+    ]
+    
+    for file_path in possible_paths:
+        if os.path.exists(file_path):
+            return FileResponse(file_path, media_type="application/pdf", headers={"Content-Disposition": "inline"})
+    
+    # If file not found locally, redirect to the public URL
+    raise HTTPException(status_code=404, detail="COA file not found on server")
 
 @api_router.delete("/strains/{strain_id}")
 async def delete_strain(strain_id: str, token: str = Depends(verify_admin_token)):
@@ -3904,6 +3932,15 @@ async def startup_event():
         {"category": {"$exists": False}},
         {"$set": {"category": "Dried Flower"}}
     )
+    
+    # Migration: set COA URLs for strains that are missing them
+    COA_MAPPING = {"Jealousy": "/coa/5b2e6ecc-77a3-4488-915e-c8b9f8926c14.pdf", "AIS": "/coa/341d303a-8d1e-4d28-b09b-86484d179a39.pdf", "Animal Mints": "/coa/ab4b23c6-5b79-4dcb-93ed-d470b4b7234e.pdf", "Black Tuna": "/coa/032e5b6b-c18f-4e36-aebb-f18b6b216101.pdf", "Bubble Gum": "/coa/ed0bf094-4e22-41ec-b466-1c45e9dff15c.pdf", "BCC": "/coa/32635610-bd85-4c6b-a67d-379102bf1bff.pdf", "Cadillac Rainbows": "/coa/97db0b6b-75e0-4c04-a31f-294e4aa05692.pdf", "Cerberus": "/coa/636ef5a0-a511-41fd-a303-16284b753270.pdf", "Chemo Kush": "/coa/341f9778-edd6-4c84-915b-e3ade4a0d9eb.pdf", "Crystal Caviar": "/coa/b5c07ca3-f82d-4d69-9e2e-f003d4312e33.pdf", "G-Force": "/coa/85669ca0-7670-47f5-a615-93c38c395fd2.pdf", "Grape Galena": "/coa/0b320b8b-4cc7-4649-baf0-04cac3fa7a6e.pdf", "Integrator": "/coa/1cd0eb7f-212f-44a4-8af6-2523e14d4d84.pdf", "Jager": "/coa/b7bd1ee7-ca53-44ce-a4b5-46575b65fd6d.pdf", "Juciy Jay": "/coa/73a92ea9-603b-49a3-9fa2-d8264f558bdc.pdf", "London Zoap": "/coa/088578d9-5f65-4145-8ba3-73e0aa3265aa.pdf", "Marshmallow OG": "/coa/6675e526-c92e-444f-bbc0-20442b5a55fa.pdf", "MAC 1": "/coa/3df312de-a234-4f01-8da6-7eecd67d2828.pdf", "Motor Breath": "/coa/8ff0f974-acce-4974-a60d-5eb5428bdfdc.pdf", "Papaya Bombs": "/coa/1af59a60-db2b-43e6-ace4-7e52d153a39b.pdf", "Purple Platinum": "/coa/7f697039-1bb0-4aa4-9020-060561c29f27.pdf", "Rainbow": "/coa/3001ec99-75a1-4d27-b8d7-b40c4de9fcd1.pdf", "Runtz Coffin Candy": "/coa/59e90613-b651-4760-8937-08d611bee1d5.pdf", "Rainbow Driver": "/coa/b88e4b94-0ba1-48fa-8827-9cd434ea84e3.pdf", "King  Sherb": "/coa/21a73034-8c3c-4f16-b0a6-9b8622ea87e3.pdf", "Souffle": "/coa/38da590c-3713-4e2d-b7f6-abc4fc39dd68.pdf", "Strawberry Froyo": "/coa/1f9ec6cb-bd5f-497e-95ca-87e5a577c4d7.pdf", "24K gold ": "/coa/d592440b-0c92-4400-a87c-814f32bd3770.pdf", "Garlic Funk ": "/coa/63a73a22-f671-45e4-af43-7a6898aeb453.pdf", "Garlic Funk": "/coa/033b68c1-f54f-4156-8bdf-9a5e92d76aaf.pdf", "Dantes Inferno": "/coa/677ad769-3c4f-4e1d-ad30-592624cd5953.pdf", "Sunset Struedel": "/coa/e1a86ff2-d648-431c-9ce1-f8259ac17f45.pdf"}
+    for strain_name, coa_path in COA_MAPPING.items():
+        await db.strains.update_many(
+            {"strain_name": strain_name, "$or": [{"coa_url": None}, {"coa_url": {"$exists": False}}]},
+            {"$set": {"coa_url": coa_path}}
+        )
+    logger.info("COA migration complete")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
