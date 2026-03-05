@@ -2966,6 +2966,9 @@ const AdminPage = () => {
   const [newTraining, setNewTraining] = useState({ question: '', answer: '', category: 'general' });
   const [editingTraining, setEditingTraining] = useState(null);
 
+  // Settings state
+  const [emailsEnabled, setEmailsEnabled] = useState(false);
+
   // Request notification permission and set up polling
   useEffect(() => {
     if (!isAuthenticated || !adminToken) return;
@@ -3286,6 +3289,32 @@ const AdminPage = () => {
     }
   };
 
+  // Settings
+  const fetchSettings = async (token) => {
+    try {
+      const resp = await axios.get(`${API}/admin/settings`, {
+        headers: { Authorization: `Bearer ${token || adminToken}` }
+      });
+      setEmailsEnabled(resp.data.emails_enabled || false);
+    } catch (err) {
+      console.error('Failed to load settings');
+    }
+  };
+
+  const toggleEmails = async () => {
+    const newValue = !emailsEnabled;
+    try {
+      await axios.put(`${API}/admin/settings`, 
+        { emails_enabled: newValue },
+        { headers: { Authorization: `Bearer ${adminToken}` } }
+      );
+      setEmailsEnabled(newValue);
+      toast.success(newValue ? 'Emails ENABLED — notifications will be sent' : 'Emails DISABLED — no notifications will be sent');
+    } catch (err) {
+      toast.error('Failed to update setting');
+    }
+  };
+
   const createAffiliate = async () => {
     try {
       await axios.post(`${API}/admin/affiliates`, affiliateForm, {
@@ -3437,6 +3466,7 @@ const AdminPage = () => {
     fetchInventory(token);
     fetchAdminInquiries(token);
     fetchContactMessages(token);
+    fetchSettings(token);
     
     // Set baseline counts for notifications
     Promise.all([
@@ -3823,14 +3853,29 @@ const AdminPage = () => {
           <Settings className="w-6 h-6 text-gold-500" />
           <span className="font-cinzel font-bold text-xl text-white">Admin Panel</span>
         </div>
-        <button 
-          onClick={handleLogout}
+        <div className="flex items-center gap-6">
+          <button 
+            onClick={toggleEmails}
+            data-testid="email-toggle-btn"
+            className={`flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-widest font-bold transition-all border ${
+              emailsEnabled 
+                ? 'bg-cannabis-green/20 border-cannabis-green/40 text-cannabis-green' 
+                : 'bg-red-500/10 border-red-500/30 text-red-400'
+            }`}
+            title={emailsEnabled ? 'Click to disable all outbound emails' : 'Click to enable outbound emails'}
+          >
+            <Mail className="w-4 h-4" />
+            Emails: {emailsEnabled ? 'ON' : 'OFF'}
+          </button>
+          <button 
+            onClick={handleLogout}
           data-testid="admin-logout-btn"
           className="flex items-center gap-2 text-zinc-400 hover:text-red-400 transition-colors"
         >
           <LogOut className="w-5 h-5" />
           <span className="text-sm">Logout</span>
         </button>
+        </div>
       </header>
 
       <main className="max-w-[1400px] mx-auto px-6 md:px-12 py-12">

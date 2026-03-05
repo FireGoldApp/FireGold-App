@@ -42,7 +42,13 @@ SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'Firegold Marketplace')
 APP_URL = os.environ.get('APP_URL', 'https://app.firegold.ca')
 
 async def send_email(to_email: str, subject: str, html_body: str):
-    """Send email via Microsoft 365 SMTP"""
+    """Send email via Microsoft 365 SMTP — respects admin email toggle"""
+    # Check if emails are enabled
+    settings = await db.app_settings.find_one({"key": "emails_enabled"}, {"_id": 0})
+    if not settings or not settings.get("value", False):
+        logger.info(f"Emails disabled — skipping send to {to_email}: {subject}")
+        return False
+    
     if not all([SMTP_SERVER, SMTP_EMAIL, SMTP_PASSWORD]):
         logger.warning("Email not configured, skipping send")
         return False
@@ -3768,6 +3774,25 @@ async def delete_bot_training(entry_id: str, token: str = Depends(verify_admin_t
         raise HTTPException(status_code=404, detail="Entry not found")
     return {"message": "Deleted"}
 
+# --- App Settings (Email Toggle) ---
+@api_router.get("/admin/settings")
+async def get_settings(token: str = Depends(verify_admin_token)):
+    settings = {}
+    docs = await db.app_settings.find({}, {"_id": 0}).to_list(50)
+    for d in docs:
+        settings[d["key"]] = d["value"]
+    return settings
+
+@api_router.put("/admin/settings")
+async def update_settings(body: dict, token: str = Depends(verify_admin_token)):
+    for key, value in body.items():
+        await db.app_settings.update_one(
+            {"key": key},
+            {"$set": {"key": key, "value": value}},
+            upsert=True
+        )
+    return {"message": "Settings updated"}
+
 app.include_router(api_router)
 
 app.add_middleware(
@@ -3820,6 +3845,11 @@ async def startup_event():
             doc['created_at'] = doc['created_at'].isoformat()
             await db.strains.insert_one(doc)
         logger.info(f"Seeded {len(SEED_STRAINS)} strains")
+    
+    # Ensure emails_enabled setting exists (default OFF)
+    existing = await db.app_settings.find_one({"key": "emails_enabled"})
+    if not existing:
+        await db.app_settings.insert_one({"key": "emails_enabled", "value": False})
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
