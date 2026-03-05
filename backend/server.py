@@ -274,6 +274,7 @@ class Strain(BaseModel):
     submission_id: Optional[str] = None  # Link back to grower submission
     image_url: Optional[str] = None
     coa_url: Optional[str] = None  # Path to redacted COA PDF
+    bc_dd_compliant: Optional[bool] = False  # BC Direct Delivery compliant
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class StrainCreate(BaseModel):
@@ -292,6 +293,7 @@ class StrainCreate(BaseModel):
     harvest_date: Optional[str] = None
     growing_method: Optional[str] = None
     category: Optional[str] = None
+    bc_dd_compliant: Optional[bool] = False
     grower_company: Optional[str] = None
     grower_name: Optional[str] = None
     grower_email: Optional[str] = None
@@ -885,6 +887,8 @@ async def submit_strain(
     willing_to_irradiate: str = Form(""),
     gacp_compliant: str = Form(""),
     gmp_compliant: str = Form(""),
+    bc_dd_compliant: str = Form(""),
+    terpene_percentage: str = Form(""),
     additional_notes: str = Form(""),
     grade_a_kg: float = Form(0),
     grade_b_kg: float = Form(0),
@@ -976,6 +980,8 @@ async def submit_strain(
         "willing_to_irradiate": willing_to_irradiate or None,
         "gacp_compliant": gacp_compliant or None,
         "gmp_compliant": gmp_compliant or None,
+        "bc_dd_compliant": bc_dd_compliant or None,
+        "terpene_percentage": terpene_percentage or None,
         "license_number": license_number or None,
         "grade_a_kg": grade_a_kg if grade_a_kg > 0 else None,
         "grade_b_kg": grade_b_kg if grade_b_kg > 0 else None,
@@ -1080,6 +1086,7 @@ async def update_submission_status(
                 harvest_date=submission.get("harvest_date"),
                 growing_method=submission.get("growing_method"),
                 category=submission.get("category"),
+                bc_dd_compliant=submission.get("bc_dd_compliant") == "Yes",
                 grower_company=submission.get("company_name"),
                 grower_name=submission.get("grower_name"),
                 grower_email=submission.get("email"),
@@ -1091,6 +1098,39 @@ async def update_submission_status(
             if ppg:
                 doc['price_per_gram'] = ppg
             await db.strains.insert_one(doc)
+            
+            # Send approval email with attachments to QA team
+            attachment_info = []
+            for field_name, label in [
+                ("coa_path", "COA"), 
+                ("health_canada_license_path", "Health Canada License"),
+                ("cra_license_path", "CRA License"),
+                ("ddc_path", "Direct Delivery Compliance")
+            ]:
+                path = submission.get(field_name)
+                if path:
+                    full_path = f"/app{path}" if not path.startswith("/app") else path
+                    attachment_info.append(f'<li><a href="{os.environ.get("APP_URL", "")}{path}" style="color: #D4AF37;">{label}</a></li>')
+            
+            docs_html = f"<ul>{''.join(attachment_info)}</ul>" if attachment_info else "<p>No documents uploaded.</p>"
+            
+            approval_email_body = email_template("Approved Submission — Documents", f"""
+                <p>A grower submission has been <strong style="color: #4CAF50;">APPROVED</strong>:</p>
+                <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                    <tr><td style="color: #888; padding: 4px 8px;">Strain:</td><td style="color: #fff; padding: 4px 8px;">{submission['strain_name']}</td></tr>
+                    <tr><td style="color: #888; padding: 4px 8px;">Company:</td><td style="color: #fff; padding: 4px 8px;">{submission.get('company_name', 'N/A')}</td></tr>
+                    <tr><td style="color: #888; padding: 4px 8px;">Grower:</td><td style="color: #fff; padding: 4px 8px;">{submission.get('grower_name', 'N/A')}</td></tr>
+                    <tr><td style="color: #888; padding: 4px 8px;">Email:</td><td style="color: #fff; padding: 4px 8px;">{submission.get('email', 'N/A')}</td></tr>
+                    <tr><td style="color: #888; padding: 4px 8px;">THC:</td><td style="color: #fff; padding: 4px 8px;">{submission.get('thc_percentage', 'N/A')}</td></tr>
+                    <tr><td style="color: #888; padding: 4px 8px;">Category:</td><td style="color: #fff; padding: 4px 8px;">{submission.get('category', 'N/A')}</td></tr>
+                    <tr><td style="color: #888; padding: 4px 8px;">BC DD:</td><td style="color: #fff; padding: 4px 8px;">{submission.get('bc_dd_compliant', 'N/A')}</td></tr>
+                </table>
+                <p style="color: #D4AF37; font-weight: bold;">Uploaded Documents:</p>
+                {docs_html}
+            """)
+            
+            for qa_email in ["lynette@firegold.ca", "qa@firegold.ca"]:
+                await send_email(qa_email, f"Approved: {submission['strain_name']} — {submission.get('company_name', '')}", approval_email_body)
     
     return {"message": f"Submission {body.status}", "submission_id": submission_id}
 
@@ -3850,6 +3890,20 @@ async def startup_event():
     existing = await db.app_settings.find_one({"key": "emails_enabled"})
     if not existing:
         await db.app_settings.insert_one({"key": "emails_enabled", "value": False})
+    
+    # Migration: ensure all strains have growing_method and bc_dd_compliant
+    await db.strains.update_many(
+        {"growing_method": {"$exists": False}},
+        {"$set": {"growing_method": "Indoor"}}
+    )
+    await db.strains.update_many(
+        {"bc_dd_compliant": {"$exists": False}},
+        {"$set": {"bc_dd_compliant": False}}
+    )
+    await db.strains.update_many(
+        {"category": {"$exists": False}},
+        {"$set": {"category": "Dried Flower"}}
+    )
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

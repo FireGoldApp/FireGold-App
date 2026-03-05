@@ -168,6 +168,13 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
             <span className="text-white font-mono text-xs font-bold">COA</span>
           </div>
         )}
+
+        {/* BC DD Badge */}
+        {strain.bc_dd_compliant && (
+          <div className="absolute top-4 left-12 bg-blue-600/90 backdrop-blur-sm px-2 py-0.5 border border-blue-400 text-center">
+            <span className="text-white font-mono text-[9px] font-bold">BC DD</span>
+          </div>
+        )}
         
         {/* Selection checkbox */}
         <div 
@@ -187,7 +194,12 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
         <div className={`font-manrope text-xs uppercase tracking-widest ${getTypeColor(strain.type)} mb-2`}>
           {strain.type}
         </div>
-        <h3 className="font-cinzel font-bold text-xl text-white mb-2">{strain.strain_name}</h3>
+        <h3 className="font-cinzel font-bold text-xl text-white mb-2 flex items-center gap-2">
+          {strain.strain_name}
+          {strain.bc_dd_compliant && (
+            <span className="bg-blue-600/20 border border-blue-400/40 text-blue-300 px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest">BC DD</span>
+          )}
+        </h3>
         <div className="flex items-center gap-4 text-zinc-400 text-sm">
           <span className="flex items-center gap-1">
             <Activity className="w-4 h-4 text-gold-500" />
@@ -313,6 +325,9 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
               <span>{strain.type}</span>
               {strain.growing_method && (
                 <span className="bg-white/10 border border-white/20 text-zinc-300 px-2 py-0.5 text-[10px] font-bold tracking-widest">{strain.growing_method}</span>
+              )}
+              {strain.bc_dd_compliant && (
+                <span className="bg-blue-600/20 border border-blue-400/40 text-blue-300 px-2 py-0.5 text-[10px] font-bold tracking-widest">BC DD</span>
               )}
             </div>
             <h2 className="font-cinzel font-bold text-3xl text-white mb-4">{strain.strain_name}</h2>
@@ -641,10 +656,26 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
         </div>
       </div>
 
-      {filters.type || filters.priceTier || filters.minThc || filters.search || filters.grade || filters.growingMethod || filters.category ? (
+      <div>
+        <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">Compliance</h3>
+        <button
+          data-testid="filter-bc-dd"
+          onClick={() => setFilters(prev => ({ ...prev, bcDd: !prev.bcDd }))}
+          className={`block w-full text-left px-4 py-2 border ${
+            filters.bcDd
+              ? 'border-blue-400 text-blue-300 bg-blue-600/10'
+              : 'border-zinc-800 text-zinc-400 hover:border-blue-400/50'
+          } transition-all`}
+        >
+          <span className="font-bold text-xs">BC DD</span>
+          <span className="text-zinc-500 text-xs ml-2">Direct Delivery</span>
+        </button>
+      </div>
+
+      {filters.type || filters.priceTier || filters.minThc || filters.search || filters.grade || filters.growingMethod || filters.category || filters.bcDd ? (
         <button
           data-testid="clear-filters-btn"
-          onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '', category: '' })}
+          onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '', category: '', bcDd: false })}
           className="w-full px-4 py-2 border border-zinc-700 text-zinc-400 hover:border-red-500 hover:text-red-400 transition-all uppercase tracking-widest text-xs"
         >
           Clear All Filters
@@ -1199,6 +1230,8 @@ const GrowerSubmitPage = () => {
     willing_to_irradiate: '',
     gacp_compliant: '',
     gmp_compliant: '',
+    bc_dd_compliant: false,
+    terpene_percentage: '',
     grade_a_kg: '',
     grade_b_kg: '',
     grade_c_kg: '',
@@ -1280,6 +1313,8 @@ const GrowerSubmitPage = () => {
       submitData.append('willing_to_irradiate', formData.willing_to_irradiate || '');
       submitData.append('gacp_compliant', formData.gacp_compliant || '');
       submitData.append('gmp_compliant', formData.gmp_compliant || '');
+      submitData.append('bc_dd_compliant', formData.bc_dd_compliant ? 'Yes' : 'No');
+      submitData.append('terpene_percentage', formData.terpene_percentage || '');
       submitData.append('additional_notes', formData.additional_notes || '');
       submitData.append('grade_a_kg', parseFloat(formData.grade_a_kg) || 0);
       submitData.append('grade_b_kg', parseFloat(formData.grade_b_kg) || 0);
@@ -1568,6 +1603,17 @@ const GrowerSubmitPage = () => {
                   placeholder="e.g., 0.5%"
                 />
               </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Terpene % (optional)</label>
+                <input
+                  data-testid="grower-terpene-pct-input"
+                  type="text"
+                  value={formData.terpene_percentage}
+                  onChange={(e) => setFormData(prev => ({ ...prev, terpene_percentage: e.target.value }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                  placeholder="e.g., 3.2%"
+                />
+              </div>
               <div className="md:col-span-2">
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Lineage / Genetics *</label>
                 <input
@@ -1708,7 +1754,7 @@ const GrowerSubmitPage = () => {
           {/* Irradiation */}
           <div>
             <h3 className="font-cinzel font-bold text-lg text-gold-500 mb-4 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5" /> Irradiation & Compliance
+              <ShieldCheck className="w-5 h-5" /> Compliance
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -1767,6 +1813,24 @@ const GrowerSubmitPage = () => {
                   <option value="No">No</option>
                 </select>
               </div>
+            </div>
+            {/* BC DD Compliance */}
+            <div className="mt-4 bg-zinc-900/30 border border-white/5 p-4">
+              <label className="flex items-center gap-3 cursor-pointer" data-testid="bc-dd-checkbox">
+                <input
+                  type="checkbox"
+                  checked={formData.bc_dd_compliant}
+                  onChange={(e) => setFormData(prev => ({ ...prev, bc_dd_compliant: e.target.checked }))}
+                  className="w-5 h-5 accent-gold-500"
+                />
+                <div>
+                  <span className="text-white font-bold text-sm">BC Direct Delivery (DD) Compliant</span>
+                  <p className="text-zinc-500 text-xs mt-0.5">Check this if your product meets BC Direct Delivery compliance requirements.</p>
+                </div>
+              </label>
+              {formData.bc_dd_compliant && !ddcFile && (
+                <p className="text-gold-500 text-xs mt-2 ml-8">Please upload your Direct Delivery Compliance document in the Documents section below.</p>
+              )}
             </div>
           </div>
 
@@ -3423,7 +3487,8 @@ const AdminPage = () => {
     terpene_profile: '',
     lineage: '',
     lot_size: '',
-    effects: ''
+    effects: '',
+    bc_dd_compliant: false
   });
   const [newStrainImage, setNewStrainImage] = useState(null);
   const [addingStrain, setAddingStrain] = useState(false);
@@ -7070,7 +7135,7 @@ const CatalogPage = () => {
   
   const [strains, setStrains] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '', category: '' });
+  const [filters, setFilters] = useState({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '', category: '', bcDd: false });
   const [selectedStrains, setSelectedStrains] = useState([]);
   const [viewingStrain, setViewingStrain] = useState(null);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
@@ -7255,6 +7320,7 @@ const CatalogPage = () => {
       }
       if (filters.growingMethod && strain.growing_method !== filters.growingMethod) return false;
       if (filters.category && strain.category !== filters.category) return false;
+      if (filters.bcDd && !strain.bc_dd_compliant) return false;
       return true;
     });
   }, [strains, filters]);
@@ -7517,7 +7583,7 @@ const CatalogPage = () => {
                 <Flame className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
                 <p className="text-zinc-500">No strains match your filters</p>
                 <button 
-                  onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '', category: '' })}
+                  onClick={() => setFilters({ type: '', priceTier: '', minThc: null, search: '', grade: '', growingMethod: '', category: '', bcDd: false })}
                   className="mt-4 text-gold-500 hover:text-gold-400 text-sm"
                 >
                   Clear filters

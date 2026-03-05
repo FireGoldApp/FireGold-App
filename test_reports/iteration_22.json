@@ -1,0 +1,81 @@
+{
+  "summary": "Iteration 22 testing complete. All 13 backend tests passed, all frontend features verified. New features: BC DD Compliance checkbox with warning, Terpene % field, Compliance section rename, BC DD filter on catalog, Email toggle in admin header (OFF by default), DB migration for missing fields.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✅ Backend: API health check passes",
+    "✅ Backend: Admin login returns token",
+    "✅ Backend: GET /api/admin/settings requires auth (401)",
+    "✅ Backend: GET /api/admin/settings returns emails_enabled: false (default)",
+    "✅ Backend: PUT /api/admin/settings toggles emails_enabled",
+    "✅ Backend: POST /api/grower/submit accepts bc_dd_compliant field",
+    "✅ Backend: POST /api/grower/submit accepts terpene_percentage field",
+    "✅ Backend: Submitted strain stores bc_dd_compliant in DB",
+    "✅ Backend: GET /api/strains returns strains with bc_dd_compliant field (migration)",
+    "✅ Backend: GET /api/strains returns strains with growing_method field (migration)",
+    "✅ Backend: POST /api/auth/register accepts user_type field",
+    "✅ Backend: POST /api/auth/register accepts open_permit field",
+    "✅ Backend: POST /api/auth/register accepts permit_jurisdiction field",
+    "✅ Frontend: Submit strain page loads correctly",
+    "✅ Frontend: 'Compliance' section heading visible (not 'Irradiation')",
+    "✅ Frontend: BC DD Compliance checkbox visible and clickable",
+    "✅ Frontend: Terpene % input field visible next to CBD %",
+    "✅ Frontend: Warning message appears when BC DD checked but no DDC file",
+    "✅ Frontend: Registration page has 'I AM A...' dropdown",
+    "✅ Frontend: Registration page has 'Open Permit' dropdown",
+    "✅ Frontend: Registration page has 'Permit Jurisdiction' dropdown",
+    "✅ Frontend: Catalog page shows 32 strain cards",
+    "✅ Frontend: Filter sidebar visible with categories",
+    "✅ Frontend: BC DD filter button visible in Compliance section",
+    "✅ Frontend: BC DD filter works - shows 0 of 32 strains (no BC DD strains yet)",
+    "✅ Frontend: INDOOR growing method badges visible on strain cards",
+    "✅ Frontend: COA badges visible on strain cards",
+    "✅ Frontend: Category badges (DRIED FLOWER) visible on strain cards",
+    "✅ Frontend: Admin panel email toggle visible (EMAILS: OFF)",
+    "✅ Frontend: Admin email toggle switches ON/OFF correctly",
+    "✅ Frontend: Email toggle shows success toast notifications"
+  ],
+
+  "skipped_tests": [],
+
+  "test_report_links": [
+    "/app/backend/tests/test_iteration22_features.py",
+    "/app/test_reports/pytest/pytest_iteration22.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_iteration22_features.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (13/13 tests passed)",
+    "frontend": "100% (All UI features verified)"
+  },
+
+  "test_credentials": {
+    "admin_password": "firegold2026",
+    "test_user": "testuser123@test.com / Test123!",
+    "backend_url": "https://flower-marketplace-2.preview.emergentagent.com"
+  },
+
+  "seed_data_creation": "Created test submissions during API tests (TEST_BC_DD_*, TEST_TERP_*, TEST_USERTYPE_*, TEST_PERMIT_*, TEST_JURIS_*)",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Iteration 22 all features verified working: 1) Submit page 'Compliance' section has BC DD checkbox that shows warning message when checked without DDC file. Terpene % field next to CBD %. 2) Catalog filter sidebar has 'Compliance' section with BC DD filter button - shows 0 results since no strains have bc_dd_compliant=true yet. 3) Admin panel header has 'EMAILS: OFF/ON' toggle that persists to DB. Default is OFF. 4) DB migration on startup adds growing_method='Indoor' and bc_dd_compliant=false to strains missing these. 5) Registration page has user_type, open_permit, permit_jurisdiction fields. Key data-testids: bc-dd-checkbox, grower-terpene-pct-input, filter-bc-dd, email-toggle-btn. License download links on post-submission page reference files that don't exist yet (firegold_hc_license.pdf, firegold_cra_license.pdf)."
+}
