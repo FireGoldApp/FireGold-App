@@ -3452,6 +3452,29 @@ app.add_middleware(
 )
 
 # Configure logging
+
+@api_router.post("/admin/migrate-data")
+async def migrate_data(body: dict, token: str = Depends(verify_admin_token)):
+    """Temporary endpoint to import data from preview to production"""
+    results = {}
+    for collection_name, docs in body.items():
+        if collection_name in ['users', 'strains', 'affiliates', 'inquiries', 'grower_submissions', 'sample_requests', 'referral_events', 'contact_messages']:
+            if docs:
+                # Skip duplicates by checking 'id' field
+                inserted = 0
+                for doc in docs:
+                    doc_id = doc.get('id')
+                    if doc_id:
+                        existing = await db[collection_name].find_one({"id": doc_id})
+                        if not existing:
+                            await db[collection_name].insert_one(doc)
+                            inserted += 1
+                    else:
+                        await db[collection_name].insert_one(doc)
+                        inserted += 1
+                results[collection_name] = f"{inserted} inserted (of {len(docs)})"
+    return results
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
