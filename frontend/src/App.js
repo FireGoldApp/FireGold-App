@@ -2961,6 +2961,11 @@ const AdminPage = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const prevCountsRef = useRef({ messages: 0, inquiries: 0 });
 
+  // Bot Training state
+  const [botTraining, setBotTraining] = useState([]);
+  const [newTraining, setNewTraining] = useState({ question: '', answer: '', category: 'general' });
+  const [editingTraining, setEditingTraining] = useState(null);
+
   // Request notification permission and set up polling
   useEffect(() => {
     if (!isAuthenticated || !adminToken) return;
@@ -3224,6 +3229,60 @@ const AdminPage = () => {
       toast.error('Failed to send reply');
     } finally {
       setSendingReply(false);
+    }
+  };
+
+  // Bot Training CRUD
+  const fetchBotTraining = async () => {
+    try {
+      const resp = await axios.get(`${API}/admin/bot-training`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setBotTraining(resp.data);
+    } catch (err) {
+      console.error('Failed to load training data');
+    }
+  };
+
+  const addTrainingEntry = async () => {
+    if (!newTraining.question.trim() || !newTraining.answer.trim()) return;
+    try {
+      const resp = await axios.post(`${API}/admin/bot-training`, newTraining, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setBotTraining(prev => [...prev, resp.data]);
+      setNewTraining({ question: '', answer: '', category: 'general' });
+      toast.success('Training entry added');
+    } catch (err) {
+      toast.error('Failed to add entry');
+    }
+  };
+
+  const updateTrainingEntry = async (entry) => {
+    try {
+      await axios.put(`${API}/admin/bot-training/${entry.id}`, {
+        question: entry.question,
+        answer: entry.answer,
+        category: entry.category
+      }, { headers: { Authorization: `Bearer ${adminToken}` } });
+      setBotTraining(prev => prev.map(e => e.id === entry.id ? entry : e));
+      setEditingTraining(null);
+      toast.success('Training entry updated');
+    } catch (err) {
+      toast.error('Failed to update entry');
+    }
+  };
+
+  const deleteTrainingEntry = async (entryId) => {
+    if (!window.confirm('Delete this training entry?')) return;
+    try {
+      await axios.delete(`${API}/admin/bot-training/${entryId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setBotTraining(prev => prev.filter(e => e.id !== entryId));
+      toast.success('Entry deleted');
+    } catch (err) {
+      toast.error('Failed to delete entry');
     }
   };
 
@@ -3924,6 +3983,15 @@ const AdminPage = () => {
                 {contactMessages.filter(m => m.status === 'unread').length}
               </span>
             )}
+          </button>
+          <button
+            onClick={() => { setActiveTab('bot-training'); fetchBotTraining(); }}
+            data-testid="admin-tab-bot-training"
+            className={`px-6 py-2 font-bold uppercase tracking-widest text-sm transition-all ${
+              activeTab === 'bot-training' ? 'bg-gold-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Bot className="w-4 h-4 inline mr-2" />Bot Training
           </button>
         </div>
         {/* Affiliates Tab */}
@@ -6704,6 +6772,141 @@ const AdminPage = () => {
             )}
           </>
         )}
+        {activeTab === 'bot-training' && (
+          <>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+              <div>
+                <h2 className="font-cinzel font-bold text-2xl text-white mb-2">Bot Training</h2>
+                <p className="text-zinc-500 text-sm">{botTraining.length} custom Q&A entries — The chatbot uses these to answer visitor questions.</p>
+              </div>
+            </div>
+
+            {/* Add New Entry Form */}
+            <div className="bg-charcoal border border-white/10 p-6 mb-8" data-testid="add-training-form">
+              <h3 className="font-cinzel font-bold text-sm text-gold-500 uppercase tracking-widest mb-4">Add Training Entry</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <select
+                  data-testid="training-category-select"
+                  value={newTraining.category}
+                  onChange={(e) => setNewTraining(prev => ({...prev, category: e.target.value}))}
+                  className="bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                >
+                  <option value="general">General</option>
+                  <option value="pricing">Pricing</option>
+                  <option value="products">Products</option>
+                  <option value="compliance">Compliance</option>
+                  <option value="shipping">Shipping & Logistics</option>
+                  <option value="process">Process & How It Works</option>
+                  <option value="custom">Custom Response</option>
+                </select>
+              </div>
+              <div className="space-y-3 mb-4">
+                <input
+                  data-testid="training-question-input"
+                  type="text"
+                  placeholder="Question or topic (e.g., 'What are your payment terms?')"
+                  value={newTraining.question}
+                  onChange={(e) => setNewTraining(prev => ({...prev, question: e.target.value}))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none text-sm"
+                />
+                <textarea
+                  data-testid="training-answer-input"
+                  placeholder="How the bot should respond..."
+                  value={newTraining.answer}
+                  onChange={(e) => setNewTraining(prev => ({...prev, answer: e.target.value}))}
+                  rows={3}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white px-4 py-3 outline-none text-sm resize-none"
+                />
+              </div>
+              <button
+                data-testid="add-training-btn"
+                onClick={addTrainingEntry}
+                disabled={!newTraining.question.trim() || !newTraining.answer.trim()}
+                className="bg-gold-500 hover:bg-gold-400 disabled:bg-zinc-700 text-black font-bold uppercase tracking-widest px-6 py-3 text-sm transition-all"
+              >
+                <Plus className="w-4 h-4 inline mr-2" />Add Entry
+              </button>
+            </div>
+
+            {/* Training Entries List */}
+            {botTraining.length === 0 ? (
+              <div className="bg-zinc-900/30 border border-white/5 p-12 text-center">
+                <Bot className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+                <p className="text-zinc-500 mb-2">No custom training data yet</p>
+                <p className="text-zinc-600 text-sm">The chatbot uses built-in Firegold knowledge. Add custom Q&A pairs above to teach it your specific responses.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {botTraining.map(entry => (
+                  <div key={entry.id} data-testid={`training-entry-${entry.id}`}
+                    className="bg-charcoal border border-white/5 p-5 hover:border-gold-500/30 transition-all">
+                    {editingTraining === entry.id ? (
+                      <div className="space-y-3">
+                        <select
+                          value={entry.category || 'general'}
+                          onChange={(e) => setBotTraining(prev => prev.map(t => t.id === entry.id ? {...t, category: e.target.value} : t))}
+                          className="bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-10 px-3 outline-none text-sm"
+                        >
+                          <option value="general">General</option>
+                          <option value="pricing">Pricing</option>
+                          <option value="products">Products</option>
+                          <option value="compliance">Compliance</option>
+                          <option value="shipping">Shipping & Logistics</option>
+                          <option value="process">Process & How It Works</option>
+                          <option value="custom">Custom Response</option>
+                        </select>
+                        <input
+                          type="text"
+                          value={entry.question}
+                          onChange={(e) => setBotTraining(prev => prev.map(t => t.id === entry.id ? {...t, question: e.target.value} : t))}
+                          className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-10 px-3 outline-none text-sm"
+                        />
+                        <textarea
+                          value={entry.answer}
+                          onChange={(e) => setBotTraining(prev => prev.map(t => t.id === entry.id ? {...t, answer: e.target.value} : t))}
+                          rows={3}
+                          className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white px-3 py-2 outline-none text-sm resize-none"
+                        />
+                        <div className="flex gap-2">
+                          <button onClick={() => updateTrainingEntry(entry)}
+                            className="bg-cannabis-green/20 text-cannabis-green hover:bg-cannabis-green/30 px-4 py-2 text-xs uppercase tracking-widest font-bold transition-all">
+                            <Save className="w-3 h-3 inline mr-1" />Save
+                          </button>
+                          <button onClick={() => setEditingTraining(null)}
+                            className="bg-zinc-800 text-zinc-400 hover:text-white px-4 py-2 text-xs uppercase tracking-widest font-bold transition-all">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 bg-gold-500/10 text-gold-500 border border-gold-500/20">
+                              {entry.category || 'general'}
+                            </span>
+                          </div>
+                          <p className="text-white font-bold text-sm mb-1">Q: {entry.question}</p>
+                          <p className="text-zinc-400 text-sm">A: {entry.answer}</p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <button data-testid={`edit-training-${entry.id}`} onClick={() => setEditingTraining(entry.id)}
+                            className="text-zinc-500 hover:text-gold-500 transition-colors">
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button data-testid={`delete-training-${entry.id}`} onClick={() => deleteTrainingEntry(entry.id)}
+                            className="text-zinc-500 hover:text-red-500 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </main>
       {editingAffiliate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -7564,6 +7767,14 @@ const ChatWidget = () => {
     }
   }, [isOpen, messages.length]);
 
+  const quickReplies = [
+    { label: 'View Catalog', msg: 'How do I view your cannabis catalog?' },
+    { label: 'Submit Product', msg: 'I\'m a grower and want to submit my product' },
+    { label: 'Pricing Info', msg: 'How does your pricing work?' },
+    { label: 'Export Markets', msg: 'What international markets do you support?' },
+    { label: 'Contact Sales', msg: 'I\'d like to speak with someone from the Firegold team' }
+  ];
+
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
     const userMsg = input.trim();
@@ -7635,7 +7846,20 @@ const ChatWidget = () => {
           </div>
 
           {/* Input */}
-          <div className="border-t border-zinc-800 p-3 flex gap-2 flex-shrink-0">
+          <div className="border-t border-zinc-800 flex-shrink-0">
+            {/* Quick Replies */}
+            {messages.length <= 1 && (
+              <div className="px-3 pt-3 flex flex-wrap gap-1.5" data-testid="quick-replies">
+                {quickReplies.map((qr, idx) => (
+                  <button key={idx} data-testid={`quick-reply-${idx}`}
+                    onClick={() => { setInput(qr.msg); }}
+                    className="text-[11px] bg-gold-500/10 border border-gold-500/30 text-gold-400 hover:bg-gold-500/20 px-3 py-1.5 transition-all whitespace-nowrap">
+                    {qr.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="p-3 flex gap-2">
             <input
               data-testid="chat-input"
               type="text"
@@ -7653,6 +7877,7 @@ const ChatWidget = () => {
             >
               <Send className="w-4 h-4" />
             </button>
+            </div>
           </div>
         </div>
       )}

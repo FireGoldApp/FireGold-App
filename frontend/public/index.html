@@ -3,8 +3,14 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#000000" />
-        <meta name="description" content="A product of emergent.sh" />
+        <meta name="theme-color" content="#D4AF37" />
+        <meta name="description" content="Firegold Marketplace — Premium B2B Wholesale Cannabis Flower" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Firegold" />
+        <link rel="apple-touch-icon" href="%PUBLIC_URL%/apple-touch-icon.png" />
+        <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+        <link rel="icon" type="image/png" href="%PUBLIC_URL%/firegold_icon_192.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />
@@ -176,6 +182,17 @@
                     capturePerformance: false,
                 },
             });
+        </script>
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                        console.log('SW registered:', reg.scope);
+                    }).catch(function(err) {
+                        console.log('SW registration failed:', err);
+                    });
+                });
+            }
         </script>
     </body>
 </html>

@@ -1,0 +1,74 @@
+{
+  "summary": "Iteration 21 testing complete. All 14 backend tests passed, all frontend features verified. New features: Enhanced AI chatbot with FAQ knowledge, quick-reply buttons, Admin Bot Training CRUD panel, and PWA setup.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✅ Backend: API health check passes",
+    "✅ Backend: POST /api/chat returns 200 with response and session_id (first message)",
+    "✅ Backend: POST /api/chat returns 200 for multi-turn conversation (graceful budget fallback)",
+    "✅ Backend: GET /api/admin/bot-training returns array",
+    "✅ Backend: POST /api/admin/bot-training creates entry with id",
+    "✅ Backend: PUT /api/admin/bot-training/{id} updates entry",
+    "✅ Backend: DELETE /api/admin/bot-training/{id} deletes entry",
+    "✅ Backend: manifest.json accessible at /manifest.json with proper PWA data",
+    "✅ Backend: sw.js (service worker) accessible at /sw.js",
+    "✅ Backend: firegold_icon_192.png accessible",
+    "✅ Backend: firegold_icon_512.png accessible",
+    "✅ Backend: HTML has manifest link",
+    "✅ Backend: HTML has apple-mobile-web-app meta tags",
+    "✅ Backend: HTML has theme-color meta tag",
+    "✅ Frontend: Chat widget toggle button visible and clickable",
+    "✅ Frontend: Chat widget opens on click showing welcome message",
+    "✅ Frontend: Quick-reply buttons visible on first open (View Catalog, Submit Product, Pricing Info, Export Markets, Contact Sales)",
+    "✅ Frontend: Quick-reply button fills input with question text",
+    "✅ Frontend: Chat sends message and receives response from enhanced AI",
+    "✅ Frontend: Quick-reply buttons disappear after sending first message",
+    "✅ Frontend: Admin Bot Training tab visible and clickable",
+    "✅ Frontend: Bot Training shows entry count (custom Q&A entries)",
+    "✅ Frontend: Bot Training - Add Training Entry form has category dropdown, question input, answer textarea",
+    "✅ Frontend: Bot Training - Add Entry button creates new entry (success toast shown)",
+    "✅ Frontend: Bot Training - Entries list shows category badge, Q&A, and Edit/Delete icons"
+  ],
+
+  "skipped_tests": [],
+
+  "test_report_links": [
+    "/app/backend/tests/test_iteration21_features.py",
+    "/app/test_reports/pytest/pytest_iteration21.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_iteration21_features.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (14/14 tests passed)",
+    "frontend": "100% (All UI features verified)"
+  },
+
+  "test_credentials": {
+    "admin_password": "firegold2026",
+    "backend_url": "https://flower-marketplace-2.preview.emergentagent.com"
+  },
+
+  "seed_data_creation": "Created test bot training entries during API and UI tests (TEST_question_*, TEST_PLAYWRIGHT_QUESTION_21, Updated question)",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Iteration 21 all new features verified working: 1) Chat widget has 5 quick-reply buttons (View Catalog, Submit Product, Pricing Info, Export Markets, Contact Sales) that appear on first open and fill input when clicked. Quick replies hide after first message sent. 2) Chat uses enhanced system prompt with comprehensive Firegold FAQ knowledge. Budget exceeded scenarios return graceful fallback message. 3) Admin Bot Training tab (data-testid='admin-tab-bot-training') shows CRUD panel with: category dropdown, question input, answer textarea, Add Entry button. Entries display with category badge, Q&A text, and Edit/Delete icons. 4) PWA setup complete: manifest.json, sw.js, and icons (192px, 384px, 512px) all accessible. HTML has proper PWA meta tags (manifest link, apple-mobile-web-app-capable, theme-color). Key data-testids: chat-toggle-btn, chat-window, chat-input, chat-send-btn, quick-replies, quick-reply-{0-4}, admin-tab-bot-training."
+}
