@@ -1989,6 +1989,25 @@ const AuthPage = ({ onAuth }) => {
     password: ''
   });
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSending, setForgotSending] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail) { toast.error('Please enter your email'); return; }
+    setForgotSending(true);
+    try {
+      await axios.post(`${API}/auth/forgot-password`, { email: forgotEmail });
+      setForgotSent(true);
+      toast.success('Reset link sent! Check your email.');
+    } catch (err) {
+      toast.error('Failed to send reset link');
+    } finally {
+      setForgotSending(false);
+    }
+  };
   const [showContactFromAuth, setShowContactFromAuth] = useState(false);
   const [authContactForm, setAuthContactForm] = useState({ name: '', email: '', company: '', message: '' });
   const [authContactSending, setAuthContactSending] = useState(false);
@@ -2408,7 +2427,53 @@ const AuthPage = ({ onAuth }) => {
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              data-testid="forgot-password-link"
+              className="w-full text-center text-gold-500 hover:text-gold-400 text-xs uppercase tracking-widest mt-3 transition-colors"
+            >
+              Forgot Password?
+            </button>
           </form>
+        )}
+
+        {/* Forgot Password Modal */}
+        {showForgotPassword && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { setShowForgotPassword(false); setForgotSent(false); }} />
+            <div data-testid="forgot-password-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-md p-8">
+              <button onClick={() => { setShowForgotPassword(false); setForgotSent(false); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+              <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest mb-4">Reset Password</h2>
+              {forgotSent ? (
+                <div className="text-center py-4">
+                  <CheckCircle2 className="w-12 h-12 text-cannabis-green mx-auto mb-4" />
+                  <p className="text-white mb-2">Reset link sent!</p>
+                  <p className="text-zinc-400 text-sm">Check your email for a link to reset your password. It expires in 24 hours.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <p className="text-zinc-400 text-sm mb-4">Enter your email and we'll send you a link to reset your password.</p>
+                  <input
+                    data-testid="forgot-email-input"
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                    placeholder="Your email address"
+                  />
+                  <button
+                    type="submit"
+                    disabled={forgotSending}
+                    data-testid="forgot-submit-btn"
+                    className="w-full bg-gold-500 hover:bg-gold-400 disabled:opacity-50 text-black font-bold uppercase tracking-widest py-3 text-sm transition-all"
+                  >
+                    {forgotSending ? 'Sending...' : 'Send Reset Link'}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
         )}
 
         <p className="text-zinc-600 text-xs text-center mt-6">
@@ -7035,6 +7100,71 @@ const CatalogPage = () => {
   );
 };
 
+const ResetPasswordPage = () => {
+  const [token] = useState(new URLSearchParams(window.location.search).get('token'));
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPw] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleReset = async (e) => {
+    e.preventDefault();
+    if (password.length < 6) { setError('Password must be at least 6 characters'); return; }
+    if (password !== confirmPassword) { setError('Passwords do not match'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      await axios.post(`${API}/auth/reset-password`, { token, new_password: password });
+      setSuccess(true);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to reset password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-obsidian flex items-center justify-center p-6">
+      <div className="bg-charcoal border border-white/10 p-8 max-w-md w-full">
+        <div className="text-center mb-8">
+          <h1 className="font-cinzel font-bold text-2xl text-gold-500 tracking-widest">FIREGOLD</h1>
+          <p className="text-zinc-500 text-xs tracking-widest mt-1">MARKETPLACE</p>
+        </div>
+        {!token ? (
+          <div className="text-center">
+            <p className="text-red-500 mb-4">Invalid reset link. No token found.</p>
+            <a href="/" className="text-gold-500 hover:text-gold-400 text-sm uppercase tracking-widest">Back to Login</a>
+          </div>
+        ) : success ? (
+          <div className="text-center">
+            <CheckCircle2 className="w-12 h-12 text-cannabis-green mx-auto mb-4" />
+            <h2 className="text-white text-lg font-bold mb-2">Password Reset!</h2>
+            <p className="text-zinc-400 text-sm mb-6">Your password has been updated. You can now log in.</p>
+            <a href="/" className="bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-8 py-3 text-sm transition-all inline-block">Go to Login</a>
+          </div>
+        ) : (
+          <form onSubmit={handleReset} className="space-y-4">
+            <h2 className="font-cinzel font-bold text-lg text-white uppercase tracking-widest text-center mb-4">Set New Password</h2>
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">New Password</label>
+              <input data-testid="reset-password-input" type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="New password" required />
+            </div>
+            <div>
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Confirm Password</label>
+              <input data-testid="reset-confirm-input" type="password" value={confirmPassword} onChange={e => setConfirmPw(e.target.value)} className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder="Confirm password" required />
+            </div>
+            <button type="submit" disabled={loading} data-testid="reset-submit-btn" className="w-full bg-gold-500 hover:bg-gold-400 disabled:opacity-50 text-black font-bold uppercase tracking-widest py-3 text-sm transition-all">
+              {loading ? 'Resetting...' : 'Reset Password'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
 function App() {
   return (
     <div className="App dark">
@@ -7044,6 +7174,7 @@ function App() {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/submit-strain" element={<GrowerSubmitPage />} />
           <Route path="/track" element={<SubmissionTracker />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Routes>
       </BrowserRouter>
     </div>

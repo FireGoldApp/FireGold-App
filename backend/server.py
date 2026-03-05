@@ -39,6 +39,7 @@ SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
 SMTP_EMAIL = os.environ.get('SMTP_EMAIL')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD')
 SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'Firegold Marketplace')
+APP_URL = os.environ.get('APP_URL', 'https://app.firegold.ca')
 
 async def send_email(to_email: str, subject: str, html_body: str):
     """Send email via Microsoft 365 SMTP"""
@@ -1319,6 +1320,9 @@ async def register_user(user_data: UserRegister):
             email_template("Welcome!", f"""
                 <p>Hi {user.first_name},</p>
                 <p>Thank you for registering with Firegold Marketplace. Your account is now active and you can browse our full cannabis whole flower catalog.</p>
+                <p style="margin: 25px 0;">
+                    <a href="{APP_URL}" style="background: #D4AF37; color: #000; padding: 12px 30px; text-decoration: none; font-weight: bold; letter-spacing: 2px; font-size: 13px;">VISIT MARKETPLACE</a>
+                </p>
                 <p>If you have any questions, don't hesitate to reach out.</p>
                 <p style="margin-top: 20px; color: #D4AF37;">— The Firegold Team</p>
             """)
@@ -1428,6 +1432,65 @@ async def verify_user(user_data: dict = Depends(verify_user_token)):
             "email": user_data.get('email')
         }
     }
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(body: ForgotPasswordRequest):
+    """Send password reset email"""
+    user = await db.users.find_one({"email": body.email.lower()}, {"_id": 0})
+    if not user:
+        # Don't reveal if email exists
+        return {"message": "If this email is registered, you will receive a reset link shortly."}
+    
+    reset_token = str(uuid.uuid4())
+    expires = datetime.now(timezone.utc) + timedelta(hours=24)
+    
+    await db.password_resets.insert_one({
+        "token": reset_token,
+        "user_id": user["id"],
+        "email": body.email.lower(),
+        "expires_at": expires.isoformat(),
+        "used": False
+    })
+    
+    reset_link = f"{APP_URL}/reset-password?token={reset_token}"
+    
+    await send_email(
+        body.email,
+        "Reset Your Firegold Password",
+        email_template("Password Reset", f"""
+            <p>Hi {user.get('first_name', '')},</p>
+            <p>We received a request to reset your password. Click the link below to set a new password:</p>
+            <p style="margin: 25px 0;">
+                <a href="{reset_link}" style="background: #D4AF37; color: #000; padding: 12px 30px; text-decoration: none; font-weight: bold; letter-spacing: 2px; font-size: 13px;">RESET PASSWORD</a>
+            </p>
+            <p style="color: #888; font-size: 12px;">This link expires in 24 hours. If you didn't request this, you can safely ignore this email.</p>
+        """)
+    )
+    
+    return {"message": "If this email is registered, you will receive a reset link shortly."}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(body: ResetPasswordRequest):
+    """Reset password using token"""
+    reset = await db.password_resets.find_one({"token": body.token, "used": False}, {"_id": 0})
+    if not reset:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+    
+    if datetime.now(timezone.utc).isoformat() > reset["expires_at"]:
+        raise HTTPException(status_code=400, detail="Reset link has expired")
+    
+    password_hash = hashlib.sha256(body.new_password.encode()).hexdigest()
+    await db.users.update_one({"id": reset["user_id"]}, {"$set": {"password_hash": password_hash}})
+    await db.password_resets.update_one({"token": body.token}, {"$set": {"used": True}})
+    
+    return {"message": "Password reset successful. You can now log in with your new password."}
 
 @api_router.get("/auth/my-referral")
 async def get_my_referral(user_data: dict = Depends(verify_user_token)):
