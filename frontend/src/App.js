@@ -306,7 +306,7 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
               <button 
                 data-testid="close-modal-btn"
                 onClick={(e) => { e.stopPropagation(); onClose(); }}
-                className="absolute top-4 right-4 w-10 h-10 bg-gold-500 text-black hidden md:flex items-center justify-center hover:bg-red-600 hover:text-black transition-all z-10"
+                className="absolute top-4 right-4 w-10 h-10 bg-gold-500 text-black hidden md:flex items-center justify-center hover:bg-gold-400 transition-all z-10"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -465,7 +465,7 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
               <button
                 data-testid="close-zoom-btn"
                 onClick={() => setImageZoomed(false)}
-                className="w-10 h-10 bg-zinc-800 hover:bg-gold-500 hover:text-black text-white flex items-center justify-center transition-all"
+                className="w-10 h-10 bg-gold-500 text-black hover:bg-gold-400 flex items-center justify-center transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -502,7 +502,7 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
               <button
                 data-testid="close-coa-btn"
                 onClick={closeCoa}
-                className="w-10 h-10 bg-zinc-800 hover:bg-gold-500 hover:text-black flex items-center justify-center transition-all"
+                className="w-10 h-10 bg-gold-500 text-black hover:bg-gold-400 flex items-center justify-center transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2305,11 +2305,12 @@ const AuthPage = ({ onAuth }) => {
       )}
 
       <div className="flex-1 flex items-center justify-center p-6">
-      {/* Contact Us floating button */}
+      {/* Contact Us floating button - positioned below install banner on mobile */}
       <button
         onClick={() => setShowContactFromAuth(true)}
         data-testid="auth-contact-btn"
         className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-zinc-900/80 border border-zinc-700 hover:border-gold-500 text-zinc-300 hover:text-gold-500 px-4 py-2 transition-all backdrop-blur-sm"
+        style={{ top: showAuthInstallBanner ? '60px' : '24px' }}
       >
         <MessageCircle className="w-4 h-4" />
         <span className="text-xs uppercase tracking-widest font-manrope">Contact Us</span>
@@ -2323,9 +2324,9 @@ const AuthPage = ({ onAuth }) => {
             <button 
               onClick={() => setShowContactFromAuth(false)} 
               data-testid="auth-contact-modal-close"
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-black" />
             </button>
             <div className="flex items-center gap-3 mb-6">
               <MessageCircle className="w-6 h-6 text-gold-500" />
@@ -2723,7 +2724,7 @@ const AuthPage = ({ onAuth }) => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { setShowForgotPassword(false); setForgotSent(false); }} />
             <div data-testid="forgot-password-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-md p-8">
-              <button onClick={() => { setShowForgotPassword(false); setForgotSent(false); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+              <button onClick={() => { setShowForgotPassword(false); setForgotSent(false); }} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"><X className="w-5 h-5 text-black" /></button>
               <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest mb-4">Reset Password</h2>
               {forgotSent ? (
                 <div className="text-center py-4">
@@ -4243,8 +4244,8 @@ const AdminPage = () => {
                       <h2 className="font-cinzel font-bold text-2xl text-white">{selectedAffiliateDetail.affiliate.name}</h2>
                       <p className="text-gold-500 font-mono text-sm">Code: {selectedAffiliateDetail.affiliate.referral_code} &middot; {selectedAffiliateDetail.affiliate.commission_rate}% commission</p>
                     </div>
-                    <button onClick={() => setSelectedAffiliateDetail(null)} className="w-10 h-10 bg-zinc-800 hover:bg-gold-500 hover:text-black text-white flex items-center justify-center transition-all">
-                      <X className="w-5 h-5" />
+                    <button onClick={() => setSelectedAffiliateDetail(null)} className="w-10 h-10 bg-gold-500 text-black hover:bg-gold-400 flex items-center justify-center transition-all">
+                      <X className="w-5 h-5 text-black" />
                     </button>
                   </div>
                   <div className="p-6 space-y-6">
@@ -4526,8 +4527,8 @@ const AdminPage = () => {
               <div className="p-8">
                 <div className="flex justify-between items-start mb-6">
                   <h2 className="font-cinzel font-bold text-2xl text-white">Edit Strain</h2>
-                  <button onClick={() => setEditingStrain(null)} className="text-zinc-500 hover:text-white">
-                    <X className="w-6 h-6" />
+                  <button onClick={() => setEditingStrain(null)} className="w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all">
+                    <X className="w-6 h-6 text-black" />
                   </button>
                 </div>
 
@@ -4741,9 +4742,9 @@ const AdminPage = () => {
                   </div>
                   <button 
                     onClick={() => setShowAddStrain(false)}
-                    className="w-10 h-10 flex items-center justify-center hover:bg-zinc-800 transition-all"
+                    className="w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"
                   >
-                    <X className="w-5 h-5 text-zinc-400" />
+                    <X className="w-5 h-5 text-black" />
                   </button>
                 </div>
 
@@ -5732,8 +5733,8 @@ const AdminPage = () => {
                       <h2 className="font-cinzel font-bold text-2xl text-white">{selectedUserProfile.user.first_name} {selectedUserProfile.user.last_name}</h2>
                       <p className="text-zinc-400 text-sm">{selectedUserProfile.user.company} · {selectedUserProfile.user.email}</p>
                     </div>
-                    <button onClick={() => setSelectedUserProfile(null)} className="w-10 h-10 bg-zinc-800 hover:bg-gold-500 hover:text-black text-white flex items-center justify-center transition-all">
-                      <X className="w-5 h-5" />
+                    <button onClick={() => setSelectedUserProfile(null)} className="w-10 h-10 bg-gold-500 text-black hover:bg-gold-400 flex items-center justify-center transition-all">
+                      <X className="w-5 h-5 text-black" />
                     </button>
                   </div>
                   <div className="p-6 space-y-6">
@@ -6923,7 +6924,7 @@ const AdminPage = () => {
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { setReplyingMessage(null); setReplyText(''); }} />
                 <div data-testid="reply-message-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-lg p-8">
-                  <button onClick={() => { setReplyingMessage(null); setReplyText(''); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+                  <button onClick={() => { setReplyingMessage(null); setReplyText(''); }} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"><X className="w-5 h-5 text-black" /></button>
                   <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest mb-2">Reply</h2>
                   <p className="text-zinc-500 text-sm mb-4">To: {replyingMessage.name} ({replyingMessage.email})</p>
                   <div className="bg-zinc-900 border border-white/5 p-4 mb-4">
@@ -7172,7 +7173,7 @@ const AdminPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setEditingAffiliate(null)} />
           <div data-testid="edit-affiliate-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-lg p-8">
-            <button onClick={() => setEditingAffiliate(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+            <button onClick={() => setEditingAffiliate(null)} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"><X className="w-5 h-5 text-black" /></button>
             <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest mb-6">Edit Affiliate</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -7209,7 +7210,7 @@ const AdminPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setConvertingInquiry(null)} />
           <div data-testid="convert-inquiry-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-lg p-8">
-            <button onClick={() => setConvertingInquiry(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
+            <button onClick={() => setConvertingInquiry(null)} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"><X className="w-5 h-5 text-black" /></button>
             <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest mb-2">Convert to Sale</h2>
             <p className="text-zinc-400 text-sm mb-6">Inquiry from <span className="text-white">{convertingInquiry.contact_name}</span> — {convertingInquiry.company_name}</p>
             <div className="space-y-4">
@@ -7780,8 +7781,8 @@ const CatalogPage = () => {
             <div className="md:hidden fixed inset-0 z-50 bg-black/95 p-6 overflow-y-auto">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="font-manrope font-semibold text-lg text-white">Filters</h2>
-                <button onClick={() => setMobileFiltersOpen(false)}>
-                  <X className="w-6 h-6 text-zinc-400" />
+                <button onClick={() => setMobileFiltersOpen(false)} className="w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all">
+                  <X className="w-6 h-6 text-black" />
                 </button>
               </div>
               <FilterSidebar filters={filters} setFilters={setFilters} strains={strains} />
@@ -7974,9 +7975,9 @@ const CatalogPage = () => {
             <button 
               onClick={() => setShowShareModal(false)} 
               data-testid="share-modal-close"
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-black" />
             </button>
             <div className="flex items-center gap-3 mb-6">
               <Share2 className="w-6 h-6 text-gold-500" />
