@@ -428,8 +428,8 @@ class AffiliateCreate(BaseModel):
     phone: Optional[str] = None
     company: Optional[str] = None
     referral_code: str
-    commission_type: str = "per_gram"  # per_gram, percentage, flat_fee
-    commission_value: float = 0.03  # $0.03/gram default
+    commission_type: Optional[str] = None  # Set per-deal at conversion time
+    commission_value: Optional[float] = None
 
 class Affiliate(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -441,8 +441,8 @@ class Affiliate(BaseModel):
     phone: Optional[str] = None
     company: Optional[str] = None
     referral_code: str
-    commission_type: str = "per_gram"  # per_gram, percentage, flat_fee
-    commission_value: float = 0.03
+    commission_type: Optional[str] = None  # Set per-deal at conversion time
+    commission_value: Optional[float] = None
     is_active: bool = True
     total_referrals: int = 0
     total_conversions: int = 0

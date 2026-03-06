@@ -2111,6 +2111,32 @@ const AuthPage = ({ onAuth }) => {
   const [error, setError] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [referralName, setReferralName] = useState('');
+  const [showAuthInstallBanner, setShowAuthInstallBanner] = useState(false);
+  const [authIsIOS, setAuthIsIOS] = useState(false);
+  const [authDeferredPrompt, setAuthDeferredPrompt] = useState(null);
+
+  // PWA Install prompt for auth page — always show on mobile
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone || localStorage.getItem('pwa_install_dismissed')) return;
+    const ios = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+    const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+    setAuthIsIOS(ios);
+    // Always show on mobile devices
+    if (isMobile) {
+      setShowAuthInstallBanner(true);
+    }
+    // Also listen for the browser prompt on non-iOS
+    if (!ios) {
+      const handler = (e) => {
+        e.preventDefault();
+        setAuthDeferredPrompt(e);
+        setShowAuthInstallBanner(true);
+      };
+      window.addEventListener('beforeinstallprompt', handler);
+      return () => window.removeEventListener('beforeinstallprompt', handler);
+    }
+  }, []);
   const [registerData, setRegisterData] = useState({
     first_name: '',
     last_name: '',
@@ -2232,7 +2258,53 @@ const AuthPage = ({ onAuth }) => {
   };
 
   return (
-    <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 relative">
+    <div className="min-h-screen bg-obsidian flex flex-col relative">
+      {/* PWA Install Banner - Top of page */}
+      {showAuthInstallBanner && (
+        <div data-testid="auth-pwa-install-banner" className="bg-gold-500/15 border-b border-gold-500/30 py-3 px-4 flex-shrink-0">
+          <div className="flex items-center justify-between gap-3 max-w-lg mx-auto">
+            <div className="flex items-center gap-3 min-w-0">
+              <img src="/firegold_icon_192.png" alt="Firegold" className="w-9 h-9 rounded-lg flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-white font-manrope text-sm font-bold">Install Firegold</p>
+                {authIsIOS ? (
+                  <p className="text-zinc-300 text-xs">
+                    Tap <span className="inline-flex items-center text-gold-500 font-bold">
+                      <svg className="w-3.5 h-3.5 inline mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                      Share
+                    </span> then <span className="text-gold-500 font-bold">"Add to Home Screen"</span>
+                  </p>
+                ) : (
+                  <p className="text-zinc-400 text-xs">Add to home screen for quick access</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {!authIsIOS && authDeferredPrompt && (
+                <button
+                  onClick={async () => {
+                    authDeferredPrompt.prompt();
+                    await authDeferredPrompt.userChoice;
+                    setAuthDeferredPrompt(null);
+                    setShowAuthInstallBanner(false);
+                  }}
+                  className="bg-gold-500 text-black font-bold text-xs uppercase tracking-widest px-3 py-1.5 hover:bg-gold-400 transition-all"
+                >
+                  Install
+                </button>
+              )}
+              <button
+                onClick={() => { setShowAuthInstallBanner(false); localStorage.setItem('pwa_install_dismissed', 'true'); }}
+                className="w-7 h-7 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"
+              >
+                <X className="w-3.5 h-3.5 text-black" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 flex items-center justify-center p-6">
       {/* Contact Us floating button */}
       <button
         onClick={() => setShowContactFromAuth(true)}
@@ -2688,6 +2760,7 @@ const AuthPage = ({ onAuth }) => {
           By registering, you agree to our terms of service.
         </p>
       </div>
+      </div>
 
       <Toaster 
         position="bottom-right"
@@ -3051,7 +3124,7 @@ const AdminPage = () => {
   const [directoryLicenseForm, setDirectoryLicenseForm] = useState({});
   const [affiliates, setAffiliates] = useState([]);
   const [showAddAffiliate, setShowAddAffiliate] = useState(false);
-  const [affiliateForm, setAffiliateForm] = useState({ name: '', email: '', phone: '', company: '', referral_code: '', commission_type: 'per_gram', commission_value: 0.03 });
+  const [affiliateForm, setAffiliateForm] = useState({ name: '', email: '', phone: '', company: '', referral_code: '' });
   const [editingAffiliate, setEditingAffiliate] = useState(null);
   const [convertingInquiry, setConvertingInquiry] = useState(null);
   const [conversionData, setConversionData] = useState({ sale_amount: '', total_grams: '', commission_type: '', commission_value: '' });
@@ -3438,7 +3511,7 @@ const AdminPage = () => {
       });
       toast.success(`Affiliate ${affiliateForm.referral_code.toUpperCase()} created`);
       setShowAddAffiliate(false);
-      setAffiliateForm({ name: '', email: '', phone: '', company: '', referral_code: '', commission_type: 'per_gram', commission_value: 0.03 });
+      setAffiliateForm({ name: '', email: '', phone: '', company: '', referral_code: '' });
       fetchAffiliates();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to create affiliate');
@@ -4257,14 +4330,9 @@ const AdminPage = () => {
                       <button onClick={() => setAffiliateForm(p => ({...p, referral_code: autoGenerateCode(p.name)}))} className="absolute right-2 top-1/2 -translate-y-1/2 text-gold-500 text-xs hover:underline">Generate</button>
                     )}
                   </div>
-                  <select data-testid="affiliate-commission-type" value={affiliateForm.commission_type} onChange={e => setAffiliateForm(p => ({...p, commission_type: e.target.value, commission_value: e.target.value === 'per_gram' ? 0.03 : e.target.value === 'percentage' ? 5 : 500 }))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none">
-                    <option value="per_gram">Per Gram ($)</option>
-                    <option value="percentage">% of Deal</option>
-                    <option value="flat_fee">Flat Fee ($)</option>
-                  </select>
-                  <input data-testid="affiliate-commission-value" type="number" step="0.01" value={affiliateForm.commission_value} onChange={e => setAffiliateForm(p => ({...p, commission_value: parseFloat(e.target.value) || 0}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-12 px-4 outline-none" placeholder={affiliateForm.commission_type === 'per_gram' ? '$/gram' : affiliateForm.commission_type === 'percentage' ? '%' : 'Flat $'} />
                 </div>
-                <div className="flex gap-3">
+                <p className="text-zinc-500 text-xs mt-1">Commission will be set per-deal when converting inquiries to sales.</p>
+                <div className="flex gap-3 mt-3">
                   <button data-testid="save-affiliate-btn" onClick={createAffiliate} className="bg-gold-500 hover:bg-gold-400 text-black px-6 py-2 font-bold uppercase tracking-widest text-xs transition-colors">Create</button>
                   <button onClick={() => setShowAddAffiliate(false)} className="bg-zinc-700 text-white px-6 py-2 text-xs uppercase tracking-widest">Cancel</button>
                 </div>
@@ -7129,26 +7197,7 @@ const AdminPage = () => {
                 <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Referral Code</label>
                 <input type="text" value={editingAffiliate.referral_code} onChange={e => setEditingAffiliate(p => ({...p, referral_code: e.target.value.toUpperCase()}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm font-mono uppercase" />
               </div>
-              <div className="border border-gold-500/30 bg-gold-500/5 p-4">
-                <label className="block text-xs uppercase tracking-widest text-gold-500 mb-3 font-bold">Commission Structure</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-zinc-500 mb-1">Type</label>
-                    <select value={editingAffiliate.commission_type || 'per_gram'} onChange={e => setEditingAffiliate(p => ({...p, commission_type: e.target.value}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm">
-                      <option value="per_gram">Per Gram ($)</option>
-                      <option value="percentage">% of Deal</option>
-                      <option value="flat_fee">Flat Fee ($)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-zinc-500 mb-1">{editingAffiliate.commission_type === 'per_gram' ? '$ Per Gram' : editingAffiliate.commission_type === 'percentage' ? 'Percentage' : 'Flat Amount ($)'}</label>
-                    <input type="number" step="0.01" value={editingAffiliate.commission_value ?? 0.03} onChange={e => setEditingAffiliate(p => ({...p, commission_value: parseFloat(e.target.value) || 0}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm font-mono" />
-                  </div>
-                </div>
-                <p className="text-zinc-500 text-xs mt-2">
-                  {editingAffiliate.commission_type === 'per_gram' ? `$${editingAffiliate.commission_value || 0.03} x grams sold = commission` : editingAffiliate.commission_type === 'percentage' ? `${editingAffiliate.commission_value || 5}% of total sale = commission` : `Flat $${editingAffiliate.commission_value || 500} per deal`}
-                </p>
-              </div>
+              <p className="text-zinc-500 text-xs">Commission is set per-deal when converting inquiries to sales.</p>
               <button onClick={saveAffiliateEdit} data-testid="save-affiliate-btn" className="w-full bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest py-3 text-sm transition-all">Save Changes</button>
             </div>
           </div>
@@ -7174,21 +7223,28 @@ const AdminPage = () => {
                   <input data-testid="convert-total-grams" type="number" step="0.01" value={conversionData.total_grams} onChange={e => setConversionData(p => ({...p, total_grams: e.target.value}))} className="w-full bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm font-mono" placeholder="Grams sold" />
                 </div>
               </div>
-              <div className="border border-zinc-700 bg-zinc-900/50 p-4">
-                <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-3">Commission Override (leave blank to use affiliate default)</label>
+              <div className="border border-gold-500/30 bg-gold-500/5 p-4">
+                <label className="block text-xs uppercase tracking-widest text-gold-500 mb-3 font-bold">Affiliate Commission for this Deal *</label>
                 <div className="grid grid-cols-2 gap-4">
-                  <select value={conversionData.commission_type} onChange={e => setConversionData(p => ({...p, commission_type: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm">
-                    <option value="">Use Default</option>
+                  <select data-testid="convert-commission-type" value={conversionData.commission_type} onChange={e => setConversionData(p => ({...p, commission_type: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm">
+                    <option value="">Select type...</option>
                     <option value="per_gram">Per Gram ($)</option>
                     <option value="percentage">% of Deal</option>
                     <option value="flat_fee">Flat Fee ($)</option>
                   </select>
-                  {conversionData.commission_type && (
-                    <input type="number" step="0.01" value={conversionData.commission_value} onChange={e => setConversionData(p => ({...p, commission_value: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm font-mono" placeholder={conversionData.commission_type === 'per_gram' ? '$/gram' : conversionData.commission_type === 'percentage' ? '%' : 'Flat $'} />
-                  )}
+                  <input data-testid="convert-commission-value" type="number" step="0.01" value={conversionData.commission_value} onChange={e => setConversionData(p => ({...p, commission_value: e.target.value}))} className="bg-zinc-900 border border-zinc-700 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm font-mono" placeholder={conversionData.commission_type === 'per_gram' ? '$/gram' : conversionData.commission_type === 'percentage' ? '%' : conversionData.commission_type === 'flat_fee' ? 'Flat $' : 'Enter value'} />
                 </div>
+                {conversionData.commission_type && conversionData.commission_value && conversionData.sale_amount && (
+                  <p className="text-gold-500 text-xs mt-2 font-mono">
+                    Payout: ${conversionData.commission_type === 'per_gram' 
+                      ? (parseFloat(conversionData.commission_value) * (parseFloat(conversionData.total_grams) || 0)).toFixed(2) 
+                      : conversionData.commission_type === 'percentage' 
+                        ? (parseFloat(conversionData.sale_amount) * parseFloat(conversionData.commission_value) / 100).toFixed(2) 
+                        : parseFloat(conversionData.commission_value).toFixed(2)}
+                  </p>
+                )}
               </div>
-              <button onClick={recordConversion} disabled={!conversionData.sale_amount} data-testid="confirm-conversion-btn" className="w-full bg-cannabis-green hover:bg-green-600 disabled:opacity-50 text-white font-bold uppercase tracking-widest py-3 text-sm transition-all">Confirm Sale Conversion</button>
+              <button onClick={recordConversion} disabled={!conversionData.sale_amount || !conversionData.commission_type || !conversionData.commission_value} data-testid="confirm-conversion-btn" className="w-full bg-cannabis-green hover:bg-green-600 disabled:opacity-50 text-white font-bold uppercase tracking-widest py-3 text-sm transition-all">Confirm Sale Conversion</button>
             </div>
           </div>
         </div>
@@ -7233,22 +7289,42 @@ const CatalogPage = () => {
   const [loadingReferral, setLoadingReferral] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   // PWA Install prompt
   useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      // Only show if user hasn't dismissed it before
-      if (!localStorage.getItem('pwa_install_dismissed')) {
+    // Detect iOS
+    const ios = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+    const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+    setIsIOS(ios);
+
+    // Check if already installed as PWA
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone || localStorage.getItem('pwa_install_dismissed')) return;
+
+    // Always show on mobile devices
+    if (isMobile) {
+      setShowInstallBanner(true);
+    }
+
+    if (!ios) {
+      // Android/Desktop — also listen for the browser's install prompt
+      const handler = (e) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
         setShowInstallBanner(true);
-      }
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+      };
+      window.addEventListener('beforeinstallprompt', handler);
+      return () => window.removeEventListener('beforeinstallprompt', handler);
+    }
   }, []);
 
   const handleInstallClick = async () => {
+    if (isIOS) {
+      // Can't auto-install on iOS, just dismiss and let them follow instructions
+      setShowInstallBanner(false);
+      return;
+    }
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
@@ -7614,29 +7690,40 @@ const CatalogPage = () => {
 
       {/* PWA Install Banner */}
       {showInstallBanner && (
-        <div data-testid="pwa-install-banner" className="bg-gold-500/10 border-y border-gold-500/30 py-3 px-6">
-          <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img src="/firegold_icon_192.png" alt="Firegold" className="w-10 h-10 rounded-lg" />
-              <div>
+        <div data-testid="pwa-install-banner" className="bg-gold-500/15 border-y border-gold-500/30 py-3 px-4 md:px-6">
+          <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <img src="/firegold_icon_192.png" alt="Firegold" className="w-10 h-10 rounded-lg flex-shrink-0" />
+              <div className="min-w-0">
                 <p className="text-white font-manrope text-sm font-bold">Install Firegold App</p>
-                <p className="text-zinc-400 text-xs">Quick access from your home screen — no app store needed</p>
+                {isIOS ? (
+                  <p className="text-zinc-300 text-xs">
+                    Tap <span className="inline-flex items-center text-gold-500 font-bold">
+                      <svg className="w-3.5 h-3.5 inline mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                      Share
+                    </span> then <span className="text-gold-500 font-bold">"Add to Home Screen"</span>
+                  </p>
+                ) : (
+                  <p className="text-zinc-400 text-xs hidden md:block">Quick access from your home screen — no app store needed</p>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                data-testid="pwa-install-btn"
-                onClick={handleInstallClick}
-                className="bg-gold-500 text-black font-bold text-xs uppercase tracking-widest px-4 py-2 hover:bg-gold-400 transition-all"
-              >
-                Install
-              </button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {!isIOS && (
+                <button
+                  data-testid="pwa-install-btn"
+                  onClick={handleInstallClick}
+                  className="bg-gold-500 text-black font-bold text-xs uppercase tracking-widest px-4 py-2 hover:bg-gold-400 transition-all"
+                >
+                  Install
+                </button>
+              )}
               <button
                 data-testid="pwa-dismiss-btn"
                 onClick={dismissInstallBanner}
-                className="w-8 h-8 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 transition-all"
+                className="w-8 h-8 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"
               >
-                <X className="w-4 h-4 text-zinc-400" />
+                <X className="w-4 h-4 text-black" />
               </button>
             </div>
           </div>
