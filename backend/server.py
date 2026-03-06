@@ -371,6 +371,8 @@ class InquiryCreate(BaseModel):
     strain_volumes: Optional[dict] = {}  # {strain_id: "volume in kg"}
     market_of_interest: Optional[str] = None
     message: str
+    open_permit: Optional[str] = None
+    permit_jurisdiction: Optional[str] = None
 
 class Inquiry(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -384,6 +386,8 @@ class Inquiry(BaseModel):
     strain_volumes: Optional[dict] = {}
     market_of_interest: Optional[str] = None
     message: str
+    open_permit: Optional[str] = None
+    permit_jurisdiction: Optional[str] = None
     status: str = "pending"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

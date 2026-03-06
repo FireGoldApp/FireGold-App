@@ -276,10 +276,10 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
           <button
             data-testid="mobile-back-btn"
             onClick={onClose}
-            className="flex items-center gap-2 text-zinc-300 active:text-gold-500 transition-colors"
+            className="flex items-center gap-2 text-black bg-gold-500 px-3 py-1.5 active:bg-gold-400 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm font-manrope uppercase tracking-widest">Back</span>
+            <span className="text-sm font-manrope uppercase tracking-widest font-bold">Back</span>
           </button>
           <span className="text-gold-500 font-cinzel font-bold text-sm truncate max-w-[50%]">{strain.strain_name}</span>
         </div>
@@ -553,6 +553,18 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
               {cat}
             </button>
           ))}
+          <button
+            data-testid="filter-bc-dd"
+            onClick={() => setFilters(prev => ({ ...prev, bcDd: !prev.bcDd }))}
+            className={`block w-full text-left px-4 py-2 border ${
+              filters.bcDd
+                ? 'border-blue-400 text-blue-300 bg-blue-600/10'
+                : 'border-zinc-800 text-zinc-400 hover:border-blue-400/50'
+            } transition-all`}
+          >
+            <span className="font-bold text-xs">BC DD</span>
+            <span className="text-zinc-500 text-xs ml-2">Direct Delivery</span>
+          </button>
         </div>
       </div>
 
@@ -658,22 +670,6 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
             </button>
           ))}
         </div>
-      </div>
-
-      <div>
-        <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">Compliance</h3>
-        <button
-          data-testid="filter-bc-dd"
-          onClick={() => setFilters(prev => ({ ...prev, bcDd: !prev.bcDd }))}
-          className={`block w-full text-left px-4 py-2 border ${
-            filters.bcDd
-              ? 'border-blue-400 text-blue-300 bg-blue-600/10'
-              : 'border-zinc-800 text-zinc-400 hover:border-blue-400/50'
-          } transition-all`}
-        >
-          <span className="font-bold text-xs">BC DD</span>
-          <span className="text-zinc-500 text-xs ml-2">Direct Delivery</span>
-        </button>
       </div>
 
       {filters.type || filters.priceTier || filters.minThc || filters.search || filters.grade || filters.growingMethod || filters.category || filters.bcDd ? (
@@ -799,9 +795,9 @@ const SampleRequestModal = ({ isOpen, onClose, strain, userData, userToken }) =>
             <button 
               data-testid="close-sample-request-btn"
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center hover:bg-zinc-800 transition-all"
+              className="w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"
             >
-              <X className="w-5 h-5 text-zinc-400" />
+              <X className="w-5 h-5 text-black" />
             </button>
           </div>
 
@@ -1011,7 +1007,9 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, use
     email: '',
     phone: '',
     market_of_interest: '',
-    message: ''
+    message: '',
+    open_permit: '',
+    permit_jurisdiction: ''
   });
   const [strainVolumes, setStrainVolumes] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1044,7 +1042,7 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, use
       });
       toast.success('Inquiry submitted successfully! We will contact you soon.');
       onClose();
-      setFormData({ company_name: '', contact_name: '', email: '', phone: '', market_of_interest: '', message: '' });
+      setFormData({ company_name: '', contact_name: '', email: '', phone: '', market_of_interest: '', message: '', open_permit: '', permit_jurisdiction: '' });
       setStrainVolumes({});
     } catch (error) {
       toast.error('Failed to submit inquiry. Please try again.');
@@ -1074,9 +1072,9 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, use
             <button 
               data-testid="close-inquiry-btn"
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center hover:bg-zinc-800 transition-all"
+              className="w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"
             >
-              <X className="w-5 h-5 text-zinc-400" />
+              <X className="w-5 h-5 text-black" />
             </button>
           </div>
 
@@ -1179,6 +1177,43 @@ const InquiryModal = ({ isOpen, onClose, selectedStrains, strains, userData, use
                 className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
                 placeholder="e.g., Canada, Germany, Australia, Israel"
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Do you have an Open Permit?</label>
+                <select
+                  data-testid="inquiry-open-permit"
+                  value={formData.open_permit}
+                  onChange={(e) => setFormData(prev => ({ ...prev, open_permit: e.target.value, permit_jurisdiction: e.target.value !== 'Yes' ? '' : prev.permit_jurisdiction }))}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
+                >
+                  <option value="">Select...</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Permit Jurisdiction</label>
+                <select
+                  data-testid="inquiry-jurisdiction"
+                  value={formData.permit_jurisdiction}
+                  onChange={(e) => setFormData(prev => ({ ...prev, permit_jurisdiction: e.target.value }))}
+                  className={`w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none ${formData.open_permit !== 'Yes' ? 'opacity-50' : ''}`}
+                  disabled={formData.open_permit !== 'Yes'}
+                >
+                  <option value="">Select jurisdiction...</option>
+                  <option value="Domestic (Canada)">Domestic (Canada)</option>
+                  <option value="Australia">Australia</option>
+                  <option value="Czech Republic">Czech Republic</option>
+                  <option value="Germany">Germany</option>
+                  <option value="Israel">Israel</option>
+                  <option value="Portugal">Portugal</option>
+                  <option value="South Africa">South Africa</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
 
             <div>
@@ -2375,15 +2410,24 @@ const AuthPage = ({ onAuth }) => {
               <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
                 <Globe className="w-4 h-4 inline mr-1" /> Country *
               </label>
-              <input
+              <select
                 data-testid="register-country"
-                type="text"
                 required
                 value={registerData.country}
                 onChange={(e) => setRegisterData(prev => ({ ...prev, country: e.target.value }))}
                 className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
-                placeholder="Canada"
-              />
+              >
+                <option value="">Select country...</option>
+                <option value="Domestic (Canada)">Domestic (Canada)</option>
+                <option value="Australia">Australia</option>
+                <option value="Czech Republic">Czech Republic</option>
+                <option value="Germany">Germany</option>
+                <option value="Israel">Israel</option>
+                <option value="Portugal">Portugal</option>
+                <option value="South Africa">South Africa</option>
+                <option value="United Kingdom">United Kingdom</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
 
             <div>
@@ -2476,6 +2520,7 @@ const AuthPage = ({ onAuth }) => {
                   disabled={registerData.open_permit !== 'Yes'}
                 >
                   <option value="">Select jurisdiction...</option>
+                  <option value="Domestic (Canada)">Domestic (Canada)</option>
                   <option value="Australia">Australia</option>
                   <option value="Czech Republic">Czech Republic</option>
                   <option value="Germany">Germany</option>
@@ -7186,6 +7231,38 @@ const CatalogPage = () => {
   const [myReferralCode, setMyReferralCode] = useState('');
   const [referralCopied, setReferralCopied] = useState(false);
   const [loadingReferral, setLoadingReferral] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  // PWA Install prompt
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      // Only show if user hasn't dismissed it before
+      if (!localStorage.getItem('pwa_install_dismissed')) {
+        setShowInstallBanner(true);
+      }
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      toast.success('Firegold app installed!');
+    }
+    setDeferredPrompt(null);
+    setShowInstallBanner(false);
+  };
+
+  const dismissInstallBanner = () => {
+    setShowInstallBanner(false);
+    localStorage.setItem('pwa_install_dismissed', 'true');
+  };
 
   const handleShareWithBuyer = async () => {
     setShowShareModal(true);
@@ -7535,6 +7612,37 @@ const CatalogPage = () => {
         </div>
       </section>
 
+      {/* PWA Install Banner */}
+      {showInstallBanner && (
+        <div data-testid="pwa-install-banner" className="bg-gold-500/10 border-y border-gold-500/30 py-3 px-6">
+          <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img src="/firegold_icon_192.png" alt="Firegold" className="w-10 h-10 rounded-lg" />
+              <div>
+                <p className="text-white font-manrope text-sm font-bold">Install Firegold App</p>
+                <p className="text-zinc-400 text-xs">Quick access from your home screen — no app store needed</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                data-testid="pwa-install-btn"
+                onClick={handleInstallClick}
+                className="bg-gold-500 text-black font-bold text-xs uppercase tracking-widest px-4 py-2 hover:bg-gold-400 transition-all"
+              >
+                Install
+              </button>
+              <button
+                data-testid="pwa-dismiss-btn"
+                onClick={dismissInstallBanner}
+                className="w-8 h-8 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 transition-all"
+              >
+                <X className="w-4 h-4 text-zinc-400" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="max-w-[1600px] mx-auto px-6 md:px-12 pb-24">
         {/* Mobile Search */}
@@ -7705,9 +7813,9 @@ const CatalogPage = () => {
             <button 
               onClick={() => setShowContactModal(false)} 
               data-testid="contact-modal-close"
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-black" />
             </button>
             <div className="flex items-center gap-3 mb-6">
               <MessageCircle className="w-6 h-6 text-gold-500" />
@@ -7975,8 +8083,8 @@ const ChatWidget = () => {
                 <p className="text-cannabis-green text-[10px] uppercase tracking-widest">Online</p>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-zinc-500 hover:text-white transition-colors" data-testid="chat-close-btn">
-              <Minimize2 className="w-4 h-4" />
+            <button onClick={() => setIsOpen(false)} className="w-7 h-7 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all" data-testid="chat-close-btn">
+              <Minimize2 className="w-4 h-4 text-black" />
             </button>
           </div>
 

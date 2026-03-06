@@ -1,12 +1,7 @@
 {
-  "name": "Firegold Marketplace",
   "short_name": "Firegold",
-  "description": "Premium B2B Wholesale Cannabis Flower Marketplace",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#D4AF37",
-  "orientation": "any",
+  "name": "Firegold Marketplace",
+  "description": "Premium wholesale cannabis flower for discerning B2B partners",
   "icons": [
     {
       "src": "/firegold_icon_192.png",
@@ -18,7 +13,7 @@
       "src": "/firegold_icon_384.png",
       "sizes": "384x384",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/firegold_icon_512.png",
@@ -26,5 +21,9 @@
       "type": "image/png",
       "purpose": "any"
     }
-  ]
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#D4AF37",
+  "background_color": "#0a0a0a"
 }
