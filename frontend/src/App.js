@@ -51,7 +51,8 @@ import {
   Copy,
   CheckCircle2,
   Bot,
-  Minimize2
+  Minimize2,
+  Instagram
 } from "lucide-react";
 
 // Prevent right-click on images
@@ -135,6 +136,7 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
       <div className="aspect-[4/5] overflow-hidden relative">
         <img 
           src={strain.image_url || 'https://images.unsplash.com/photo-1721058454918-5582b68de13c'}
+          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1721058454918-5582b68de13c'; }}
           alt={strain.strain_name}
           className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105 select-none pointer-events-none"
           onContextMenu={preventImageActions}
@@ -294,6 +296,7 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
             >
               <img 
                 src={strain.image_url || 'https://images.unsplash.com/photo-1721058454918-5582b68de13c'}
+          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1721058454918-5582b68de13c'; }}
                 alt={strain.strain_name}
                 className="w-full h-full object-cover select-none pointer-events-none transition-transform duration-300 group-hover:scale-105"
                 onContextMenu={preventImageActions}
@@ -479,6 +482,7 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
             >
               <img 
                 src={strain.image_url || 'https://images.unsplash.com/photo-1721058454918-5582b68de13c'}
+          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1721058454918-5582b68de13c'; }}
                 alt={strain.strain_name}
                 className="max-w-full max-h-full object-contain select-none pointer-events-none"
                 style={{ transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`, transform: 'scale(1.8)' }}
@@ -7621,6 +7625,15 @@ const CatalogPage = () => {
             <Leaf className="w-4 h-4" />
             Submit Your Product
           </a>
+          <a
+            href="https://www.instagram.com/my_firegold?igsh=ZjYxOHB1cnh6ZmJl"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="instagram-link-desktop"
+            className="hidden md:flex items-center justify-center w-10 h-10 border border-zinc-700 hover:border-pink-500 text-zinc-300 hover:text-pink-400 transition-all"
+          >
+            <Instagram className="w-5 h-5" />
+          </a>
           <button
             onClick={handleShareWithBuyer}
             data-testid="share-buyer-btn"
@@ -7654,10 +7667,11 @@ const CatalogPage = () => {
           )}
           <button 
             data-testid="mobile-menu-btn"
-            className="md:hidden p-2"
+            className="md:hidden flex items-center gap-1.5 px-3 py-1.5 border border-zinc-700 hover:border-gold-500 transition-all"
             onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
           >
-            <Menu className="w-6 h-6 text-zinc-400" />
+            <Menu className="w-5 h-5 text-gold-500" />
+            <span className="text-gold-500 text-xs font-manrope font-bold uppercase tracking-widest">Filter</span>
           </button>
         </div>
       </header>
@@ -7799,6 +7813,15 @@ const CatalogPage = () => {
               >
                 <MessageCircle className="w-4 h-4" /> Contact Us
               </button>
+              <a
+                href="https://www.instagram.com/my_firegold?igsh=ZjYxOHB1cnh6ZmJl"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="instagram-link-mobile"
+                className="w-full mt-4 border border-pink-500/50 text-pink-400 font-bold uppercase tracking-widest px-6 py-4 flex items-center justify-center gap-2 hover:bg-pink-500/10 transition-all"
+              >
+                <Instagram className="w-5 h-5" /> Follow Us on Instagram
+              </a>
             </div>
           )}
 
