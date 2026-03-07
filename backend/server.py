@@ -265,7 +265,7 @@ class Strain(BaseModel):
     terpene_profile: List[str]
     lineage: str
     lot_size: str
-    effects: str
+    effects: List[str] = []
     grade_a_kg: Optional[float] = None
     grade_b_kg: Optional[float] = None
     grade_c_kg: Optional[float] = None
@@ -291,7 +291,7 @@ class StrainCreate(BaseModel):
     terpene_profile: List[str]
     lineage: str
     lot_size: str
-    effects: str
+    effects: List[str] = []
     grade_a_kg: Optional[float] = None
     grade_b_kg: Optional[float] = None
     grade_c_kg: Optional[float] = None
@@ -1069,6 +1069,13 @@ async def update_submission_status(
             terpenes = [t.strip() for t in submission.get("terpene_profile", "").split(",") if t.strip()]
             lot_kg = submission.get("lot_size_kg", 30)
             
+            # Convert effects from comma-separated string to array
+            effects_raw = submission.get("effects", "")
+            if isinstance(effects_raw, str):
+                effects_list = [e.strip() for e in effects_raw.split(",") if e.strip()]
+            else:
+                effects_list = effects_raw or []
+            
             # Determine price tier from admin_price_per_gram
             price_tier = "$$"  # default
             ppg = body.admin_price_per_gram or submission.get("admin_price_per_gram")
@@ -1093,7 +1100,7 @@ async def update_submission_status(
                 terpene_profile=terpenes,
                 lineage=submission["lineage"],
                 lot_size=f"{lot_kg} kg",
-                effects=submission["effects"],
+                effects=effects_list,
                 grade_a_kg=submission.get("grade_a_kg"),
                 grade_b_kg=submission.get("grade_b_kg"),
                 grade_c_kg=submission.get("grade_c_kg"),
@@ -2625,7 +2632,10 @@ async def reseed_database():
     
     # Re-seed with new data
     for strain_data in SEED_STRAINS:
-        strain = Strain(**strain_data)
+        sd = {**strain_data}
+        if isinstance(sd.get("effects"), str):
+            sd["effects"] = [e.strip() for e in sd["effects"].split(",") if e.strip()]
+        strain = Strain(**sd)
         doc = strain.model_dump()
         doc['created_at'] = doc['created_at'].isoformat()
         await db.strains.insert_one(doc)
@@ -2777,7 +2787,7 @@ async def export_strain_directory_csv(token: str = Depends(verify_admin_token)):
             strain.get("thc_percentage", ""),
             strain.get("cbd_percentage", ""),
             strain.get("lot_size", ""),
-            strain.get("effects", ""),
+            ", ".join(strain.get("effects", [])) if isinstance(strain.get("effects"), list) else strain.get("effects", ""),
             strain.get("lineage", ""),
             ", ".join(strain.get("terpene_profile", [])) if isinstance(strain.get("terpene_profile"), list) else strain.get("terpene_profile", ""),
             strain.get("price_tier", ""),
@@ -2868,6 +2878,10 @@ async def get_strains(
     search: Optional[str] = Query(None, description="Search by strain name"),
     min_thc: Optional[float] = Query(None, description="Minimum THC percentage"),
     terpene: Optional[str] = Query(None, description="Filter by terpene"),
+    effects: Optional[str] = Query(None, description="Comma-separated effects to filter by"),
+    category: Optional[str] = Query(None, description="Filter by category"),
+    growing_method: Optional[str] = Query(None, description="Filter by growing method"),
+    bc_dd: Optional[bool] = Query(None, description="Filter BC DD compliant"),
     user_data: dict = Depends(verify_user_token)
 ):
     """Get all strains with optional filters (requires authentication)"""
@@ -2884,6 +2898,20 @@ async def get_strains(
     
     if terpene:
         query["terpene_profile"] = {"$regex": terpene, "$options": "i"}
+    
+    if category:
+        query["category"] = category
+    
+    if growing_method:
+        query["growing_method"] = growing_method
+    
+    if bc_dd:
+        query["bc_dd_compliant"] = True
+    
+    if effects:
+        effects_list = [e.strip() for e in effects.split(",") if e.strip()]
+        if effects_list:
+            query["effects"] = {"$all": effects_list}
     
     strains = await db.strains.find(query, {"_id": 0}).to_list(1000)
     
@@ -3929,7 +3957,11 @@ async def startup_event():
     if count == 0:
         logger.info("Seeding database with initial strains...")
         for strain_data in SEED_STRAINS:
-            strain = Strain(**strain_data)
+            sd = {**strain_data}
+            # Convert legacy effects strings to arrays
+            if isinstance(sd.get("effects"), str):
+                sd["effects"] = [e.strip() for e in sd["effects"].split(",") if e.strip()]
+            strain = Strain(**sd)
             doc = strain.model_dump()
             doc['created_at'] = doc['created_at'].isoformat()
             await db.strains.insert_one(doc)
@@ -3969,6 +4001,20 @@ async def startup_event():
         )
         coa_updated += result.modified_count
     logger.info(f"COA migration complete — updated {coa_updated} strains")
+
+    # Migration: convert effects from string to array for all strains
+    effects_migrated = 0
+    async for strain_doc in db.strains.find({"effects": {"$type": "string"}}):
+        effects_str = strain_doc.get("effects", "")
+        if isinstance(effects_str, str):
+            effects_arr = [e.strip() for e in effects_str.split(",") if e.strip()]
+            await db.strains.update_one(
+                {"_id": strain_doc["_id"]},
+                {"$set": {"effects": effects_arr}}
+            )
+            effects_migrated += 1
+    if effects_migrated:
+        logger.info(f"Migrated effects to arrays for {effects_migrated} strains")
 
     # Migration: fix submission image paths (old /submissions/ -> /api/uploads/submissions/)
     fixed_images = await db.grower_submissions.update_many(

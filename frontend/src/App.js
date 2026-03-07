@@ -501,7 +501,11 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
             {/* Effects */}
             <div className="mb-6">
               <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-2">Effects</div>
-              <div className="text-zinc-300 font-light">{strain.effects}</div>
+              <div className="flex flex-wrap gap-1.5">
+                {(Array.isArray(strain.effects) ? strain.effects : (typeof strain.effects === 'string' && strain.effects ? strain.effects.split(',').map(e => e.trim()) : [])).map((effect, i) => (
+                  <span key={i} className="bg-gold-500/10 border border-gold-500/30 text-gold-500 text-xs px-2 py-1">{effect}</span>
+                ))}
+              </div>
             </div>
             
             {/* Lot Size */}
@@ -3273,7 +3277,7 @@ const AdminPage = () => {
       terpene_profile: Array.isArray(strain.terpene_profile) ? strain.terpene_profile.join(', ') : (strain.terpene_profile || ''),
       lineage: strain.lineage || '',
       lot_size: strain.lot_size || '',
-      effects: strain.effects || '',
+      effects: Array.isArray(strain.effects) ? strain.effects : (typeof strain.effects === 'string' && strain.effects ? strain.effects.split(',').map(e => e.trim()).filter(Boolean) : []),
       grade_a_kg: strain.grade_a_kg || '',
       grade_b_kg: strain.grade_b_kg || '',
       grade_c_kg: strain.grade_c_kg || '',
@@ -3293,7 +3297,7 @@ const AdminPage = () => {
     try {
       const payload = {
         ...editForm,
-        effects: Array.isArray(editForm.effects) ? editForm.effects.join(', ') : editForm.effects,
+        effects: Array.isArray(editForm.effects) ? editForm.effects : [],
         terpene_profile: editForm.terpene_profile.split(',').map(t => t.trim()).filter(Boolean),
         grade_a_kg: parseFloat(editForm.grade_a_kg) || null,
         grade_b_kg: parseFloat(editForm.grade_b_kg) || null,
@@ -3830,7 +3834,7 @@ const AdminPage = () => {
     terpene_profile: '',
     lineage: '',
     lot_size: '',
-    effects: '',
+    effects: [],
     bc_dd_compliant: false,
     terpene_percentage: '',
     category: 'Dried Flower'
@@ -4146,7 +4150,7 @@ const AdminPage = () => {
         terpene_profile: '',
         lineage: '',
         lot_size: '',
-        effects: ''
+        effects: []
       });
       setNewStrainImage(null);
       setShowAddStrain(false);
@@ -5082,13 +5086,10 @@ const AdminPage = () => {
                     <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">
                       Effects *
                     </label>
-                    <input
-                      type="text"
-                      required
-                      value={newStrain.effects}
-                      onChange={(e) => setNewStrain(prev => ({ ...prev, effects: e.target.value }))}
-                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white placeholder-zinc-600 h-12 px-4 transition-colors outline-none"
-                      placeholder="e.g., Mood Elevation, Relaxation, Creativity"
+                    <EffectsMultiSelect
+                      selected={Array.isArray(newStrain.effects) ? newStrain.effects : []}
+                      onChange={(effects) => setNewStrain(prev => ({ ...prev, effects }))}
+                      testId="add-strain-effects"
                     />
                   </div>
 
@@ -6438,7 +6439,11 @@ const AdminPage = () => {
 
                     <div className="mb-4">
                       <p className="text-zinc-600 text-xs uppercase tracking-widest">Effects</p>
-                      <p className="text-zinc-300 text-sm">{sub.effects}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {(typeof sub.effects === 'string' ? sub.effects.split(',').map(e => e.trim()).filter(Boolean) : (Array.isArray(sub.effects) ? sub.effects : [])).map((effect, i) => (
+                          <span key={i} className="bg-gold-500/10 border border-gold-500/30 text-gold-500 text-xs px-2 py-0.5">{effect}</span>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Grower Info */}
@@ -7766,6 +7771,13 @@ const CatalogPage = () => {
       if (filters.growingMethod && strain.growing_method !== filters.growingMethod) return false;
       if (filters.category && strain.category !== filters.category) return false;
       if (filters.bcDd && !strain.bc_dd_compliant) return false;
+      if (filters.selectedEffects && filters.selectedEffects.length > 0) {
+        const strainEffects = Array.isArray(strain.effects)
+          ? strain.effects
+          : (typeof strain.effects === 'string' ? strain.effects.split(',').map(e => e.trim()) : []);
+        const hasAll = filters.selectedEffects.every(e => strainEffects.includes(e));
+        if (!hasAll) return false;
+      }
       return true;
     });
   }, [strains, filters]);
