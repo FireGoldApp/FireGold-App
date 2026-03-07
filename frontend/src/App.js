@@ -69,19 +69,52 @@ const API = `${BACKEND_URL}/api`;
 const FIREGOLD_LOGO = "https://customer-assets.emergentagent.com/job_reload-engine/artifacts/sx02pppj_ChatGPT%20Image%20Nov%2011%2C%202025%20at%2009_53_40%20AM.png";
 const FIREGOLD_MARKETPLACE_LOGO = "https://customer-assets.emergentagent.com/job_ecd636ef-7568-464f-aeda-90fbfc69ca12/artifacts/0f25xj2d_firegold%20Marketplace.png";
 
-// Canonical list of cannabis effects (grouped)
-const EFFECTS_LIST = {
-  "Mood & Emotion": ["Euphoria","Happiness","Uplifted mood","Blissful","Calm","Relaxed","Content","Giggly","Cheerful","Sociable","Positive outlook","Stress relief","Anxiety relief","Emotional balance","Confidence boost"],
-  "Mental & Cognitive": ["Mental clarity","Focus","Creative thinking","Inspiration","Alertness","Cerebral stimulation","Mind expansion","Introspection","Heightened perception","Enhanced sensory awareness","Motivation","Mental energy","Dreaminess","Spacy feeling","Thought acceleration"],
-  "Body & Physical": ["Body relaxation","Muscle relaxation","Physical calm","Full-body heaviness","Body melt","Sedation","Couch-lock","Pain relief","Anti-inflammatory relief","Nerve relief","Muscle tension release","Warm body sensation","Tingling sensation","Floating feeling","Light body feeling"],
-  "Energy & Activity": ["Energizing","Stimulating","Motivating","Wakefulness","Mental stimulation","Productive energy","Active body feeling"],
-  "Sensory Enhancement": ["Enhanced music appreciation","Heightened taste","Heightened smell","Enhanced visual perception","Tactile sensitivity","Time perception alteration","Enhanced creativity in art/music"],
-  "Social": ["Talkative","Outgoing","Bonding","Laughter","Playfulness","Reduced social inhibition"],
-  "Appetite": ["Increased appetite","Food craving","Taste enhancement","Hunger stimulation"],
-  "Sleep": ["Sleepiness","Deep relaxation","Sleep induction","Heavy eyelids","Nighttime calm"],
-  "Therapeutic": ["Anxiety reduction","Migraine relief","Nausea reduction","Muscle spasm relief","Mood stabilization"]
-};
-const ALL_EFFECTS = Object.values(EFFECTS_LIST).flat();
+// Canonical list of cannabis effects (alphabetical)
+const ALL_EFFECTS = [
+  "Active Body Feeling",
+  "Alertness",
+  "Anti-inflammatory Relief",
+  "Anxiety Reduction",
+  "Blissful",
+  "Body High",
+  "Body Relaxation",
+  "Bonding",
+  "Calm",
+  "Cerebral",
+  "Cheerful",
+  "Confidence Boost",
+  "Couch-Lock",
+  "Creative",
+  "Deep Relax",
+  "Dreaminess",
+  "Emotional Balance",
+  "Energetic",
+  "Enhanced Creativity in Art/Music",
+  "Enhanced Sensory Awareness",
+  "Enhanced Visual Perception",
+  "Euphoria",
+  "Floating Feeling",
+  "Focus",
+  "Food Craving",
+  "Happiness",
+  "Increased Appetite",
+  "Inspiration",
+  "Introspection",
+  "Mental Stimulation",
+  "Mood Enhance",
+  "Motivation",
+  "Muscle Relaxation",
+  "Nausea Reduction",
+  "Pain Relief",
+  "Reduce Social Inhibition",
+  "Relax",
+  "Sedating",
+  "Sleepy",
+  "Stimulating",
+  "Stress Relief",
+  "Thought Acceleration",
+  "Uplifted"
+];
 
 // Multi-select effects dropdown component
 const EffectsMultiSelect = ({ selected = [], onChange, maxItems = 8, testId = "effects-select" }) => {
@@ -105,9 +138,9 @@ const EffectsMultiSelect = ({ selected = [], onChange, maxItems = 8, testId = "e
     }
   };
 
-  const filteredEffects = search
+  const visibleEffects = search
     ? ALL_EFFECTS.filter(e => e.toLowerCase().includes(search.toLowerCase()))
-    : null;
+    : ALL_EFFECTS;
 
   return (
     <div ref={dropRef} className="relative" data-testid={testId}>
@@ -144,52 +177,29 @@ const EffectsMultiSelect = ({ selected = [], onChange, maxItems = 8, testId = "e
               className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm h-8 px-3 outline-none focus:border-gold-500"
             />
           </div>
-          {filteredEffects ? (
-            <div className="p-1">
-              {filteredEffects.map(effect => (
-                <button
-                  key={effect}
-                  type="button"
-                  onClick={() => toggleEffect(effect)}
-                  disabled={!selected.includes(effect) && selected.length >= maxItems}
-                  className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between ${
-                    selected.includes(effect)
-                      ? 'bg-gold-500/10 text-gold-500'
-                      : selected.length >= maxItems
-                        ? 'text-zinc-600 cursor-not-allowed'
-                        : 'text-zinc-300 hover:bg-zinc-800'
-                  }`}
-                >
-                  {effect}
-                  {selected.includes(effect) && <Check className="w-3 h-3" />}
-                </button>
-              ))}
-            </div>
-          ) : (
-            Object.entries(EFFECTS_LIST).map(([group, effects]) => (
-              <div key={group}>
-                <div className="px-3 py-1.5 text-[10px] uppercase tracking-widest text-zinc-600 font-bold bg-zinc-900 sticky top-10">{group}</div>
-                {effects.map(effect => (
-                  <button
-                    key={effect}
-                    type="button"
-                    onClick={() => toggleEffect(effect)}
-                    disabled={!selected.includes(effect) && selected.length >= maxItems}
-                    className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between ${
-                      selected.includes(effect)
-                        ? 'bg-gold-500/10 text-gold-500'
-                        : selected.length >= maxItems
-                          ? 'text-zinc-600 cursor-not-allowed'
-                          : 'text-zinc-300 hover:bg-zinc-800'
-                    }`}
-                  >
-                    {effect}
-                    {selected.includes(effect) && <Check className="w-3 h-3" />}
-                  </button>
-                ))}
-              </div>
-            ))
-          )}
+          <div className="p-1">
+            {visibleEffects.map(effect => (
+              <button
+                key={effect}
+                type="button"
+                onClick={() => toggleEffect(effect)}
+                disabled={!selected.includes(effect) && selected.length >= maxItems}
+                className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between ${
+                  selected.includes(effect)
+                    ? 'bg-gold-500/10 text-gold-500'
+                    : selected.length >= maxItems
+                      ? 'text-zinc-600 cursor-not-allowed'
+                      : 'text-zinc-300 hover:bg-zinc-800'
+                }`}
+              >
+                {effect}
+                {selected.includes(effect) && <Check className="w-3 h-3" />}
+              </button>
+            ))}
+            {visibleEffects.length === 0 && (
+              <p className="text-zinc-600 text-xs px-3 py-2">No effects match your search</p>
+            )}
+          </div>
         </div>
       )}
     </div>
