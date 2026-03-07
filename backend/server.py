@@ -94,7 +94,11 @@ app = FastAPI(title="Firegold Cannabis Catalog API")
 
 # Serve uploaded files (PDFs, docs) statically
 os.makedirs("/app/uploads/submissions/docs", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="/app/uploads"), name="uploads")
+
+# Mount uploads under /api/uploads so it's accessible through Kubernetes ingress
+api_uploads_app = FastAPI()
+api_uploads_app.mount("/", StaticFiles(directory="/app/uploads"), name="uploads")
+app.mount("/api/uploads", api_uploads_app)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -951,9 +955,7 @@ async def submit_strain(
         with open(save_path, "wb") as buffer:
             shutil.copyfileobj(strain_image.file, buffer)
         
-        pub_path = f"/app/frontend/public/submissions/{safe_name}"
-        shutil.copy2(save_path, pub_path)
-        image_path = f"/submissions/{safe_name}"
+        image_path = f"/api/uploads/submissions/{safe_name}"
     
     # Handle document uploads
     pdf_exts = ['.pdf']
@@ -3432,16 +3434,23 @@ async def update_strain_image(
     if not strain:
         raise HTTPException(status_code=404, detail="Strain not found")
     
-    # Save image to public folder
+    # Save image to uploads folder (persists across builds)
     import shutil
-    filename = f"{strain['strain_name']}{file_ext}"
-    filepath = f"/app/frontend/public/strains/{filename}"
+    safe_name = f"{uuid.uuid4()}{file_ext}"
+    filepath = f"/app/uploads/submissions/{safe_name}"
     
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(image.file, buffer)
     
-    # Update database
-    new_image_url = f"/strains/{filename}"
+    # Also copy to public/strains for backward compatibility
+    pub_path = f"/app/frontend/public/strains/{strain['strain_name']}{file_ext}"
+    try:
+        shutil.copy2(filepath, pub_path)
+    except Exception:
+        pass
+    
+    # Update database - use API-served path
+    new_image_url = f"/api/uploads/submissions/{safe_name}"
     await db.strains.update_one(
         {"id": strain_id},
         {"$set": {"image_url": new_image_url}}
@@ -3954,6 +3963,21 @@ async def startup_event():
         )
         coa_updated += result.modified_count
     logger.info(f"COA migration complete — updated {coa_updated} strains")
+
+    # Migration: fix submission image paths (old /submissions/ -> /api/uploads/submissions/)
+    fixed_images = await db.grower_submissions.update_many(
+        {"image_path": {"$regex": "^/submissions/", "$not": {"$regex": "^/api/"}}},
+        [{"$set": {"image_path": {"$concat": ["/api/uploads", "$image_path"]}}}]
+    )
+    if fixed_images.modified_count:
+        logger.info(f"Fixed {fixed_images.modified_count} submission image paths")
+    # Also fix strain image_urls that point to old /submissions/ paths
+    fixed_strain_images = await db.strains.update_many(
+        {"image_url": {"$regex": "^/submissions/", "$not": {"$regex": "^/api/"}}},
+        [{"$set": {"image_url": {"$concat": ["/api/uploads", "$image_url"]}}}]
+    )
+    if fixed_strain_images.modified_count:
+        logger.info(f"Fixed {fixed_strain_images.modified_count} strain image paths")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
