@@ -1260,6 +1260,8 @@ const GrowerSubmitPage = () => {
     strain_name: '',
     strain_type: 'Balanced Hybrid',
     category: 'Dried Flower',
+    extract_type: '',
+    extraction_method: '',
     thc_percentage: '',
     cbd_percentage: '',
     terpene_profile: '',
@@ -1318,8 +1320,8 @@ const GrowerSubmitPage = () => {
   const handleLotSizeChange = (val) => {
     setFormData(prev => ({ ...prev, lot_size_kg: val }));
     const num = parseFloat(val);
-    if (val && (isNaN(num) || num < 30)) {
-      setLotError('Minimum lot size is 30 kg');
+    if (val && isNaN(num)) {
+      setLotError('Please enter a valid number');
     } else {
       setLotError('');
     }
@@ -1328,8 +1330,8 @@ const GrowerSubmitPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const lotKg = parseFloat(formData.lot_size_kg);
-    if (isNaN(lotKg) || lotKg < 30) {
-      setLotError('Minimum lot size is 30 kg');
+    if (isNaN(lotKg) || lotKg <= 0) {
+      setLotError('Please enter a valid lot size');
       return;
     }
     setSubmitting(true);
@@ -1344,6 +1346,10 @@ const GrowerSubmitPage = () => {
       submitData.append('strain_name', formData.strain_name);
       submitData.append('strain_type', formData.strain_type);
       submitData.append('category', formData.category);
+      if (formData.category === 'Concentrates') {
+        submitData.append('extract_type', formData.extract_type || '');
+        submitData.append('extraction_method', formData.extraction_method || '');
+      }
       submitData.append('thc_percentage', formData.thc_percentage);
       submitData.append('cbd_percentage', formData.cbd_percentage || '');
       submitData.append('terpene_profile', formData.terpene_profile);
@@ -1479,7 +1485,7 @@ const GrowerSubmitPage = () => {
           </div>
           <h1 className="font-cinzel font-bold text-3xl text-white mb-4">Submit Your Product</h1>
           <p className="text-zinc-400 max-w-xl mx-auto">
-            Are you a licensed grower with premium cannabis products? Submit your product for consideration in our B2B catalog. Minimum lot size: <span className="text-gold-500 font-bold">30 kg</span>.
+            Are you a licensed grower with premium cannabis products? Submit your product for consideration in our B2B catalog.
           </p>
         </div>
 
@@ -1620,6 +1626,57 @@ const GrowerSubmitPage = () => {
                   <option value="Concentrates">Concentrates</option>
                 </select>
               </div>
+
+              {/* Concentrates-specific fields */}
+              {formData.category === 'Concentrates' && (
+                <>
+                  <div>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Extracts *</label>
+                    <select
+                      data-testid="grower-extract-type"
+                      value={formData.extract_type}
+                      onChange={(e) => setFormData(prev => ({ ...prev, extract_type: e.target.value }))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                    >
+                      <option value="">Select extract type...</option>
+                      <option value="Live Resin">Live Resin</option>
+                      <option value="Cured Resin">Cured Resin</option>
+                      <option value="Liquid Diamonds">Liquid Diamonds</option>
+                      <option value="Distillate">Distillate</option>
+                      <option value="Dry Diamonds">Dry Diamonds</option>
+                      <option value="Diamonds and Sauce">Diamonds and Sauce</option>
+                      <option value="THCa Micro Powder">THCa Micro Powder</option>
+                      <option value="Vape Ready Resin">Vape Ready Resin</option>
+                      <option value="CBD Distillate">CBD Distillate</option>
+                      <option value="CBD Resin">CBD Resin</option>
+                      <option value="CBG Isolate">CBG Isolate</option>
+                      <option value="THC Isolate">THC Isolate</option>
+                      <option value="CBC Isolate">CBC Isolate</option>
+                      <option value="Rosin">Rosin</option>
+                      <option value="Hash">Hash</option>
+                      <option value="Bubble Hash">Bubble Hash</option>
+                      <option value="Kief">Kief</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Extraction Method *</label>
+                    <select
+                      data-testid="grower-extraction-method"
+                      value={formData.extraction_method}
+                      onChange={(e) => setFormData(prev => ({ ...prev, extraction_method: e.target.value }))}
+                      className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
+                    >
+                      <option value="">Select method...</option>
+                      <option value="BHO">BHO</option>
+                      <option value="CO2">CO2</option>
+                      <option value="Ethanol">Ethanol</option>
+                      <option value="Water">Water</option>
+                      <option value="Solventless">Solventless</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
               <div>
                 <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">THC % *</label>
                 <input
@@ -1700,12 +1757,12 @@ const GrowerSubmitPage = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Total Lot Size (kg) * <span className="text-gold-500">Min 30 kg</span></label>
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Total Lot Size (kg) *</label>
                 <input
                   data-testid="grower-lot-size-input"
                   type="number"
                   required
-                  min="30"
+                  min="1"
                   step="0.1"
                   value={formData.lot_size_kg}
                   onChange={(e) => handleLotSizeChange(e.target.value)}
@@ -5135,6 +5192,7 @@ const AdminPage = () => {
                             { key: 'sample_requests', label: 'Samples', align: 'center' },
                             { key: 'total_duration_seconds', label: 'Time Spent', align: 'center' },
                             { key: 'last_active', label: 'Last Active', align: 'left' },
+                            { key: 'actions', label: '', align: 'center' },
                           ].map(col => (
                             <th
                               key={col.key}
@@ -5181,6 +5239,26 @@ const AdminPage = () => {
                             </td>
                             <td className="p-4 text-center text-zinc-400 font-mono text-xs">{formatDuration(u.total_duration_seconds)}</td>
                             <td className="p-4 text-zinc-500 text-xs">{u.last_active ? new Date(u.last_active).toLocaleString() : 'Never'}</td>
+                            <td className="p-4 text-center">
+                              <button
+                                data-testid={`delete-user-${u.user_id}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm(`Delete user "${u.name || u.email}"? This cannot be undone.`)) {
+                                    axios.delete(`${API}/admin/users/${u.user_id}`, { headers: { Authorization: `Bearer ${adminToken}` } })
+                                      .then(() => {
+                                        toast.success('User deleted');
+                                        setUserActivityReport(prev => prev.filter(r => r.user_id !== u.user_id));
+                                      })
+                                      .catch(() => toast.error('Failed to delete user'));
+                                  }
+                                }}
+                                className="w-8 h-8 flex items-center justify-center bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white transition-all"
+                                title="Delete user"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

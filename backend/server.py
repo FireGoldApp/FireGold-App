@@ -298,6 +298,8 @@ class StrainCreate(BaseModel):
     harvest_date: Optional[str] = None
     growing_method: Optional[str] = None
     category: Optional[str] = None
+    extract_type: Optional[str] = None
+    extraction_method: Optional[str] = None
     bc_dd_compliant: Optional[bool] = False
     terpene_percentage: Optional[float] = None
     grower_company: Optional[str] = None
@@ -321,7 +323,7 @@ class GrowerSubmission(BaseModel):
     cbd_percentage: Optional[str] = None
     terpene_profile: str  # Comma separated
     lineage: str
-    lot_size_kg: float  # Minimum 30 kg
+    lot_size_kg: float  # Lot size in kg
     effects: str
     growing_method: Optional[str] = None  # Indoor, Outdoor, Greenhouse
     category: Optional[str] = None  # Dried Flower, Fresh Frozen, Trim, Concentrates
@@ -354,7 +356,7 @@ class GrowerSubmissionInput(BaseModel):
     cbd_percentage: Optional[str] = None
     terpene_profile: str
     lineage: str
-    lot_size_kg: float  # Minimum 30 kg
+    lot_size_kg: float  # Lot size in kg
     effects: str
     growing_method: Optional[str] = None
     export_country: Optional[str] = None
@@ -891,6 +893,8 @@ async def submit_strain(
     effects: str = Form(...),
     growing_method: str = Form(""),
     category: str = Form(""),
+    extract_type: str = Form(""),
+    extraction_method: str = Form(""),
     export_country: str = Form(""),
     open_permit: str = Form(""),
     is_irradiated: str = Form(""),
@@ -912,9 +916,9 @@ async def submit_strain(
 ):
     """Public endpoint for growers to submit their strains for consideration"""
     import shutil
-    # Enforce minimum lot size of 30 kg
-    if lot_size_kg < 30:
-        raise HTTPException(status_code=400, detail="Minimum lot size is 30 kilograms.")
+    # Validate lot size
+    if lot_size_kg <= 0:
+        raise HTTPException(status_code=400, detail="Lot size must be greater than 0")
     
     # Check if same strain from same company already submitted
     existing = await db.grower_submissions.find_one({
@@ -982,6 +986,8 @@ async def submit_strain(
         "effects": effects,
         "growing_method": growing_method or None,
         "category": category or None,
+        "extract_type": extract_type or None,
+        "extraction_method": extraction_method or None,
         "export_country": export_country or None,
         "open_permit": open_permit or None,
         "is_irradiated": is_irradiated or None,
