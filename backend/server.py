@@ -3687,6 +3687,162 @@ async def reply_to_message(message_id: str, body: ReplyMessageBody, token: str =
     )
     return {"message": "Reply sent successfully"}
 
+# --- Saved Lists ---
+class SavedListCreate(BaseModel):
+    list_name: str
+    strain_ids: List[str]
+    filters_applied: Optional[dict] = None
+
+@api_router.post("/user/lists")
+async def create_saved_list(body: SavedListCreate, user_data: dict = Depends(verify_user_token)):
+    """Save a filtered list of strains for the logged-in user"""
+    user_id = user_data.get("user_id")
+    
+    # Resolve strain names for the list
+    strain_names = []
+    if body.strain_ids:
+        strains_cursor = db.strains.find({"id": {"$in": body.strain_ids}}, {"_id": 0, "id": 1, "strain_name": 1, "type": 1, "thc_percentage": 1, "effects": 1, "category": 1, "price_tier": 1, "lot_size": 1, "growing_method": 1, "terpene_profile": 1, "lineage": 1})
+        strains_list = await strains_cursor.to_list(500)
+        strain_names = [s["strain_name"] for s in strains_list]
+    
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "user_email": user_data.get("email"),
+        "user_company": user_data.get("company"),
+        "list_name": body.list_name,
+        "strain_ids": body.strain_ids,
+        "strain_names": strain_names,
+        "strain_count": len(body.strain_ids),
+        "filters_applied": body.filters_applied,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.saved_lists.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+@api_router.get("/user/lists")
+async def get_user_lists(user_data: dict = Depends(verify_user_token)):
+    """Get all saved lists for the logged-in user"""
+    user_id = user_data.get("user_id")
+    lists = await db.saved_lists.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return lists
+
+@api_router.delete("/user/lists/{list_id}")
+async def delete_saved_list(list_id: str, user_data: dict = Depends(verify_user_token)):
+    """Delete a saved list"""
+    user_id = user_data.get("user_id")
+    result = await db.saved_lists.delete_one({"id": list_id, "user_id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="List not found")
+    return {"message": "List deleted"}
+
+@api_router.get("/user/lists/{list_id}/csv")
+async def download_list_csv(list_id: str, user_data: dict = Depends(verify_user_token)):
+    """Download a saved list as CSV"""
+    user_id = user_data.get("user_id")
+    saved_list = await db.saved_lists.find_one({"id": list_id, "user_id": user_id}, {"_id": 0})
+    if not saved_list:
+        raise HTTPException(status_code=404, detail="List not found")
+    
+    # Fetch full strain details
+    strains = await db.strains.find({"id": {"$in": saved_list.get("strain_ids", [])}}, {"_id": 0}).to_list(500)
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Strain Name", "Type", "THC %", "CBD %", "Category", "Price Tier", "Lot Size", "Effects", "Terpene Profile", "Lineage", "Growing Method", "Harvest Date"])
+    for s in strains:
+        effects = ", ".join(s.get("effects", [])) if isinstance(s.get("effects"), list) else s.get("effects", "")
+        terpenes = ", ".join(s.get("terpene_profile", [])) if isinstance(s.get("terpene_profile"), list) else s.get("terpene_profile", "")
+        writer.writerow([
+            s.get("strain_name", ""), s.get("type", ""), s.get("thc_percentage", ""),
+            s.get("cbd_percentage", ""), s.get("category", ""), s.get("price_tier", ""),
+            s.get("lot_size", ""), effects, terpenes, s.get("lineage", ""),
+            s.get("growing_method", ""), s.get("harvest_date", "")
+        ])
+    
+    output.seek(0)
+    safe_name = saved_list.get("list_name", "list").replace(" ", "_")
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=firegold_{safe_name}.csv"}
+    )
+
+@api_router.get("/admin/lists")
+async def get_all_saved_lists(token: str = Depends(verify_admin_token)):
+    """Admin: View all user-saved lists"""
+    lists = await db.saved_lists.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return lists
+
+@api_router.get("/admin/lists/analytics")
+async def get_lists_analytics(token: str = Depends(verify_admin_token)):
+    """Admin: Get analytics on saved lists - common strains, effects, categories"""
+    lists = await db.saved_lists.find({}, {"_id": 0}).to_list(500)
+    
+    # Collect all strain IDs from all lists
+    all_strain_ids = []
+    for lst in lists:
+        all_strain_ids.extend(lst.get("strain_ids", []))
+    
+    # Count strain frequency
+    strain_freq = {}
+    for sid in all_strain_ids:
+        strain_freq[sid] = strain_freq.get(sid, 0) + 1
+    
+    # Fetch strain details for top strains
+    if strain_freq:
+        top_ids = sorted(strain_freq, key=strain_freq.get, reverse=True)[:20]
+        top_strains_raw = await db.strains.find({"id": {"$in": top_ids}}, {"_id": 0, "id": 1, "strain_name": 1, "type": 1, "category": 1, "effects": 1}).to_list(20)
+        strain_map = {s["id"]: s for s in top_strains_raw}
+    else:
+        top_ids = []
+        strain_map = {}
+    
+    top_strains = []
+    for sid in top_ids:
+        s = strain_map.get(sid, {})
+        top_strains.append({
+            "strain_id": sid,
+            "strain_name": s.get("strain_name", "Unknown"),
+            "type": s.get("type", ""),
+            "category": s.get("category", ""),
+            "save_count": strain_freq[sid]
+        })
+    
+    # Count effects frequency
+    effect_freq = {}
+    for sid in all_strain_ids:
+        s = strain_map.get(sid)
+        if not s:
+            full = await db.strains.find_one({"id": sid}, {"_id": 0, "effects": 1})
+            s = full if full else {}
+        effects = s.get("effects", [])
+        if isinstance(effects, list):
+            for e in effects:
+                effect_freq[e] = effect_freq.get(e, 0) + 1
+    
+    top_effects = sorted(effect_freq.items(), key=lambda x: x[1], reverse=True)[:15]
+    
+    # Count categories
+    category_freq = {}
+    for sid in all_strain_ids:
+        s = strain_map.get(sid)
+        if not s:
+            full = await db.strains.find_one({"id": sid}, {"_id": 0, "category": 1})
+            s = full if full else {}
+        cat = s.get("category", "Unknown")
+        category_freq[cat] = category_freq.get(cat, 0) + 1
+    
+    return {
+        "total_lists": len(lists),
+        "total_saves": len(all_strain_ids),
+        "unique_users": len(set(lst.get("user_id") for lst in lists)),
+        "top_strains": top_strains,
+        "top_effects": [{"effect": e, "count": c} for e, c in top_effects],
+        "category_breakdown": [{"category": k, "count": v} for k, v in sorted(category_freq.items(), key=lambda x: x[1], reverse=True)]
+    }
+
 # --- AI Chatbot ---
 class ChatMessage(BaseModel):
     message: str

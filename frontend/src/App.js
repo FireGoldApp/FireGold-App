@@ -52,7 +52,10 @@ import {
   CheckCircle2,
   Bot,
   Minimize2,
-  Instagram
+  Instagram,
+  BookmarkPlus,
+  Bookmark,
+  BarChart3
 } from "lucide-react";
 
 // Prevent right-click on images
@@ -3376,6 +3379,9 @@ const AdminPage = () => {
   const [botTraining, setBotTraining] = useState([]);
   const [newTraining, setNewTraining] = useState({ question: '', answer: '', category: 'general' });
   const [editingTraining, setEditingTraining] = useState(null);
+  const [adminLists, setAdminLists] = useState([]);
+  const [adminListsAnalytics, setAdminListsAnalytics] = useState(null);
+  const [loadingAdminLists, setLoadingAdminLists] = useState(false);
 
   // Settings state
   const [emailsEnabled, setEmailsEnabled] = useState(false);
@@ -3710,6 +3716,22 @@ const AdminPage = () => {
     } catch (err) {
       console.error('Failed to load settings');
     }
+  };
+
+  // Saved Lists (Admin)
+  const fetchAdminLists = async () => {
+    setLoadingAdminLists(true);
+    try {
+      const [listsRes, analyticsRes] = await Promise.all([
+        axios.get(`${API}/admin/lists`, { headers: { Authorization: `Bearer ${adminToken}` } }),
+        axios.get(`${API}/admin/lists/analytics`, { headers: { Authorization: `Bearer ${adminToken}` } })
+      ]);
+      setAdminLists(listsRes.data);
+      setAdminListsAnalytics(analyticsRes.data);
+    } catch (err) {
+      console.error('Failed to load admin lists:', err);
+    }
+    setLoadingAdminLists(false);
   };
 
   const toggleEmails = async () => {
@@ -4451,6 +4473,15 @@ const AdminPage = () => {
             }`}
           >
             <Bot className="w-4 h-4 inline mr-2" />Bot Training
+          </button>
+          <button
+            onClick={() => { setActiveTab('saved-lists'); fetchAdminLists(); }}
+            data-testid="admin-tab-saved-lists"
+            className={`px-6 py-2 font-bold uppercase tracking-widest text-sm transition-all ${
+              activeTab === 'saved-lists' ? 'bg-gold-500 text-black' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Bookmark className="w-4 h-4 inline mr-2" />User Lists
           </button>
         </div>
         {/* Affiliates Tab */}
@@ -7413,6 +7444,142 @@ const AdminPage = () => {
             )}
           </>
         )}
+
+        {/* Saved Lists Tab */}
+        {activeTab === 'saved-lists' && (
+          <>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+              <div>
+                <h2 className="font-cinzel font-bold text-2xl text-white mb-2">User Saved Lists</h2>
+                <p className="text-zinc-500 text-sm">View all lists saved by users and analytics on common trends.</p>
+              </div>
+            </div>
+
+            {loadingAdminLists ? (
+              <div className="flex items-center justify-center py-16">
+                <RefreshCw className="w-8 h-8 text-gold-500 animate-spin" />
+              </div>
+            ) : (
+              <>
+                {/* Analytics Summary */}
+                {adminListsAnalytics && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-charcoal border border-white/10 p-6">
+                      <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">Total Lists</p>
+                      <p className="text-white font-mono text-3xl font-bold">{adminListsAnalytics.total_lists}</p>
+                    </div>
+                    <div className="bg-charcoal border border-white/10 p-6">
+                      <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">Total Saves</p>
+                      <p className="text-white font-mono text-3xl font-bold">{adminListsAnalytics.total_saves}</p>
+                    </div>
+                    <div className="bg-charcoal border border-white/10 p-6">
+                      <p className="text-zinc-500 text-xs uppercase tracking-widest mb-1">Unique Users</p>
+                      <p className="text-white font-mono text-3xl font-bold">{adminListsAnalytics.unique_users}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Top Strains & Effects */}
+                {adminListsAnalytics && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    {/* Top Saved Strains */}
+                    <div className="bg-charcoal border border-white/10 p-6">
+                      <h3 className="font-cinzel font-bold text-sm text-gold-500 uppercase tracking-widest mb-4">
+                        <BarChart3 className="w-4 h-4 inline mr-2" />Most Saved Strains
+                      </h3>
+                      {adminListsAnalytics.top_strains?.length > 0 ? (
+                        <div className="space-y-2">
+                          {adminListsAnalytics.top_strains.map((s, i) => (
+                            <div key={s.strain_id} className="flex justify-between items-center py-1.5 border-b border-zinc-800 last:border-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gold-500 font-mono text-xs w-5">{i + 1}.</span>
+                                <span className="text-white text-sm">{s.strain_name}</span>
+                                <span className="text-zinc-600 text-xs">({s.category})</span>
+                              </div>
+                              <span className="text-gold-500 font-mono text-sm font-bold">{s.save_count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-zinc-600 text-sm">No data yet</p>
+                      )}
+                    </div>
+
+                    {/* Top Effects */}
+                    <div className="bg-charcoal border border-white/10 p-6">
+                      <h3 className="font-cinzel font-bold text-sm text-gold-500 uppercase tracking-widest mb-4">
+                        <Activity className="w-4 h-4 inline mr-2" />Most Common Effects
+                      </h3>
+                      {adminListsAnalytics.top_effects?.length > 0 ? (
+                        <div className="space-y-2">
+                          {adminListsAnalytics.top_effects.map((e, i) => (
+                            <div key={e.effect} className="flex justify-between items-center py-1.5 border-b border-zinc-800 last:border-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gold-500 font-mono text-xs w-5">{i + 1}.</span>
+                                <span className="text-white text-sm">{e.effect}</span>
+                              </div>
+                              <span className="text-gold-500 font-mono text-sm font-bold">{e.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-zinc-600 text-sm">No data yet</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Category Breakdown */}
+                {adminListsAnalytics?.category_breakdown?.length > 0 && (
+                  <div className="bg-charcoal border border-white/10 p-6 mb-8">
+                    <h3 className="font-cinzel font-bold text-sm text-gold-500 uppercase tracking-widest mb-4">Category Breakdown</h3>
+                    <div className="flex flex-wrap gap-3">
+                      {adminListsAnalytics.category_breakdown.map(c => (
+                        <div key={c.category} className="bg-zinc-900/50 border border-zinc-700 px-4 py-2">
+                          <p className="text-white text-sm font-bold">{c.category || 'Unknown'}</p>
+                          <p className="text-gold-500 font-mono text-xs">{c.count} saves</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* All Lists */}
+                <div className="bg-charcoal border border-white/10 p-6">
+                  <h3 className="font-cinzel font-bold text-sm text-gold-500 uppercase tracking-widest mb-4">All User Lists ({adminLists.length})</h3>
+                  {adminLists.length === 0 ? (
+                    <p className="text-zinc-600 text-sm text-center py-8">No lists saved yet by users.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {adminLists.map(list => (
+                        <div key={list.id} data-testid={`admin-list-${list.id}`} className="bg-zinc-900/50 border border-zinc-800 p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h4 className="text-white font-manrope font-bold text-sm">{list.list_name}</h4>
+                              <p className="text-zinc-500 text-xs mt-0.5">
+                                {list.user_email} · {list.user_company} · {list.strain_count} strains · {new Date(list.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          {list.strain_names && list.strain_names.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {list.strain_names.slice(0, 8).map((name, i) => (
+                                <span key={i} className="bg-zinc-800 text-zinc-400 text-[10px] px-1.5 py-0.5">{name}</span>
+                              ))}
+                              {list.strain_names.length > 8 && (
+                                <span className="text-zinc-600 text-[10px] px-1.5 py-0.5">+{list.strain_names.length - 8} more</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </>
+        )}
       </main>
       {editingAffiliate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -7536,6 +7703,12 @@ const CatalogPage = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [showSaveListModal, setShowSaveListModal] = useState(false);
+  const [saveListName, setSaveListName] = useState('');
+  const [savingList, setSavingList] = useState(false);
+  const [showMyLists, setShowMyLists] = useState(false);
+  const [myLists, setMyLists] = useState([]);
+  const [loadingLists, setLoadingLists] = useState(false);
 
   // PWA Install prompt
   useEffect(() => {
@@ -7818,6 +7991,69 @@ const CatalogPage = () => {
     setShowInquiryModal(true);
   };
 
+  // Saved Lists functions
+  const fetchMyLists = async () => {
+    setLoadingLists(true);
+    try {
+      const res = await axios.get(`${API}/user/lists`, { headers: { Authorization: `Bearer ${userToken}` } });
+      setMyLists(res.data);
+    } catch (err) {
+      console.error('Failed to fetch lists:', err);
+    }
+    setLoadingLists(false);
+  };
+
+  const handleSaveList = async () => {
+    if (!saveListName.trim()) { toast.error('Please enter a list name'); return; }
+    const strainIds = filteredStrains.map(s => s.id);
+    if (strainIds.length === 0) { toast.error('No strains to save'); return; }
+    setSavingList(true);
+    try {
+      await axios.post(`${API}/user/lists`, {
+        list_name: saveListName.trim(),
+        strain_ids: strainIds,
+        filters_applied: filters
+      }, { headers: { Authorization: `Bearer ${userToken}` } });
+      toast.success(`List "${saveListName}" saved with ${strainIds.length} strains!`);
+      setShowSaveListModal(false);
+      setSaveListName('');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save list');
+    }
+    setSavingList(false);
+  };
+
+  const handleDeleteList = async (listId, listName) => {
+    if (!window.confirm(`Delete "${listName}"?`)) return;
+    try {
+      await axios.delete(`${API}/user/lists/${listId}`, { headers: { Authorization: `Bearer ${userToken}` } });
+      setMyLists(prev => prev.filter(l => l.id !== listId));
+      toast.success('List deleted');
+    } catch (err) {
+      toast.error('Failed to delete list');
+    }
+  };
+
+  const handleDownloadCsv = async (listId, listName) => {
+    try {
+      const res = await axios.get(`${API}/user/lists/${listId}/csv`, {
+        headers: { Authorization: `Bearer ${userToken}` },
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `firegold_${listName.replace(/\s+/g, '_')}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('CSV downloaded');
+    } catch (err) {
+      toast.error('Failed to download CSV');
+    }
+  };
+
   // Show loading while checking auth
   if (checkingAuth) {
     return (
@@ -8079,15 +8315,33 @@ const CatalogPage = () => {
               <p className="text-zinc-500 text-sm">
                 Showing <span className="text-white font-mono">{filteredStrains.length}</span> of {strains.length} strains
               </p>
-              {selectedStrains.length > 0 && (
+              <div className="flex items-center gap-3">
                 <button
-                  data-testid="clear-selection-btn"
-                  onClick={() => setSelectedStrains([])}
-                  className="text-zinc-500 hover:text-gold-500 text-sm transition-colors"
+                  data-testid="save-list-btn"
+                  onClick={() => setShowSaveListModal(true)}
+                  className="flex items-center gap-1.5 text-gold-500 hover:text-gold-400 text-xs uppercase tracking-widest font-manrope font-bold transition-colors border border-gold-500/30 px-3 py-1.5 hover:border-gold-500"
                 >
-                  Clear selection
+                  <BookmarkPlus className="w-3.5 h-3.5" />
+                  Save List
                 </button>
-              )}
+                <button
+                  data-testid="my-lists-btn"
+                  onClick={() => { setShowMyLists(true); fetchMyLists(); }}
+                  className="flex items-center gap-1.5 text-zinc-400 hover:text-gold-500 text-xs uppercase tracking-widest font-manrope font-bold transition-colors border border-zinc-700 px-3 py-1.5 hover:border-gold-500/50"
+                >
+                  <Bookmark className="w-3.5 h-3.5" />
+                  My Lists
+                </button>
+                {selectedStrains.length > 0 && (
+                  <button
+                    data-testid="clear-selection-btn"
+                    onClick={() => setSelectedStrains([])}
+                    className="text-zinc-500 hover:text-gold-500 text-sm transition-colors"
+                  >
+                    Clear selection
+                  </button>
+                )}
+              </div>
             </div>
 
             {loading ? (
@@ -8290,6 +8544,134 @@ const CatalogPage = () => {
             ) : (
               <p className="text-red-500 text-sm">Failed to generate referral link. Please try again.</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Save List Modal */}
+      {showSaveListModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowSaveListModal(false)} />
+          <div data-testid="save-list-modal" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-md p-8">
+            <button 
+              onClick={() => setShowSaveListModal(false)} 
+              data-testid="save-list-modal-close"
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"
+            >
+              <X className="w-5 h-5 text-black" />
+            </button>
+            <div className="flex items-center gap-3 mb-6">
+              <BookmarkPlus className="w-6 h-6 text-gold-500" />
+              <h2 className="font-cinzel font-bold text-xl text-white uppercase tracking-widest">Save Current List</h2>
+            </div>
+            <p className="text-zinc-400 text-sm mb-2">
+              Save the current view of <span className="text-white font-mono">{filteredStrains.length}</span> strains to your profile.
+            </p>
+            {Object.values(filters).some(v => v && v !== false) && (
+              <div className="flex flex-wrap gap-1 mb-4">
+                {filters.category && <span className="bg-gold-500/10 text-gold-500 text-[10px] px-2 py-0.5 border border-gold-500/30">{filters.category}</span>}
+                {filters.type && <span className="bg-gold-500/10 text-gold-500 text-[10px] px-2 py-0.5 border border-gold-500/30">{filters.type}</span>}
+                {filters.growingMethod && <span className="bg-gold-500/10 text-gold-500 text-[10px] px-2 py-0.5 border border-gold-500/30">{filters.growingMethod}</span>}
+                {filters.minThc && <span className="bg-gold-500/10 text-gold-500 text-[10px] px-2 py-0.5 border border-gold-500/30">THC {filters.minThc}%+</span>}
+                {(filters.selectedEffects || []).map(e => <span key={e} className="bg-gold-500/10 text-gold-500 text-[10px] px-2 py-0.5 border border-gold-500/30">{e}</span>)}
+              </div>
+            )}
+            <div className="mb-6">
+              <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">List Name *</label>
+              <input
+                data-testid="save-list-name-input"
+                type="text"
+                value={saveListName}
+                onChange={(e) => setSaveListName(e.target.value)}
+                className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-11 px-4 outline-none text-sm"
+                placeholder="e.g., March 2026 Sativa Picks"
+                autoFocus
+              />
+            </div>
+            <button
+              data-testid="save-list-confirm-btn"
+              onClick={handleSaveList}
+              disabled={savingList}
+              className="w-full bg-gold-500 hover:bg-gold-400 text-black font-bold uppercase tracking-widest px-6 py-3 text-sm transition-all disabled:opacity-50"
+            >
+              {savingList ? 'Saving...' : `Save ${filteredStrains.length} Strains`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* My Lists Panel */}
+      {showMyLists && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowMyLists(false)} />
+          <div data-testid="my-lists-panel" className="relative bg-zinc-950 border border-zinc-800 w-full max-w-xl max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+              <div className="flex items-center gap-3">
+                <Bookmark className="w-5 h-5 text-gold-500" />
+                <h2 className="font-cinzel font-bold text-lg text-white uppercase tracking-widest">My Saved Lists</h2>
+              </div>
+              <button 
+                onClick={() => setShowMyLists(false)}
+                data-testid="my-lists-close"
+                className="w-10 h-10 flex items-center justify-center bg-gold-500 hover:bg-gold-400 transition-all"
+              >
+                <X className="w-5 h-5 text-black" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingLists ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="w-6 h-6 text-gold-500 animate-spin" />
+                </div>
+              ) : myLists.length === 0 ? (
+                <div className="text-center py-12">
+                  <Bookmark className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
+                  <p className="text-zinc-500 text-sm">No saved lists yet</p>
+                  <p className="text-zinc-600 text-xs mt-1">Use "Save List" to save your current catalog view</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {myLists.map(list => (
+                    <div key={list.id} data-testid={`saved-list-${list.id}`} className="bg-zinc-900/50 border border-zinc-800 p-4 hover:border-gold-500/30 transition-all">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="text-white font-manrope font-bold text-sm">{list.list_name}</h3>
+                          <p className="text-zinc-500 text-xs mt-0.5">{list.strain_count} strains · {new Date(list.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            data-testid={`download-list-${list.id}`}
+                            onClick={() => handleDownloadCsv(list.id, list.list_name)}
+                            className="flex items-center gap-1 text-gold-500 hover:text-gold-400 text-xs border border-gold-500/30 px-2 py-1 hover:border-gold-500 transition-all"
+                            title="Download CSV"
+                          >
+                            <Download className="w-3 h-3" /> CSV
+                          </button>
+                          <button
+                            data-testid={`delete-list-${list.id}`}
+                            onClick={() => handleDeleteList(list.id, list.list_name)}
+                            className="text-zinc-600 hover:text-red-400 transition-colors p-1"
+                            title="Delete list"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      {list.strain_names && list.strain_names.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {list.strain_names.slice(0, 6).map((name, i) => (
+                            <span key={i} className="bg-zinc-800 text-zinc-400 text-[10px] px-1.5 py-0.5">{name}</span>
+                          ))}
+                          {list.strain_names.length > 6 && (
+                            <span className="text-zinc-600 text-[10px] px-1.5 py-0.5">+{list.strain_names.length - 6} more</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
