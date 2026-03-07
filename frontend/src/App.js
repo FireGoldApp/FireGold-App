@@ -66,6 +66,133 @@ const API = `${BACKEND_URL}/api`;
 const FIREGOLD_LOGO = "https://customer-assets.emergentagent.com/job_reload-engine/artifacts/sx02pppj_ChatGPT%20Image%20Nov%2011%2C%202025%20at%2009_53_40%20AM.png";
 const FIREGOLD_MARKETPLACE_LOGO = "https://customer-assets.emergentagent.com/job_ecd636ef-7568-464f-aeda-90fbfc69ca12/artifacts/0f25xj2d_firegold%20Marketplace.png";
 
+// Canonical list of cannabis effects (grouped)
+const EFFECTS_LIST = {
+  "Mood & Emotion": ["Euphoria","Happiness","Uplifted mood","Blissful","Calm","Relaxed","Content","Giggly","Cheerful","Sociable","Positive outlook","Stress relief","Anxiety relief","Emotional balance","Confidence boost"],
+  "Mental & Cognitive": ["Mental clarity","Focus","Creative thinking","Inspiration","Alertness","Cerebral stimulation","Mind expansion","Introspection","Heightened perception","Enhanced sensory awareness","Motivation","Mental energy","Dreaminess","Spacy feeling","Thought acceleration"],
+  "Body & Physical": ["Body relaxation","Muscle relaxation","Physical calm","Full-body heaviness","Body melt","Sedation","Couch-lock","Pain relief","Anti-inflammatory relief","Nerve relief","Muscle tension release","Warm body sensation","Tingling sensation","Floating feeling","Light body feeling"],
+  "Energy & Activity": ["Energizing","Stimulating","Motivating","Wakefulness","Mental stimulation","Productive energy","Active body feeling"],
+  "Sensory Enhancement": ["Enhanced music appreciation","Heightened taste","Heightened smell","Enhanced visual perception","Tactile sensitivity","Time perception alteration","Enhanced creativity in art/music"],
+  "Social": ["Talkative","Outgoing","Bonding","Laughter","Playfulness","Reduced social inhibition"],
+  "Appetite": ["Increased appetite","Food craving","Taste enhancement","Hunger stimulation"],
+  "Sleep": ["Sleepiness","Deep relaxation","Sleep induction","Heavy eyelids","Nighttime calm"],
+  "Therapeutic": ["Anxiety reduction","Migraine relief","Nausea reduction","Muscle spasm relief","Mood stabilization"]
+};
+const ALL_EFFECTS = Object.values(EFFECTS_LIST).flat();
+
+// Multi-select effects dropdown component
+const EffectsMultiSelect = ({ selected = [], onChange, maxItems = 8, testId = "effects-select" }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const dropRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleEffect = (effect) => {
+    if (selected.includes(effect)) {
+      onChange(selected.filter(e => e !== effect));
+    } else if (selected.length < maxItems) {
+      onChange([...selected, effect]);
+    }
+  };
+
+  const filteredEffects = search
+    ? ALL_EFFECTS.filter(e => e.toLowerCase().includes(search.toLowerCase()))
+    : null;
+
+  return (
+    <div ref={dropRef} className="relative" data-testid={testId}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 text-left flex items-center justify-between outline-none"
+      >
+        <span className={selected.length ? 'text-white text-sm' : 'text-zinc-500 text-sm'}>
+          {selected.length ? `${selected.length} effect${selected.length > 1 ? 's' : ''} selected` : 'Select effects (max 8)...'}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {selected.map(e => (
+            <span key={e} className="bg-gold-500/15 border border-gold-500/30 text-gold-500 text-xs px-2 py-1 flex items-center gap-1">
+              {e}
+              <button type="button" onClick={() => toggleEffect(e)} className="hover:text-red-400">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-zinc-900 border border-zinc-700 max-h-72 overflow-y-auto shadow-xl">
+          <div className="sticky top-0 bg-zinc-900 p-2 border-b border-zinc-800">
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search effects..."
+              className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm h-8 px-3 outline-none focus:border-gold-500"
+            />
+          </div>
+          {filteredEffects ? (
+            <div className="p-1">
+              {filteredEffects.map(effect => (
+                <button
+                  key={effect}
+                  type="button"
+                  onClick={() => toggleEffect(effect)}
+                  disabled={!selected.includes(effect) && selected.length >= maxItems}
+                  className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between ${
+                    selected.includes(effect)
+                      ? 'bg-gold-500/10 text-gold-500'
+                      : selected.length >= maxItems
+                        ? 'text-zinc-600 cursor-not-allowed'
+                        : 'text-zinc-300 hover:bg-zinc-800'
+                  }`}
+                >
+                  {effect}
+                  {selected.includes(effect) && <Check className="w-3 h-3" />}
+                </button>
+              ))}
+            </div>
+          ) : (
+            Object.entries(EFFECTS_LIST).map(([group, effects]) => (
+              <div key={group}>
+                <div className="px-3 py-1.5 text-[10px] uppercase tracking-widest text-zinc-600 font-bold bg-zinc-900 sticky top-10">{group}</div>
+                {effects.map(effect => (
+                  <button
+                    key={effect}
+                    type="button"
+                    onClick={() => toggleEffect(effect)}
+                    disabled={!selected.includes(effect) && selected.length >= maxItems}
+                    className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between ${
+                      selected.includes(effect)
+                        ? 'bg-gold-500/10 text-gold-500'
+                        : selected.length >= maxItems
+                          ? 'text-zinc-600 cursor-not-allowed'
+                          : 'text-zinc-300 hover:bg-zinc-800'
+                    }`}
+                  >
+                    {effect}
+                    {selected.includes(effect) && <Check className="w-3 h-3" />}
+                  </button>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Analytics tracking helper
 const trackEvent = async (eventType, data = {}) => {
   const token = localStorage.getItem('userToken');
@@ -589,6 +716,38 @@ const FilterSidebar = ({ filters, setFilters, strains }) => {
               {method}
             </button>
           ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="font-manrope font-bold text-sm uppercase tracking-widest text-gold-500 mb-4">Effects</h3>
+        <div className="space-y-1">
+          {(filters.selectedEffects || []).length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {filters.selectedEffects.map(e => (
+                <span key={e} className="bg-gold-500/15 border border-gold-500/30 text-gold-500 text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+                  {e}
+                  <button onClick={() => setFilters(prev => ({...prev, selectedEffects: prev.selectedEffects.filter(x => x !== e)}))}><X className="w-2.5 h-2.5" /></button>
+                </span>
+              ))}
+            </div>
+          )}
+          <select
+            data-testid="filter-effects"
+            value=""
+            onChange={(e) => {
+              if (e.target.value && !(filters.selectedEffects || []).includes(e.target.value)) {
+                setFilters(prev => ({...prev, selectedEffects: [...(prev.selectedEffects || []), e.target.value]}));
+              }
+              e.target.value = '';
+            }}
+            className="w-full bg-zinc-900/50 border border-zinc-800 text-zinc-400 text-xs h-10 px-3 outline-none focus:border-gold-500"
+          >
+            <option value="">Add effect filter...</option>
+            {ALL_EFFECTS.filter(e => !(filters.selectedEffects || []).includes(e)).map(e => (
+              <option key={e} value={e}>{e}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -1267,7 +1426,7 @@ const GrowerSubmitPage = () => {
     terpene_profile: '',
     lineage: '',
     lot_size_kg: '',
-    effects: '',
+    effects: [],
     growing_method: 'Indoor',
     /* export_country removed */
     open_permit: '',
@@ -1355,7 +1514,7 @@ const GrowerSubmitPage = () => {
       submitData.append('terpene_profile', formData.terpene_profile);
       submitData.append('lineage', formData.lineage);
       submitData.append('lot_size_kg', lotKg);
-      submitData.append('effects', formData.effects);
+      submitData.append('effects', Array.isArray(formData.effects) ? formData.effects.join(', ') : formData.effects);
       submitData.append('growing_method', formData.growing_method || '');
       submitData.append('open_permit', formData.open_permit || '');
       submitData.append('is_irradiated', formData.is_irradiated || '');
@@ -1736,15 +1895,11 @@ const GrowerSubmitPage = () => {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Effects *</label>
-                <input
-                  data-testid="grower-effects-input"
-                  type="text"
-                  required
-                  value={formData.effects}
-                  onChange={(e) => setFormData(prev => ({ ...prev, effects: e.target.value }))}
-                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none"
-                  placeholder="e.g., Relaxation, Mood Elevation, Pain Relief"
+                <label className="block font-manrope text-xs uppercase tracking-widest text-zinc-500 mb-2">Effects * (select up to 8)</label>
+                <EffectsMultiSelect
+                  selected={formData.effects}
+                  onChange={(effects) => setFormData(prev => ({ ...prev, effects }))}
+                  testId="grower-effects-select"
                 />
               </div>
             </div>
@@ -3138,6 +3293,7 @@ const AdminPage = () => {
     try {
       const payload = {
         ...editForm,
+        effects: Array.isArray(editForm.effects) ? editForm.effects.join(', ') : editForm.effects,
         terpene_profile: editForm.terpene_profile.split(',').map(t => t.trim()).filter(Boolean),
         grade_a_kg: parseFloat(editForm.grade_a_kg) || null,
         grade_b_kg: parseFloat(editForm.grade_b_kg) || null,
@@ -4692,10 +4848,12 @@ const AdminPage = () => {
                         placeholder="e.g., 50 kg" />
                     </div>
                     <div>
-                      <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Effects *</label>
-                      <input data-testid="edit-strain-effects" type="text" value={editForm.effects}
-                        onChange={e => setEditForm(p => ({...p, effects: e.target.value}))}
-                        className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-gold-500 text-white h-12 px-4 outline-none" />
+                      <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Effects</label>
+                      <EffectsMultiSelect
+                        selected={Array.isArray(editForm.effects) ? editForm.effects : (editForm.effects ? editForm.effects.split(',').map(e => e.trim()).filter(Boolean) : [])}
+                        onChange={(effects) => setEditForm(p => ({...p, effects}))}
+                        testId="edit-strain-effects"
+                      />
                     </div>
                   </div>
 

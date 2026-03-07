@@ -62,7 +62,7 @@
   "test_credentials": {
     "admin_password": "firegold2026",
     "test_user_created": "TEST_coa_*@test.com / TestPass123!",
-    "backend_url": "https://strain-database-4.preview.emergentagent.com"
+    "backend_url": "https://strain-effects.preview.emergentagent.com"
   },
 
   "seed_data_creation": "Created test users during registration tests (TEST_iter23_*, TEST_permit_*, TEST_coa_*)",

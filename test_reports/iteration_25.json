@@ -61,7 +61,7 @@
   "test_credentials": {
     "admin_password": "firegold2026",
     "test_affiliates_created": "TEST_iter25_Affiliate_*, TEST_iter25_AffWithComm_*, TEST_iter25_NoCommission_*, TEST_iter25_NullCommission_*",
-    "backend_url": "https://strain-database-4.preview.emergentagent.com"
+    "backend_url": "https://strain-effects.preview.emergentagent.com"
   },
 
   "seed_data_creation": "Created 4 test affiliates during backend API testing with TEST_iter25_* prefix",
