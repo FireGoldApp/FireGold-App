@@ -267,6 +267,29 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
     return 'text-gold-500';
   };
 
+  // THC values are stored as bare numbers ("35.21") with no unit -- always
+  // append "%" so it's unambiguous that the number is THC potency.
+  const formatThc = (value) => {
+    if (value === undefined || value === null || value === '') return null;
+    const str = String(value).trim();
+    return str.endsWith('%') ? str : `${str}%`;
+  };
+
+  const hasMultipleLots = Array.isArray(strain.lots) && strain.lots.length > 0;
+
+  const getThcDisplay = (s) => {
+    if (hasMultipleLots) {
+      const values = s.lots.map((l) => formatThc(l.thc_percentage)).filter(Boolean);
+      return values.length > 0 ? values.join(' / ') : `${s.lots.length} Lots`;
+    }
+    return formatThc(s.thc_percentage) || '—';
+  };
+
+  const getThcBadge = (s) => {
+    if (hasMultipleLots) return `${s.lots.length} LOTS`;
+    return formatThc(s.thc_percentage) || '';
+  };
+
   return (
     <div 
       data-testid={`strain-card-${strain.id}`}
@@ -292,9 +315,9 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
           </div>
         )}
 
-        {/* Price Tier Badge */}
+        {/* THC Badge */}
         <div className={`absolute ${strain.growing_method ? 'top-12' : 'top-4'} right-4 w-20 bg-black/80 backdrop-blur-sm px-2 py-1 border border-gold-500/30 text-center`}>
-          <span className="text-gold-500 font-mono text-sm">{strain.price_tier}</span>
+          <span className="text-gold-500 font-mono text-[11px]">{getThcBadge(strain)}</span>
         </div>
 
         {/* Category Badge */}
@@ -345,9 +368,11 @@ const StrainCard = ({ strain, onSelect, isSelected, onViewDetails }) => {
         <div className="flex items-center gap-4 text-zinc-400 text-sm">
           <span className="flex items-center gap-1">
             <Activity className="w-4 h-4 text-gold-500" />
-            THC {strain.thc_percentage}
+            THC {getThcDisplay(strain)}
           </span>
-          <span className="font-mono text-xs text-zinc-500">{strain.lot_size}</span>
+          {!hasMultipleLots && (
+            <span className="font-mono text-xs text-zinc-500">{strain.lot_size}</span>
+          )}
         </div>
         {(strain.grade_a_kg || strain.grade_b_kg || strain.grade_c_kg) && (
           <div className="flex gap-1.5 mt-2">
@@ -480,17 +505,40 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
             <h2 className="font-cinzel font-bold text-3xl text-white mb-4">{strain.strain_name}</h2>
             
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-zinc-900/50 p-4 border border-white/5">
-                <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-1">THC</div>
-                <div className="text-white font-mono text-lg">{strain.thc_percentage}</div>
+            {Array.isArray(strain.lots) && strain.lots.length > 0 ? (
+              <div className="mb-6">
+                <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-2">
+                  THC Percentage — {strain.lots.length} Lot{strain.lots.length > 1 ? 's' : ''} Available
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {strain.lots.map((lot, idx) => (
+                    <div key={idx} className="bg-zinc-900/50 p-4 border border-white/5">
+                      <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-1">
+                        {lot.label || `Lot ${idx + 1}`}
+                      </div>
+                      <div className="text-white font-mono text-lg">
+                        {lot.thc_percentage ? `${lot.thc_percentage}% THC` : '—'}
+                      </div>
+                      {lot.lot_size && (
+                        <div className="text-zinc-400 font-mono text-xs mt-1">{lot.lot_size}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="bg-zinc-900/50 p-4 border border-white/5">
-                <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-1">Price Tier</div>
-                <div className="text-gold-500 font-mono text-lg">{strain.price_tier}</div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-zinc-900/50 p-4 border border-white/5">
+                  <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-1">THC Percentage</div>
+                  <div className="text-white font-mono text-lg">{strain.thc_percentage ? `${strain.thc_percentage}%` : '—'}</div>
+                </div>
+                <div className="bg-zinc-900/50 p-4 border border-white/5">
+                  <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-1">Available Quantity</div>
+                  <div className="text-gold-500 font-mono text-lg">{strain.lot_size}</div>
+                </div>
               </div>
-            </div>
-            
+            )}
+
             {/* Lineage */}
             <div className="mb-6">
               <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-2">Lineage</div>
@@ -521,20 +569,6 @@ const StrainDetailModal = ({ strain, onClose, onAddToInquiry, isInInquiry, onReq
               </div>
             </div>
             
-            {/* Lot Size */}
-            <div className="mb-6">
-              <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-2">Available Quantity</div>
-              <div className="text-white font-mono">{strain.lot_size}</div>
-            </div>
-
-            {/* Harvest Date */}
-            {strain.harvest_date && (
-              <div className="mb-6">
-                <div className="text-zinc-500 font-manrope text-xs uppercase tracking-widest mb-2">Harvest Date</div>
-                <div className="text-white font-mono">{new Date(strain.harvest_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-              </div>
-            )}
-
             {/* Grade Breakdown */}
             {(strain.grade_a_kg || strain.grade_b_kg || strain.grade_c_kg) && (
               <div className="mb-6">

@@ -253,9 +253,19 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 # Define Models
+
+# One lot within a strain that has multiple lots in stock. Public-facing --
+# label is a generic "Lot 1" / "Lot 2" position, never a real lot code or
+# harvest date (those must never appear on the public marketplace).
+class StrainLot(BaseModel):
+    label: str
+    thc_percentage: Optional[str] = None
+    cbd_percentage: Optional[str] = None
+    lot_size: Optional[str] = None
+
 class Strain(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     strain_name: str
     type: str
@@ -265,6 +275,7 @@ class Strain(BaseModel):
     terpene_profile: List[str]
     lineage: str
     lot_size: str
+    lots: Optional[List[StrainLot]] = None  # set when multiple lots are shown on one card
     effects: List[str] = []
     grade_a_kg: Optional[float] = None
     grade_b_kg: Optional[float] = None
@@ -291,6 +302,7 @@ class StrainCreate(BaseModel):
     terpene_profile: List[str]
     lineage: str
     lot_size: str
+    lots: Optional[List[StrainLot]] = None
     effects: List[str] = []
     grade_a_kg: Optional[float] = None
     grade_b_kg: Optional[float] = None
